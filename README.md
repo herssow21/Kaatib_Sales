@@ -1,50 +1,29 @@
-# Welcome to your Expo app 👋
+# Inventory Management Application (Goods and Services)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Overview
 
-## Get started
+The **Inventory Management Application** is a React Native project built using Expo. It is designed for small to medium-sized businesses to efficiently manage inventory, track orders, and record expenses. The app supports managing both products and services, making it a versatile solution for various business needs.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **Authentication:** Secure login and signup with user roles (Admin and Staff).
+- **Dashboard:** Overview of key performance indicators (KPIs) and inventory status.
+- **Inventory Management:** Add, edit, delete products and services with category support.
+- **Order Management:** Create, track, and manage orders with status updates.
+- **Expense Tracking:** Record and monitor expenses with trend analysis.
+- **Modals:** Interactive modals for policy viewing, transaction management, and category updates.
+- **Push Notifications:** Alerts for low stock, order updates, and pending tasks.
 
-2. Start the app
+expo start
+Technologies Used
+Frontend: React Native, Expo
+State Management: Context API
+Backend: Node.js or Firebase (based on integration)
+Database: Firebase Firestore or MongoDB
+Contact
+For questions, contributions, or support, reach out to us:
+Fastatechs
 
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Phone: +254727880041
+Email: contact@fastatechs.com
+Thank you for using our application!
