@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { nanoid } from "nanoid";
 
 interface Category {
   id: string;
@@ -8,6 +9,7 @@ interface Category {
 interface CategoryContextType {
   categories: Category[];
   addCategory: (category: Category) => void;
+  editCategory: (updatedCategory: Category) => void;
   removeCategory: (id: string) => void;
 }
 
@@ -21,7 +23,18 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [categories, setCategories] = useState<Category[]>([]);
 
   const addCategory = (category: Category) => {
-    setCategories((prevCategories) => [...prevCategories, category]);
+    setCategories((prevCategories) => [
+      ...prevCategories,
+      { ...category, id: nanoid() },
+    ]);
+  };
+
+  const editCategory = (updatedCategory: Category) => {
+    setCategories((prevCategories) =>
+      prevCategories.map((cat) =>
+        cat.id === updatedCategory.id ? updatedCategory : cat
+      )
+    );
   };
 
   const removeCategory = (id: string) => {
@@ -32,7 +45,7 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <CategoryContext.Provider
-      value={{ categories, addCategory, removeCategory }}
+      value={{ categories, addCategory, editCategory, removeCategory }}
     >
       {children}
     </CategoryContext.Provider>

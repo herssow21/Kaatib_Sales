@@ -2,17 +2,25 @@ import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { TextInput, Button, useTheme } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
-import { nanoid } from "nanoid"; // For generating unique IDs
+import { nanoid } from "nanoid";
 
-const CategoryForm: React.FC = () => {
+const CategoryForm: React.FC<{
+  initialData?: { id?: string; name: string };
+  onClose: () => void;
+}> = ({ initialData, onClose }) => {
   const theme = useTheme();
-  const { addCategory } = useCategoryContext();
-  const [categoryName, setCategoryName] = useState("");
+  const { addCategory, editCategory } = useCategoryContext();
+  const [categoryName, setCategoryName] = useState(initialData?.name || "");
 
   const handleSubmit = () => {
     if (categoryName.trim()) {
-      addCategory({ id: nanoid(), name: categoryName });
+      if (initialData) {
+        editCategory({ id: initialData.id!, name: categoryName });
+      } else {
+        addCategory({ id: nanoid(), name: categoryName });
+      }
       setCategoryName(""); // Clear input after submission
+      onClose(); // Close the modal
     }
   };
 
@@ -26,7 +34,10 @@ const CategoryForm: React.FC = () => {
         style={styles.input}
       />
       <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-        Add Category
+        {initialData ? "Update Category" : "Add Category"}
+      </Button>
+      <Button mode="text" onPress={onClose} style={styles.button}>
+        Cancel
       </Button>
     </View>
   );

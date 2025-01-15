@@ -4,9 +4,8 @@ import { nanoid } from "nanoid";
 interface InventoryItem {
   id: string;
   name: string;
-  quantity?: number;
+  quantity: number;
   price: number;
-  category?: string;
 }
 
 interface InventoryContextType {
@@ -26,7 +25,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [items, setItems] = useState<InventoryItem[]>([]);
 
   const addItem = (item: InventoryItem) => {
-    setItems((prevItems) => [...prevItems, { ...item, id: nanoid() }]);
+    setItems((prevItems) => [...prevItems, item]);
   };
 
   const editItem = (updatedItem: InventoryItem) => {
