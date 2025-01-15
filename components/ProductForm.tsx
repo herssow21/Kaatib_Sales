@@ -28,7 +28,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit }) => {
   const [category, setCategory] = useState(initialData?.category || "");
 
   const handleSubmit = () => {
-    onSubmit({ id: initialData?.id, name, price, quantity, category });
+    onSubmit({
+      id: initialData?.id,
+      name,
+      price,
+      quantity: quantity || 0,
+      category,
+    });
     setName("");
     setPrice(0);
     setQuantity(0);

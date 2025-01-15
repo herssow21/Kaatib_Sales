@@ -2,8 +2,8 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "esModuleInterop": true,
-    "moduleResolution": "node"
-  },
+    "moduleResolution": "node",
+},
   "extends": "expo/tsconfig.base",
   "include": [
     "**/*.ts",

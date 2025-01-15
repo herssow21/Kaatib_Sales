@@ -1,11 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
-import { Text, Button, TextInput, useTheme, Card } from "react-native-paper";
+import {
+  Text,
+  Button,
+  TextInput,
+  useTheme,
+  Card,
+  Modal,
+} from "react-native-paper";
 import { useInventoryContext } from "../../contexts/InventoryContext";
+import CategoryForm from "../../components/CategoryForm";
+import ProductForm from "../../components/ProductForm";
+import * as DocumentPicker from "expo-document-picker";
+import { nanoid } from "nanoid";
 
 const InventoryScreen = () => {
   const theme = useTheme();
-  const { items } = useInventoryContext();
+  const { items, addItem, editItem } = useInventoryContext();
+
+  const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [isItemModalVisible, setItemModalVisible] = useState(false);
+  const [isBulkRestoreModalVisible, setBulkRestoreModalVisible] =
+    useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [itemType, setItemType] = useState("product");
 
   const totalItems = items.length;
   const totalStockCount = items.reduce(
@@ -18,18 +37,49 @@ const InventoryScreen = () => {
   );
   const totalStockValue = estimatedSales;
 
+  const handleBulkRestore = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    if (result.type === "success") {
+      console.log(result.uri);
+    } else {
+      console.error("Document selection failed or was canceled.");
+    }
+    setBulkRestoreModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text variant="headlineMedium">Inventory List</Text>
         <View style={styles.buttonContainer}>
-          <Button mode="outlined" style={styles.button}>
+          <Button
+            mode="outlined"
+            onPress={() => setBulkRestoreModalVisible(true)}
+            style={styles.button}
+          >
             Bulk Restock
           </Button>
-          <Button mode="contained" style={styles.button}>
+          <Button
+            mode="contained"
+            onPress={() => {
+              setSelectedItem(null);
+              setItemModalVisible(true);
+            }}
+            style={styles.button}
+          >
             Create an Item
           </Button>
-          <Button mode="contained" style={styles.button}>
+          <Button
+            mode="contained"
+            onPress={() => {
+              setSelectedCategory(null);
+              setCategoryModalVisible(true);
+            }}
+            style={styles.button}
+          >
             Create Category
           </Button>
         </View>
@@ -85,10 +135,98 @@ const InventoryScreen = () => {
               <Text>KES {item.price.toFixed(2)}</Text>
               <Text>KES {(item.price * (item.quantity || 0)).toFixed(2)}</Text>
               <Text>KES {(item.price * (item.quantity || 0)).toFixed(2)}</Text>
+              <Button
+                onPress={() => {
+                  setSelectedItem(item);
+                  setItemModalVisible(true);
+                }}
+              >
+                Edit
+              </Button>
             </View>
           ))
         )}
       </ScrollView>
+
+      {/* Category Modal */}
+      <Modal
+        visible={isCategoryModalVisible}
+        onDismiss={() => setCategoryModalVisible(false)}
+      >
+        <CategoryForm
+          initialData={selectedCategory}
+          onClose={() => setCategoryModalVisible(false)}
+        />
+      </Modal>
+
+      {/* Item Modal */}
+      <Modal
+        visible={isItemModalVisible}
+        onDismiss={() => setItemModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <Text>Select Item Type:</Text>
+          <Button onPress={() => setItemType("product")}>Product</Button>
+          <Button onPress={() => setItemType("service")}>Service</Button>
+          {itemType === "product" ? (
+            <ProductForm
+              initialData={selectedItem}
+              onSubmit={(data) => {
+                const itemData = {
+                  id: selectedItem ? selectedItem.id : nanoid(),
+                  name: data.name,
+                  price: data.price,
+                  quantity: data.quantity !== undefined ? data.quantity : 0,
+                  category: data.category,
+                };
+
+                if (selectedItem) {
+                  editItem(itemData);
+                } else {
+                  addItem(itemData);
+                }
+                setItemModalVisible(false);
+              }}
+            />
+          ) : (
+            <View>
+              <TextInput
+                mode="outlined"
+                label="Service Title"
+                onChangeText={(text) =>
+                  setSelectedItem({ ...selectedItem, name: text })
+                }
+              />
+              <TextInput
+                mode="outlined"
+                label="Charges"
+                keyboardType="numeric"
+                onChangeText={(text) =>
+                  setSelectedItem({ ...selectedItem, price: parseFloat(text) })
+                }
+              />
+              <Text>Select Category:</Text>
+              <Button onPress={() => setCategoryModalVisible(true)}>
+                Select Category
+              </Button>
+            </View>
+          )}
+        </View>
+      </Modal>
+
+      {/* Bulk Restore Modal */}
+      <Modal
+        visible={isBulkRestoreModalVisible}
+        onDismiss={() => setBulkRestoreModalVisible(false)}
+      >
+        <View style={styles.bulkRestoreContainer}>
+          <Text>Upload Excel File for Bulk Restore</Text>
+          <Button onPress={handleBulkRestore}>Upload</Button>
+          <Button onPress={() => setBulkRestoreModalVisible(false)}>
+            Cancel
+          </Button>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -151,6 +289,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 16,
     color: "#666",
+  },
+  bulkRestoreContainer: {
+    padding: 16,
+  },
+  modalContainer: {
+    padding: 16,
   },
 });
 
