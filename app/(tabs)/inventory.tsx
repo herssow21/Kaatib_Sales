@@ -42,7 +42,7 @@ const InventoryScreen = () => {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
-    if (result.type === "success") {
+    if (result && result.type === "success") {
       console.log(result.uri);
     } else {
       console.error("Document selection failed or was canceled.");
@@ -152,6 +152,7 @@ const InventoryScreen = () => {
       <Modal
         visible={isCategoryModalVisible}
         onDismiss={() => setCategoryModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
       >
         <CategoryForm
           initialData={selectedCategory}
@@ -163,8 +164,9 @@ const InventoryScreen = () => {
       <Modal
         visible={isItemModalVisible}
         onDismiss={() => setItemModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
       >
-        <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
           <Text>Select Item Type:</Text>
           <Button onPress={() => setItemType("product")}>Product</Button>
           <Button onPress={() => setItemType("service")}>Service</Button>
@@ -294,6 +296,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalContainer: {
+    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    width: "60%",
+    alignSelf: "center",
+  },
+  modalContent: {
     padding: 16,
   },
 });
