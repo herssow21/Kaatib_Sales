@@ -1,44 +1,29 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { TextInput, Button, useTheme } from "react-native-paper";
-import { useInventoryContext } from "../contexts/InventoryContext";
+import { TextInput, Button } from "react-native-paper";
+import { Picker } from "@react-native-picker/picker";
+import { nanoid } from "nanoid";
 
-interface ProductFormProps {
-  initialData?: {
-    id: string;
-    name: string;
-    price: number;
-    quantity?: number;
-    category: string;
-  };
-  onSubmit: (data: {
-    id?: string;
-    name: string;
-    price: number;
-    quantity?: number;
-    category: string;
-  }) => void;
-}
-
-const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit }) => {
-  const theme = useTheme();
+const ProductForm: React.FC<{
+  initialData?: any;
+  onSubmit: (data: any) => void;
+  categories: { id: string; name: string }[];
+}> = ({ initialData, onSubmit, categories }) => {
   const [name, setName] = useState(initialData?.name || "");
   const [price, setPrice] = useState(initialData?.price || 0);
   const [quantity, setQuantity] = useState(initialData?.quantity || 0);
   const [category, setCategory] = useState(initialData?.category || "");
 
   const handleSubmit = () => {
-    onSubmit({
-      id: initialData?.id,
+    const itemData = {
+      id: initialData?.id || nanoid(),
       name,
       price,
-      quantity: quantity || 0,
+      quantity,
       category,
-    });
-    setName("");
-    setPrice(0);
-    setQuantity(0);
-    setCategory("");
+      createdAt: initialData ? initialData.createdAt : new Date().toISOString(),
+    };
+    onSubmit(itemData);
   };
 
   return (
@@ -54,7 +39,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit }) => {
         mode="outlined"
         label="Price"
         value={price.toString()}
-        onChangeText={(text) => setPrice(Number(text))}
+        onChangeText={(text) => setPrice(parseFloat(text))}
         keyboardType="numeric"
         style={styles.input}
       />
@@ -62,17 +47,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSubmit }) => {
         mode="outlined"
         label="Quantity"
         value={quantity.toString()}
-        onChangeText={(text) => setQuantity(Number(text))}
+        onChangeText={(text) => setQuantity(parseInt(text, 10))}
         keyboardType="numeric"
         style={styles.input}
       />
-      <TextInput
-        mode="outlined"
-        label="Category"
-        value={category}
-        onChangeText={setCategory}
+      <Picker
+        selectedValue={category}
+        onValueChange={setCategory}
         style={styles.input}
-      />
+      >
+        <Picker.Item label="Select Category" value="" />
+        {categories.map((cat) => (
+          <Picker.Item key={cat.id} label={cat.name} value={cat.name} />
+        ))}
+      </Picker>
       <Button mode="contained" onPress={handleSubmit} style={styles.button}>
         {initialData ? "Update Product" : "Add Product"}
       </Button>

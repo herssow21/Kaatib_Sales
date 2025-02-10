@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useState } from "react";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid/non-secure";
+const generateId = customAlphabet("1234567890abcdef", 10);
 
 interface InventoryItem {
   id: string;
   name: string;
   quantity: number;
   price: number;
+  category: string;
+  createdAt: string;
+  buyingPrice: number;
+  sellingPrice: number;
+  stockValue: number;
 }
 
 interface InventoryContextType {

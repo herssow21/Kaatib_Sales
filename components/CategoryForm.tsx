@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, FlatList, Alert } from "react-native";
-import { TextInput, Button, Text, useTheme, Card } from "react-native-paper";
+import { TextInput, Button, Text, Card } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { nanoid } from "nanoid";
 
@@ -8,7 +8,6 @@ const CategoryForm: React.FC<{
   initialData?: { id?: string; name: string };
   onClose: () => void;
 }> = ({ initialData, onClose }) => {
-  const theme = useTheme();
   const { categories, addCategory, editCategory, removeCategory } =
     useCategoryContext();
   const [categoryName, setCategoryName] = useState("");
@@ -52,6 +51,26 @@ const CategoryForm: React.FC<{
     }
   };
 
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this category?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: () => {
+            removeCategory(id);
+            Alert.alert("Success", "Category deleted successfully.");
+          },
+        },
+      ]
+    );
+  };
+
   const handleEdit = (item: { id: string; name: string }) => {
     setCategoryName(item.name); // Populate input for editing
   };
@@ -86,10 +105,7 @@ const CategoryForm: React.FC<{
                   Edit
                 </Button>
                 <Button
-                  onPress={() => {
-                    removeCategory(item.id);
-                    Alert.alert("Success", "Category deleted successfully.");
-                  }}
+                  onPress={() => handleDelete(item.id)}
                   mode="outlined"
                   style={styles.actionButton}
                 >

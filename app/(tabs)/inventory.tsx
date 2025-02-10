@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, View, ScrollView, Alert } from "react-native";
 import {
   Text,
   Button,
@@ -9,22 +9,38 @@ import {
   Modal,
 } from "react-native-paper";
 import { useInventoryContext } from "../../contexts/InventoryContext";
+import { useCategoryContext } from "../../contexts/CategoryContext";
 import CategoryForm from "../../components/CategoryForm";
 import ProductForm from "../../components/ProductForm";
 import * as DocumentPicker from "expo-document-picker";
-import { nanoid } from "nanoid";
+import { nanoid } from "nanoid/non-secure";
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number; // This can be the base price or a different field
+  category: string;
+  createdAt: string;
+  buyingPrice: number; // Add this if it's part of your data structure
+  sellingPrice: number; // Add this if it's part of your data structure
+  stockValue: number; // Add this if it's part of your data structure
+}
 
 const InventoryScreen = () => {
   const theme = useTheme();
   const { items, addItem, editItem } = useInventoryContext();
+  const { categories } = useCategoryContext();
 
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [isItemModalVisible, setItemModalVisible] = useState(false);
   const [isBulkRestoreModalVisible, setBulkRestoreModalVisible] =
     useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [itemType, setItemType] = useState("product");
+  const [sortConfig, setSortConfig] = useState({
+    key: "",
+    direction: "ascending",
+  });
 
   const totalItems = items.length;
   const totalStockCount = items.reduce(
@@ -37,13 +53,27 @@ const InventoryScreen = () => {
   );
   const totalStockValue = estimatedSales;
 
-  const handleBulkRestore = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+  const handleSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
 
-    if (result && result.type === "success") {
-      console.log(result.uri);
+  const sortedItems = [...items].sort((a, b) => {
+    if (sortConfig.direction === "ascending") {
+      return a[sortConfig.key] > b[sortConfig.key] ? 1 : -1;
+    } else {
+      return a[sortConfig.key] < b[sortConfig.key] ? 1 : -1;
+    }
+  });
+
+  const handleBulkRestore = async () => {
+    const result = await DocumentPicker.getDocumentAsync();
+
+    if (result.assets && result.assets[0]) {
+      console.log(result.assets[0].uri);
     } else {
       console.error("Document selection failed or was canceled.");
     }
@@ -63,6 +93,13 @@ const InventoryScreen = () => {
             Bulk Restock
           </Button>
           <Button
+            mode="outlined"
+            onPress={() => setCategoryModalVisible(true)}
+            style={styles.button}
+          >
+            Create Category
+          </Button>
+          <Button
             mode="contained"
             onPress={() => {
               setSelectedItem(null);
@@ -71,16 +108,6 @@ const InventoryScreen = () => {
             style={styles.button}
           >
             Create an Item
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() => {
-              setSelectedCategory(null);
-              setCategoryModalVisible(true);
-            }}
-            style={styles.button}
-          >
-            Create Category
           </Button>
         </View>
       </View>
@@ -118,33 +145,67 @@ const InventoryScreen = () => {
         style={styles.searchInput}
       />
       <ScrollView>
-        <View style={styles.tableHeader}>
-          <Text style={styles.tableHeaderText}>Item</Text>
-          <Text style={styles.tableHeaderText}>Stock Count</Text>
-          <Text style={styles.tableHeaderText}>Buying Price</Text>
-          <Text style={styles.tableHeaderText}>Selling Price</Text>
-          <Text style={styles.tableHeaderText}>Stock Value</Text>
-        </View>
         {items.length === 0 ? (
           <Text style={styles.emptyText}>No items available in inventory.</Text>
         ) : (
-          items.map((item) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text>{item.name}</Text>
-              <Text>{item.quantity}</Text>
-              <Text>KES {item.price.toFixed(2)}</Text>
-              <Text>KES {(item.price * (item.quantity || 0)).toFixed(2)}</Text>
-              <Text>KES {(item.price * (item.quantity || 0)).toFixed(2)}</Text>
-              <Button
-                onPress={() => {
-                  setSelectedItem(item);
-                  setItemModalVisible(true);
-                }}
+          <View>
+            <View style={styles.tableHeader}>
+              <Text
+                style={styles.tableHeaderCell}
+                onPress={() => handleSort("name")}
               >
-                Edit
-              </Button>
+                Item
+              </Text>
+              <Text
+                style={styles.tableHeaderCell}
+                onPress={() => handleSort("quantity")}
+              >
+                Stock Count
+              </Text>
+              <Text
+                style={styles.tableHeaderCell}
+                onPress={() => handleSort("buyingPrice")}
+              >
+                Buying Price
+              </Text>
+              <Text
+                style={styles.tableHeaderCell}
+                onPress={() => handleSort("sellingPrice")}
+              >
+                Selling Price
+              </Text>
+              <Text
+                style={styles.tableHeaderCell}
+                onPress={() => handleSort("stockValue")}
+              >
+                Stock Value
+              </Text>
             </View>
-          ))
+            {sortedItems.map((item) => (
+              <View key={item.id} style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item.name}</Text>
+                <Text style={styles.tableCell}>{item.quantity}</Text>
+                <Text style={styles.tableCell}>
+                  KES {item.buyingPrice ? item.buyingPrice.toFixed(2) : "0.00"}
+                </Text>
+                <Text style={styles.tableCell}>
+                  KES{" "}
+                  {item.sellingPrice ? item.sellingPrice.toFixed(2) : "0.00"}
+                </Text>
+                <Text style={styles.tableCell}>
+                  KES {item.stockValue ? item.stockValue.toFixed(2) : "0.00"}
+                </Text>
+                <Button
+                  onPress={() => {
+                    setSelectedItem(item);
+                    setItemModalVisible(true);
+                  }}
+                >
+                  Edit
+                </Button>
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -152,10 +213,9 @@ const InventoryScreen = () => {
       <Modal
         visible={isCategoryModalVisible}
         onDismiss={() => setCategoryModalVisible(false)}
-        contentContainerStyle={styles.modalContainer}
       >
         <CategoryForm
-          initialData={selectedCategory}
+          initialData={selectedItem}
           onClose={() => setCategoryModalVisible(false)}
         />
       </Modal>
@@ -164,56 +224,31 @@ const InventoryScreen = () => {
       <Modal
         visible={isItemModalVisible}
         onDismiss={() => setItemModalVisible(false)}
-        contentContainerStyle={styles.modalContainer}
       >
-        <View style={styles.modalContent}>
-          <Text>Select Item Type:</Text>
-          <Button onPress={() => setItemType("product")}>Product</Button>
-          <Button onPress={() => setItemType("service")}>Service</Button>
-          {itemType === "product" ? (
-            <ProductForm
-              initialData={selectedItem}
-              onSubmit={(data) => {
-                const itemData = {
-                  id: selectedItem ? selectedItem.id : nanoid(),
-                  name: data.name,
-                  price: data.price,
-                  quantity: data.quantity !== undefined ? data.quantity : 0,
-                  category: data.category,
-                };
+        <ProductForm
+          initialData={selectedItem}
+          categories={categories}
+          onSubmit={(data) => {
+            const itemData: InventoryItem = {
+              id: selectedItem ? selectedItem.id : nanoid(),
+              name: data.name,
+              quantity: data.quantity || 0,
+              category: data.category,
+              buyingPrice: data.buyingPrice || 0,
+              sellingPrice: data.sellingPrice || 0,
+              stockValue: (data.quantity || 0) * (data.sellingPrice || 0),
+              price: data.price || 0,
+              createdAt: new Date().toISOString(),
+            };
 
-                if (selectedItem) {
-                  editItem(itemData);
-                } else {
-                  addItem(itemData);
-                }
-                setItemModalVisible(false);
-              }}
-            />
-          ) : (
-            <View>
-              <TextInput
-                mode="outlined"
-                label="Service Title"
-                onChangeText={(text) =>
-                  setSelectedItem({ ...selectedItem, name: text })
-                }
-              />
-              <TextInput
-                mode="outlined"
-                label="Charges"
-                keyboardType="numeric"
-                onChangeText={(text) =>
-                  setSelectedItem({ ...selectedItem, price: parseFloat(text) })
-                }
-              />
-              <Text>Select Category:</Text>
-              <Button onPress={() => setCategoryModalVisible(true)}>
-                Select Category
-              </Button>
-            </View>
-          )}
-        </View>
+            if (selectedItem) {
+              editItem(itemData);
+            } else {
+              addItem(itemData);
+            }
+            setItemModalVisible(false);
+          }}
+        />
       </Modal>
 
       {/* Bulk Restore Modal */}
@@ -270,40 +305,38 @@ const styles = StyleSheet.create({
   searchInput: {
     marginBottom: 16,
   },
-  tableHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-  },
-  tableHeaderText: {
-    fontWeight: "bold",
-  },
-  tableRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
   emptyText: {
     textAlign: "center",
     padding: 16,
     color: "#666",
   },
+  modalContainer: {
+    padding: 16,
+  },
   bulkRestoreContainer: {
     padding: 16,
   },
-  modalContainer: {
-    padding: 16,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    width: "60%",
-    alignSelf: "center",
+  tableHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f0f0f0",
+    padding: 8,
   },
-  modalContent: {
-    padding: 16,
+  tableHeaderCell: {
+    flex: 1,
+    fontWeight: "bold",
+    textAlign: "left",
+  },
+  tableRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: "left",
   },
 });
 
