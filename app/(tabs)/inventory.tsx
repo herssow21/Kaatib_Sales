@@ -22,12 +22,13 @@ interface InventoryItem {
   id: string;
   name: string;
   quantity: number;
-  price: number; // This can be the base price or a different field
   category: string;
   createdAt: string;
-  buyingPrice: number; // Add this if it's part of your data structure
-  sellingPrice: number; // Add this if it's part of your data structure
-  stockValue: number; // Add this if it's part of your data structure
+  buyingPrice: number;
+  sellingPrice: number;
+  stockValue: number;
+  measuringUnit?: string;
+  price: number;
 }
 
 const InventoryScreen = () => {
@@ -393,23 +394,25 @@ const InventoryScreen = () => {
       <Modal
         visible={isItemModalVisible}
         onDismiss={() => setItemModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
       >
         <ProductForm
           initialData={selectedItem}
           categories={categories}
+          onClose={() => setItemModalVisible(false)}
           onSubmit={(data) => {
             const itemData: InventoryItem = {
               id: selectedItem ? selectedItem.id : generateId(),
               name: data.name,
-              quantity: data.quantity || 0,
+              quantity: data.quantity,
               category: data.category,
-              buyingPrice: data.buyingPrice || 0,
-              sellingPrice: data.sellingPrice || 0,
-              stockValue: (data.quantity || 0) * (data.sellingPrice || 0),
-              price: data.price || 0,
+              buyingPrice: data.buyingPrice,
+              sellingPrice: data.sellingPrice,
+              measuringUnit: data.measuringUnit,
+              stockValue: data.buyingPrice * data.quantity,
               createdAt: new Date().toISOString(),
+              price: data.sellingPrice,
             };
-
             if (selectedItem) {
               editItem(itemData);
             } else {
@@ -499,6 +502,9 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     padding: 16,
+    backgroundColor: "transparent",
+    maxHeight: "100%",
+    marginVertical: 20,
   },
   bulkRestoreContainer: {
     padding: 16,
