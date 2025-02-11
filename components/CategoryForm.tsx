@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, FlatList, Alert } from "react-native";
 import { TextInput, Button, Text, Card } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
-import { nanoid } from "nanoid";
+
+function generateSimpleId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `${timestamp}-${randomStr}`;
+}
 
 const CategoryForm: React.FC<{
   initialData?: { id?: string; name: string };
@@ -22,32 +27,27 @@ const CategoryForm: React.FC<{
   }, [initialData]);
 
   const handleSubmit = () => {
-    if (categoryName.trim()) {
-      // Check for duplicate categories
-      const isDuplicate = categories.some(
-        (cat) =>
-          cat.name.toLowerCase() === categoryName.toLowerCase() &&
-          cat.id !== initialData?.id
-      );
+    if (!categoryName.trim()) {
+      Alert.alert("Error", "Category name is required");
+      return;
+    }
 
-      if (isDuplicate) {
-        Alert.alert("Duplicate Category", "This category already exists.");
-        return;
-      }
-
-      if (initialData) {
-        // Update existing category
-        editCategory({ id: initialData.id!, name: categoryName });
-        Alert.alert("Success", "Category updated successfully.");
+    try {
+      if (initialData?.id) {
+        editCategory({ id: initialData.id, name: categoryName });
       } else {
-        // Add new category
-        addCategory({ id: nanoid(), name: categoryName });
-        Alert.alert("Success", "Category added successfully.");
+        addCategory({ id: generateSimpleId(), name: categoryName });
       }
-      setCategoryName(""); // Clear input after submission
-      onClose(); // Close the modal
-    } else {
-      Alert.alert("Input Error", "Category name cannot be empty.");
+
+      setCategoryName("");
+      Alert.alert(
+        "Success",
+        `Category ${initialData ? "updated" : "created"} successfully.`,
+        [{ text: "OK", onPress: onClose }]
+      );
+    } catch (error) {
+      console.log("Category operation error:", error);
+      Alert.alert("Error", "Failed to process category");
     }
   };
 

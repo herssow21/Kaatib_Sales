@@ -181,7 +181,7 @@ const ProductForm: React.FC<{
             onPress={handleSubmit}
             style={[styles.button, styles.createButton]}
           >
-            Create Item
+            {initialData ? "Update Item" : "Create Item"}
           </Button>
         </View>
       </View>
