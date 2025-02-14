@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { customAlphabet } from "nanoid/non-secure";
-const generateId = customAlphabet("1234567890abcdef", 10);
+import { nanoid } from "nanoid";
 
 interface InventoryItem {
   id: string;
@@ -31,7 +30,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [items, setItems] = useState<InventoryItem[]>([]);
 
   const addItem = (item: InventoryItem) => {
-    setItems((prevItems) => [...prevItems, item]);
+    setItems((prevItems) => [...prevItems, { ...item, id: nanoid() }]);
   };
 
   const editItem = (updatedItem: InventoryItem) => {

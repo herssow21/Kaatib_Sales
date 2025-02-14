@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { nanoid } from "nanoid";
+import { Alert } from "react-native";
 
 interface Category {
   id: string;
@@ -23,10 +24,15 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [categories, setCategories] = useState<Category[]>([]);
 
   const addCategory = (category: Category) => {
-    setCategories((prevCategories) => [
-      ...prevCategories,
-      { ...category, id: nanoid() },
-    ]);
+    try {
+      setCategories((prevCategories) => [
+        ...prevCategories,
+        { ...category, id: nanoid() },
+      ]);
+    } catch (error) {
+      console.log("Error adding category:", error);
+      Alert.alert("Error", "Failed to add category");
+    }
   };
 
   const editCategory = (updatedCategory: Category) => {

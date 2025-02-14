@@ -27,6 +27,14 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
       marginBottom: 16,
       borderRadius: 12,
       elevation: 4,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.5,
+      boxShadow: "0 2px 3.5px rgba(0, 0, 0, 0.25)",
     },
     cardContent: {
       flexDirection: "row",

@@ -5,6 +5,8 @@ import {
   ScrollView,
   Alert,
   useWindowDimensions,
+  ViewStyle,
+  TextStyle,
 } from "react-native";
 import {
   Text,
@@ -395,15 +397,14 @@ const InventoryScreen = () => {
       gap: 8,
     },
     tableScrollView: {
-      maxHeight: "70vh",
+      maxHeight: "70%",
     },
   });
-
   return (
     <View style={styles.container}>
       {isMobile ? (
         <>
-          <View style={styles.mobileHeader}>
+          <View style={{ ...styles.mobileHeader } as const}>
             <Text variant="headlineMedium">Inventory List</Text>
           </View>
 
@@ -421,7 +422,7 @@ const InventoryScreen = () => {
                 setSelectedItem(null);
                 setItemModalVisible(true);
               }}
-              style={styles.mobileButton}
+              style={styles.mobileButton as ViewStyle}
             >
               Create Item
             </Button>
@@ -433,13 +434,14 @@ const InventoryScreen = () => {
               Categories
             </Button>
           </View>
-
-          <ScrollView horizontal style={styles.mobileStatsScroll}>
-            <View style={styles.mobileStatsContainer}>
-              <Card style={styles.mobileStatBox}>
+          <ScrollView horizontal style={styles.mobileStatsScroll as ViewStyle}>
+            <View style={styles.mobileStatsContainer as ViewStyle}>
+              <Card style={styles.mobileStatBox as ViewStyle}>
                 <Card.Content>
-                  <Text style={styles.statLabel}>Total Items</Text>
-                  <Text style={styles.statValue}>{totalItems}</Text>
+                  <Text style={styles.statLabel as TextStyle}>Total Items</Text>
+                  <Text style={styles.statValue as TextStyle}>
+                    {totalItems}
+                  </Text>
                 </Card.Content>
               </Card>
               <Card style={styles.mobileStatBox}>
@@ -448,10 +450,12 @@ const InventoryScreen = () => {
                   <Text style={styles.statValue}>{totalStockCount}</Text>
                 </Card.Content>
               </Card>
-              <Card style={styles.mobileStatBox}>
+              <Card style={styles.mobileStatBox as ViewStyle}>
                 <Card.Content>
-                  <Text style={styles.statLabel}>Estimated Sales</Text>
-                  <Text style={styles.statValue}>
+                  <Text style={styles.statLabel as TextStyle}>
+                    Estimated Sales
+                  </Text>
+                  <Text style={styles.statValue as TextStyle}>
                     KES {estimatedSales.toFixed(2)}
                   </Text>
                 </Card.Content>
@@ -467,7 +471,7 @@ const InventoryScreen = () => {
             </View>
           </ScrollView>
 
-          <View style={styles.mobileFilters}>
+          <View style={styles.mobileFilters as ViewStyle}>
             <TextInput
               mode="outlined"
               placeholder="Search Items"
@@ -475,9 +479,9 @@ const InventoryScreen = () => {
               onChangeText={setSearchQuery}
               style={styles.mobileSearchInput}
             />
-            <View style={styles.mobileFilterRow}>
-              <Text style={styles.filterLabel}>Sort By:</Text>
-              <View style={styles.filterButtons}>
+            <View style={styles.mobileFilterRow as ViewStyle}>
+              <Text style={styles.filterLabel as TextStyle}>Sort By:</Text>
+              <View style={styles.filterButtons as ViewStyle}>
                 <Menu
                   visible={isCategoryMenuVisible}
                   onDismiss={() => setIsCategoryMenuVisible(false)}
@@ -540,18 +544,30 @@ const InventoryScreen = () => {
 
           <ScrollView horizontal>
             <View>
-              <View style={styles.mobileTableHeader}>
-                <Text style={[styles.mobileTableCell, { width: 40 }]}>#</Text>
-                <Text style={[styles.mobileTableCell, { width: 120 }]}>
+              <View style={styles.mobileTableHeader as ViewStyle}>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 40 }]}
+                >
+                  #
+                </Text>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 120 }]}
+                >
                   Item
                 </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
+                >
                   Category
                 </Text>
-                <Text style={[styles.mobileTableCell, { width: 80 }]}>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 80 }]}
+                >
                   Stock
                 </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
+                >
                   Buy Price
                 </Text>
                 <Text style={[styles.mobileTableCell, { width: 100 }]}>
@@ -560,26 +576,56 @@ const InventoryScreen = () => {
                 <Text style={[styles.mobileTableCell, { width: 100 }]}>
                   Value
                 </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                <Text
+                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
+                >
                   Actions
                 </Text>
               </View>
               <ScrollView>
                 {sortedItems.map((item, index) => (
-                  <View key={item.id} style={styles.mobileTableRow}>
-                    <Text style={[styles.mobileTableCell, { width: 40 }]}>
+                  <View
+                    key={item.id}
+                    style={styles.mobileTableRow as ViewStyle}
+                  >
+                    <Text
+                      style={[
+                        styles.mobileTableCell as TextStyle,
+                        { width: 40 },
+                      ]}
+                    >
                       {index + 1}
                     </Text>
-                    <Text style={[styles.mobileTableCell, { width: 120 }]}>
+                    <Text
+                      style={[
+                        styles.mobileTableCell as TextStyle,
+                        { width: 120 },
+                      ]}
+                    >
                       {item.name}
                     </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                    <Text
+                      style={[
+                        styles.mobileTableCell as TextStyle,
+                        { width: 100 },
+                      ]}
+                    >
                       {item.category}
                     </Text>
-                    <Text style={[styles.mobileTableCell, { width: 80 }]}>
+                    <Text
+                      style={[
+                        styles.mobileTableCell as TextStyle,
+                        { width: 80 },
+                      ]}
+                    >
                       {item.quantity}
                     </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                    <Text
+                      style={[
+                        styles.mobileTableCell as TextStyle,
+                        { width: 100 },
+                      ]}
+                    >
                       KES {item.buyingPrice.toFixed(2)}
                     </Text>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
@@ -590,7 +636,7 @@ const InventoryScreen = () => {
                     </Text>
                     <View
                       style={[
-                        styles.mobileTableCell,
+                        styles.mobileTableCell as ViewStyle,
                         { width: 100, flexDirection: "row" },
                       ]}
                     >
@@ -607,7 +653,10 @@ const InventoryScreen = () => {
                             color={theme.colors.primary}
                           />
                         )}
-                      />
+                        children={""}
+                      >
+                        {/* Empty children prop */}
+                      </Button>
                       <Button
                         mode="text"
                         onPress={() => handleDeleteItem(item.id)}
@@ -618,6 +667,7 @@ const InventoryScreen = () => {
                             color={theme.colors.error}
                           />
                         )}
+                        children={""}
                       >
                         {/* Empty children prop */}
                       </Button>
@@ -630,20 +680,20 @@ const InventoryScreen = () => {
         </>
       ) : (
         <>
-          <View style={styles.header}>
+          <View style={styles.header as ViewStyle}>
             <Text variant="headlineMedium">Inventory List</Text>
-            <View style={styles.buttonContainer}>
+            <View style={styles.buttonContainer as ViewStyle}>
               <Button
                 mode="outlined"
                 onPress={() => setBulkRestoreModalVisible(true)}
-                style={styles.button}
+                style={styles.button as ViewStyle}
               >
                 Bulk Restock
               </Button>
               <Button
                 mode="outlined"
                 onPress={() => setCategoryModalVisible(true)}
-                style={styles.button}
+                style={styles.button as ViewStyle}
               >
                 Create Category
               </Button>
@@ -659,45 +709,53 @@ const InventoryScreen = () => {
               </Button>
             </View>
           </View>
-          <View style={styles.statsContainer}>
-            <Card style={styles.statBox}>
+          <View style={styles.statsContainer as ViewStyle}>
+            <Card style={styles.statBox as ViewStyle}>
               <Card.Content>
-                <Text style={styles.statLabel}>Total Items</Text>
-                <Text style={styles.statValue}>{totalItems}</Text>
+                <Text style={styles.statLabel as TextStyle}>Total Items</Text>
+                <Text style={styles.statValue as TextStyle}>{totalItems}</Text>
               </Card.Content>
             </Card>
             <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel}>Total Stock Count</Text>
-                <Text style={styles.statValue}>{totalStockCount}</Text>
+                <Text style={styles.statLabel as TextStyle}>
+                  Total Stock Count
+                </Text>
+                <Text style={styles.statValue as TextStyle}>
+                  {totalStockCount}
+                </Text>
               </Card.Content>
             </Card>
-            <Card style={styles.statBox}>
+            <Card style={styles.statBox as ViewStyle}>
               <Card.Content>
-                <Text style={styles.statLabel}>Estimated Sales</Text>
-                <Text style={styles.statValue}>
+                <Text style={styles.statLabel as TextStyle}>
+                  Estimated Sales
+                </Text>
+                <Text style={styles.statValue as TextStyle}>
                   KES {estimatedSales.toFixed(2)}
                 </Text>
               </Card.Content>
             </Card>
             <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel}>Total Stock Value</Text>
-                <Text style={styles.statValue}>
+                <Text style={styles.statLabel as TextStyle}>
+                  Total Stock Value
+                </Text>
+                <Text style={styles.statValue as TextStyle}>
                   KES {totalStockValue.toFixed(2)}
                 </Text>
               </Card.Content>
             </Card>
           </View>
-          <View style={styles.filterContainer}>
+          <View style={styles.filterContainer as ViewStyle}>
             <TextInput
               mode="outlined"
               placeholder="Search Items"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={styles.searchInput}
+              style={styles.searchInput as TextStyle}
             />
-            <View style={styles.filtersRow}>
+            <View style={styles.filtersRow as ViewStyle}>
               <Menu
                 visible={isCategoryMenuVisible}
                 onDismiss={() => setIsCategoryMenuVisible(false)}
@@ -746,10 +804,17 @@ const InventoryScreen = () => {
               </Text>
             ) : (
               <View>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>#</Text>
+                <View style={styles.tableHeader as ViewStyle}>
                   <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
+                    style={[styles.tableHeaderCell as TextStyle, { flex: 0.5 }]}
+                  >
+                    #
+                  </Text>
+                  <Text
+                    style={[
+                      styles.tableHeaderCell as TextStyle,
+                      styles.sortableHeader as TextStyle,
+                    ]}
                     onPress={() => handleSort("name")}
                   >
                     Item{" "}
@@ -765,7 +830,10 @@ const InventoryScreen = () => {
                       (sortConfig.direction === "ascending" ? "↑" : "↓")}
                   </Text>
                   <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
+                    style={[
+                      styles.tableHeaderCell as TextStyle,
+                      styles.sortableHeader as TextStyle,
+                    ]}
                     onPress={() => handleSort("quantity")}
                   >
                     Stock Count{" "}
@@ -800,14 +868,22 @@ const InventoryScreen = () => {
                 </View>
                 <ScrollView style={styles.tableScrollView}>
                   {sortedItems.map((item, index) => (
-                    <View key={item.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { flex: 0.5 }]}>
+                    <View key={item.id} style={styles.tableRow as ViewStyle}>
+                      <Text
+                        style={[styles.tableCell as TextStyle, { flex: 0.5 }]}
+                      >
                         {index + 1}
                       </Text>
-                      <Text style={styles.tableCell}>{item.name}</Text>
-                      <Text style={styles.tableCell}>{item.category}</Text>
-                      <Text style={styles.tableCell}>{item.quantity}</Text>
-                      <Text style={styles.tableCell}>
+                      <Text style={styles.tableCell as TextStyle}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.tableCell as TextStyle}>
+                        {item.category}
+                      </Text>
+                      <Text style={styles.tableCell as TextStyle}>
+                        {item.quantity}
+                      </Text>
+                      <Text style={styles.tableCell as TextStyle}>
                         KES{" "}
                         {item.buyingPrice
                           ? item.buyingPrice.toFixed(2)
@@ -837,7 +913,8 @@ const InventoryScreen = () => {
                               color={theme.colors.primary}
                             />
                           )}
-                        />
+                          children={""}
+                        ></Button>
                         <Button
                           mode="text"
                           onPress={() => handleDeleteItem(item.id)}
@@ -848,6 +925,7 @@ const InventoryScreen = () => {
                               color={theme.colors.error}
                             />
                           )}
+                          children={""}
                         >
                           {/* Empty children prop */}
                         </Button>

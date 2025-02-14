@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import { StyleSheet, View, ScrollView, Alert } from "react-native";
 import { TextInput, Button, SegmentedButtons, Text } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
-import { customAlphabet } from "nanoid/non-secure";
-
-const generateId = customAlphabet("1234567890abcdef", 10);
+import { nanoid } from "nanoid";
 
 const ProductForm: React.FC<{
   initialData?: any;
@@ -33,7 +31,7 @@ const ProductForm: React.FC<{
 
   const handleSubmit = () => {
     const itemData = {
-      id: initialData?.id || generateId(),
+      id: initialData?.id || nanoid(),
       name,
       quantity: parseInt(productCount, 10),
       category,
@@ -44,7 +42,13 @@ const ProductForm: React.FC<{
       createdAt: new Date().toISOString(),
       price: parseFloat(sellingPrice),
     };
-    onSubmit(itemData);
+
+    try {
+      onSubmit(itemData);
+    } catch (error) {
+      console.log("Item submission error:", error);
+      Alert.alert("Error", "Failed to submit item");
+    }
   };
 
   return (

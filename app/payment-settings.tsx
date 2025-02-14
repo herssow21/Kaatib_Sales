@@ -9,6 +9,7 @@ export default function PaymentSettings() {
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      boxShadow: "0 2px 3.5px rgba(0, 0, 0, 0.25)",
     },
     header: {
       padding: 16,

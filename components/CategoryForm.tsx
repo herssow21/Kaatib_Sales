@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, FlatList, Alert } from "react-native";
 import { TextInput, Button, Text, Card } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
+import { nanoid } from "nanoid";
 
 function generateSimpleId(): string {
   const timestamp = Date.now().toString(36);
@@ -36,7 +37,7 @@ const CategoryForm: React.FC<{
       if (initialData?.id) {
         editCategory({ id: initialData.id, name: categoryName });
       } else {
-        addCategory({ id: generateSimpleId(), name: categoryName });
+        addCategory({ id: nanoid(), name: categoryName });
       }
 
       setCategoryName("");
