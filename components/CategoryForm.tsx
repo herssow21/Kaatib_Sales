@@ -2,13 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View, FlatList, Alert } from "react-native";
 import { TextInput, Button, Text, Card } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
-import { nanoid } from "nanoid";
-
-function generateSimpleId(): string {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  return `${timestamp}-${randomStr}`;
-}
+import { generateId } from "../utils/idGenerator";
 
 const CategoryForm: React.FC<{
   initialData?: { id?: string; name: string };
@@ -17,13 +11,21 @@ const CategoryForm: React.FC<{
   const { categories, addCategory, editCategory, removeCategory } =
     useCategoryContext();
   const [categoryName, setCategoryName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [initialDataState, setInitialData] = useState<{
+    id?: string;
+    name: string;
+  } | null>(null);
 
   // Set category name when initialData changes
   useEffect(() => {
     if (initialData) {
       setCategoryName(initialData.name);
+      setIsEditing(true);
     } else {
+      // Reset the form when initialData is null
       setCategoryName("");
+      setIsEditing(false);
     }
   }, [initialData]);
 
@@ -33,23 +35,38 @@ const CategoryForm: React.FC<{
       return;
     }
 
-    try {
-      if (initialData?.id) {
-        editCategory({ id: initialData.id, name: categoryName });
-      } else {
-        addCategory({ id: nanoid(), name: categoryName });
-      }
+    // Check for duplicates
+    const isDuplicate = categories.some(
+      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+    );
 
-      setCategoryName("");
-      Alert.alert(
-        "Success",
-        `Category ${initialData ? "updated" : "created"} successfully.`,
-        [{ text: "OK", onPress: onClose }]
-      );
-    } catch (error) {
-      console.log("Category operation error:", error);
-      Alert.alert("Error", "Failed to process category");
+    if (isEditing) {
+      // If editing, allow the same name
+      if (isDuplicate && categoryName !== initialData?.name) {
+        Alert.alert("Error", "Category name already exists");
+        return;
+      }
+      if (initialData) {
+        // Only update if the name has changed
+        if (categoryName !== initialData.name) {
+          editCategory({ id: initialData.id, name: categoryName });
+          Alert.alert("Success", "Category updated successfully.");
+        } else {
+          Alert.alert("Info", "No changes made to the category.");
+        }
+      }
+    } else {
+      // If adding, prevent duplicates
+      if (isDuplicate) {
+        Alert.alert("Error", "Category name already exists");
+        return;
+      }
+      addCategory({ id: generateId(), name: categoryName });
+      Alert.alert("Success", "Category created successfully.");
     }
+
+    setCategoryName(""); // Reset the input field
+    onClose(); // Close the form after submission
   };
 
   const handleDelete = (id: string) => {
@@ -73,7 +90,10 @@ const CategoryForm: React.FC<{
   };
 
   const handleEdit = (item: { id: string; name: string }) => {
-    setCategoryName(item.name); // Populate input for editing
+    setCategoryName(item.name);
+    setIsEditing(true);
+    // Set initialData to the item being edited
+    setInitialData(item);
   };
 
   return (
@@ -87,7 +107,7 @@ const CategoryForm: React.FC<{
           style={styles.input}
         />
         <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-          {initialData ? "Update Category" : "Add Category"}
+          {isEditing ? "Update Category" : "Add Category"}
         </Button>
       </View>
       <FlatList

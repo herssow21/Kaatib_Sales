@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, View, ScrollView, Alert } from "react-native";
 import { TextInput, Button, SegmentedButtons, Text } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
-import { nanoid } from "nanoid";
+import { generateId } from "../utils/idGenerator";
 
 const ProductForm: React.FC<{
   initialData?: any;
@@ -31,7 +31,7 @@ const ProductForm: React.FC<{
 
   const handleSubmit = () => {
     const itemData = {
-      id: initialData?.id || nanoid(),
+      id: initialData?.id || generateId(),
       name,
       quantity: parseInt(productCount, 10),
       category,
@@ -46,7 +46,7 @@ const ProductForm: React.FC<{
     try {
       onSubmit(itemData);
     } catch (error) {
-      console.log("Item submission error:", error);
+      console.error("Item submission error:", error);
       Alert.alert("Error", "Failed to submit item");
     }
   };

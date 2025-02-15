@@ -3,9 +3,7 @@ import { View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 import { router } from "expo-router";
 import { useInventoryContext } from "../contexts/InventoryContext";
-import { customAlphabet } from "nanoid/non-secure";
-
-const generateId = customAlphabet("1234567890abcdef", 10);
+import { nanoid } from "nanoid";
 
 export default function TransactionForm() {
   const { addItem } = useInventoryContext();
@@ -16,7 +14,7 @@ export default function TransactionForm() {
   const handleSubmit = () => {
     if (itemName.trim() && itemPrice && itemQuantity) {
       addItem({
-        id: generateId(),
+        id: nanoid(),
         name: itemName,
         price: parseFloat(itemPrice),
         quantity: parseInt(itemQuantity, 10),

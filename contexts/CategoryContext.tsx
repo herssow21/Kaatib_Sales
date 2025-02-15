@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
-import { nanoid } from "nanoid";
 import { Alert } from "react-native";
+import { generateId } from "../utils/idGenerator";
 
 interface Category {
   id: string;
@@ -25,12 +25,10 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addCategory = (category: Category) => {
     try {
-      setCategories((prevCategories) => [
-        ...prevCategories,
-        { ...category, id: nanoid() },
-      ]);
+      const newCategory = { ...category, id: generateId() };
+      setCategories((prevCategories) => [...prevCategories, newCategory]);
     } catch (error) {
-      console.log("Error adding category:", error);
+      console.error("Error adding category:", error);
       Alert.alert("Error", "Failed to add category");
     }
   };
@@ -38,7 +36,9 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const editCategory = (updatedCategory: Category) => {
     setCategories((prevCategories) =>
       prevCategories.map((cat) =>
-        cat.id === updatedCategory.id ? updatedCategory : cat
+        cat.id === updatedCategory.id
+          ? { ...cat, name: updatedCategory.name }
+          : cat
       )
     );
   };

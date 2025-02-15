@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { nanoid } from "nanoid";
+import { generateId } from "../utils/idGenerator";
 
 interface InventoryItem {
   id: string;
@@ -30,7 +30,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [items, setItems] = useState<InventoryItem[]>([]);
 
   const addItem = (item: InventoryItem) => {
-    setItems((prevItems) => [...prevItems, { ...item, id: nanoid() }]);
+    setItems((prevItems) => [...prevItems, { ...item, id: generateId() }]);
   };
 
   const editItem = (updatedItem: InventoryItem) => {
