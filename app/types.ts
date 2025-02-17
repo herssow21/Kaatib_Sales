@@ -8,7 +8,7 @@ const Order = {
 
 export default Order; // Default export
 
-export interface OrderInterface {
+export interface Order {
   id: string;
   clientName: string;
   grandTotal: number;

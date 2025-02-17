@@ -11,7 +11,7 @@ import {
 } from "react-native-paper";
 import { router } from "expo-router";
 import OrderForm from "../../components/OrderForm";
-import type { Order } from "../types"; // Removed .ts extension
+import { Order } from "../types";
 
 export default function Orders() {
   const theme = useTheme();

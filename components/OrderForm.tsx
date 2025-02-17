@@ -185,12 +185,7 @@ const OrderForm: React.FC<{
       </Button>
 
       <View style={styles.bottomSection}>
-        <View
-          style={[
-            styles.leftColumn,
-            Platform.OS === "android" ? { flex: 1 } : { maxWidth: "48%" },
-          ]}
-        >
+        <View style={styles.leftColumn}>
           <View style={styles.inputGroup}>
             <View style={styles.discountRow}>
               <Text style={styles.label}>Discount</Text>
@@ -223,12 +218,8 @@ const OrderForm: React.FC<{
             </Text>
           </View>
         </View>
-        <View
-          style={[
-            styles.rightColumn,
-            Platform.OS === "android" ? { flex: 1 } : { maxWidth: "48%" },
-          ]}
-        >
+
+        <View style={styles.rightColumn}>
           <Text style={styles.label}>Payment Method</Text>
           <Picker
             selectedValue={paymentMethod}
@@ -250,12 +241,13 @@ const OrderForm: React.FC<{
           </Picker>
         </View>
       </View>
+
       <View style={styles.buttonContainer}>
-        <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-          Save Order
-        </Button>
         <Button mode="outlined" onPress={handleReset} style={styles.button}>
           Reset
+        </Button>
+        <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+          Save Order
         </Button>
       </View>
     </ScrollView>
@@ -309,7 +301,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   bottomSection: {
-    flexDirection: "row",
+    flexDirection: Platform.OS === "android" ? "column" : "row",
     justifyContent: "space-between",
     marginTop: 12,
     backgroundColor: "#f8f9fa",
@@ -317,12 +309,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   leftColumn: {
-    flex: 1,
-    maxWidth: "48%",
+    width: Platform.OS === "android" ? "98%" : "48%",
   },
   rightColumn: {
-    flex: 1,
-    maxWidth: "48%",
+    width: Platform.OS === "android" ? "98%" : "48%",
   },
   dateButton: {
     marginBottom: 12,
@@ -336,8 +326,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   button: {
-    marginTop: 12,
     flex: 1,
+    marginHorizontal: 4,
   },
   addButton: {
     marginTop: 12,
@@ -355,7 +345,7 @@ const styles = StyleSheet.create({
   alignRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 4, // Add vertical spacing
+    marginVertical: 4,
   },
 });
 
