@@ -14,4 +14,10 @@ export interface Order {
   grandTotal: number;
   status: string;
   // Add other properties as needed
-} 
+}
+
+export type RouteNames = 
+  | "Home"
+  | "Profile"
+  | "UserManagementScreen"
+  | "OtherRoutes"; 

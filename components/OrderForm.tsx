@@ -1,8 +1,15 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
 import { TextInput, Button, Text, Title } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface OrderItem {
   product: string;
@@ -21,6 +28,15 @@ interface Order {
   paymentMethod: string;
   status: string;
 }
+
+// Mock function to simulate fetching client data
+const fetchClientByContact = (contact: string) => {
+  const clients = [
+    { contact: "1234567890", name: "John Doe" },
+    { contact: "0987654321", name: "Jane Smith" },
+  ];
+  return clients.find((client) => client.contact === contact);
+};
 
 const OrderForm: React.FC<{
   onSubmit: (order: Order) => void;
@@ -43,6 +59,16 @@ const OrderForm: React.FC<{
     { id: 2, name: "Product 2" },
     // Add more products/services here
   ];
+
+  useEffect(() => {
+    // Check if the client exists when the contact changes
+    const client = fetchClientByContact(clientContact);
+    if (client) {
+      setClientName(client.name);
+    } else {
+      setClientName("");
+    }
+  }, [clientContact]);
 
   const handleDateChange = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || orderDate;
@@ -70,6 +96,11 @@ const OrderForm: React.FC<{
     setStatus("Partial");
   };
 
+  const handleDeleteItem = (index: number) => {
+    const newItems = items.filter((_, i) => i !== index);
+    setItems(newItems);
+  };
+
   const handleSubmit = () => {
     const total = items.reduce(
       (acc, item) => acc + item.rate * item.quantity,
@@ -92,7 +123,7 @@ const OrderForm: React.FC<{
 
   return (
     <ScrollView style={styles.container}>
-      <Title style={styles.title}>Add Order</Title>
+      <Title style={styles.title}>Create New Order</Title>
       <View style={styles.topSection}>
         <Button
           onPress={() => setShowDatePicker(true)}
@@ -109,19 +140,24 @@ const OrderForm: React.FC<{
           />
         )}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Client Name</Text>
+          <Text style={styles.label}>Client Contact</Text>
           <TextInput
-            value={clientName}
-            onChangeText={setClientName}
+            value={clientContact}
+            onChangeText={(value) => {
+              // Allow only numeric input
+              const numericValue = value.replace(/[^0-9]/g, "");
+              setClientContact(numericValue);
+            }}
             style={styles.input}
+            keyboardType="numeric"
             mode="outlined"
           />
         </View>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Client Contact</Text>
+          <Text style={styles.label}>Client Name</Text>
           <TextInput
-            value={clientContact}
-            onChangeText={setClientContact}
+            value={clientName}
+            onChangeText={setClientName}
             style={styles.input}
             mode="outlined"
           />
@@ -137,23 +173,30 @@ const OrderForm: React.FC<{
         </View>
       </View>
 
-      <Text style={styles.productLabel}>Products/Services</Text>
       {items.map((item, index) => (
         <View key={index} style={styles.productRow}>
-          <Picker
-            selectedValue={item.product}
-            onValueChange={(value) => handleItemChange(index, "product", value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="~~SELECT~~" value="" />
-            {products.map((product) => (
-              <Picker.Item
-                key={product.id}
-                label={product.name}
-                value={product.id}
-              />
-            ))}
-          </Picker>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Product</Text>
+            <Picker
+              selectedValue={item.product}
+              onValueChange={(value) =>
+                handleItemChange(index, "product", value)
+              }
+              style={styles.picker}
+            >
+              <Picker.Item label="~~SELECT~~" value="" />
+              {products.map((product) => (
+                <Picker.Item
+                  key={product.id}
+                  label={product.name}
+                  value={product.name}
+                />
+              ))}
+            </Picker>
+            <Text style={styles.productName}>
+              {item.product.length >= 5 ? item.product : ""}
+            </Text>
+          </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Rate</Text>
             <TextInput
@@ -178,6 +221,9 @@ const OrderForm: React.FC<{
               mode="outlined"
             />
           </View>
+          <TouchableOpacity onPress={() => handleDeleteItem(index)}>
+            <MaterialIcons name="delete" size={24} color="red" />
+          </TouchableOpacity>
         </View>
       ))}
       <Button mode="outlined" onPress={handleAddItem} style={styles.addButton}>
@@ -243,10 +289,18 @@ const OrderForm: React.FC<{
       </View>
 
       <View style={styles.buttonContainer}>
-        <Button mode="outlined" onPress={handleReset} style={styles.button}>
+        <Button
+          mode="outlined"
+          onPress={handleReset}
+          style={[styles.button, styles.actionButton]}
+        >
           Reset
         </Button>
-        <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+        <Button
+          mode="contained"
+          onPress={handleSubmit}
+          style={[styles.button, styles.actionButton]}
+        >
           Save Order
         </Button>
       </View>
@@ -256,17 +310,18 @@ const OrderForm: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 0,
     backgroundColor: "#fff",
-    borderRadius: 8,
-    elevation: 4,
-    width: "95%",
-    height: "80%",
-    alignSelf: "center",
+    borderRadius: 0,
+    elevation: 0,
+    width: "100%",
+    height: "100%",
   },
   title: {
     marginBottom: 5,
     textAlign: "center",
+    fontSize: 24,
+    fontWeight: "bold",
   },
   topSection: {
     marginBottom: 12,
@@ -289,6 +344,10 @@ const styles = StyleSheet.create({
   productLabel: {
     marginTop: 16,
     fontWeight: "bold",
+  },
+  productName: {
+    fontSize: 12,
+    color: "#666",
   },
   productRow: {
     flexDirection: "row",
@@ -329,13 +388,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
   },
+  actionButton: {
+    marginBottom: 12,
+  },
   addButton: {
     marginTop: 12,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: Platform.OS === "android" ? 13 : 2,
+    marginTop: Platform.OS === "android" ? 13 : 0,
   },
   discountRow: {
     flexDirection: "row",

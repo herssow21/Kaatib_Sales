@@ -4,6 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
+import UserManagement from "../../components/UserManagement";
 
 export default function Settings() {
   const theme = useTheme();
@@ -75,31 +76,12 @@ export default function Settings() {
       <List.Section>
         <List.Subheader>User Management</List.Subheader>
         <List.Item
-          title="Users"
-          description="Manage staff and customers"
-          left={(props) => (
-            <MaterialIcons
-              name="people"
-              size={24}
-              color={theme.colors.primary}
-            />
-          )}
-          right={(props) => (
-            <MaterialIcons
-              name="chevron-right"
-              size={24}
-              color={theme.colors.outline}
-            />
-          )}
+          title="Manage Users"
           onPress={() => router.push("/users-management")}
           style={{
             backgroundColor: theme.colors.surface,
             marginBottom: 2,
             borderRadius: 8,
-          }}
-          titleStyle={{
-            color: theme.colors.onSurface,
-            fontWeight: "500",
           }}
         />
       </List.Section>
