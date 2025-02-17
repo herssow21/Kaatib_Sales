@@ -11,7 +11,7 @@ import {
 } from "react-native-paper";
 import { router } from "expo-router";
 import OrderForm from "../../components/OrderForm";
-import { Order } from "../types";
+import { type Order } from "../types";
 
 export default function Orders() {
   const theme = useTheme();
@@ -133,13 +133,6 @@ export default function Orders() {
           {orders.length === 0 ? (
             <View style={styles.noOrdersContainer}>
               <Text style={styles.emptyText}>Sorry, No Orders Made</Text>
-              <Button
-                mode="contained"
-                onPress={() => setFormVisible(true)}
-                style={styles.makeSaleButton}
-              >
-                Make Sale
-              </Button>
             </View>
           ) : (
             orders.map((order, index) => (
@@ -158,7 +151,7 @@ export default function Orders() {
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={() => setFormVisible(true)}
-        label="Add Order"
+        label={orders.length === 0 ? "Make Sale" : "Add Order"}
       />
     </View>
   );

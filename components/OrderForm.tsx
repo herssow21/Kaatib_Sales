@@ -5,11 +5,13 @@ import {
   ScrollView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { TextInput, Button, Text, Title } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useInventoryContext } from "../contexts/InventoryContext";
 
 interface OrderItem {
   product: string;
@@ -42,6 +44,7 @@ const OrderForm: React.FC<{
   onSubmit: (order: Order) => void;
   onClose: () => void;
 }> = ({ onSubmit, onClose }) => {
+  const { items: inventoryItems } = useInventoryContext();
   const [orderDate, setOrderDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [clientName, setClientName] = useState("");
@@ -50,15 +53,16 @@ const OrderForm: React.FC<{
   const [items, setItems] = useState<OrderItem[]>([
     { product: "", rate: 0, quantity: 0 },
   ]);
-  const [discount, setDiscount] = useState(0);
+  const [discount, setDiscount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [status, setStatus] = useState("Partial");
 
-  const products = [
-    { id: 1, name: "Product 1" },
-    { id: 2, name: "Product 2" },
-    // Add more products/services here
-  ];
+  // Replace the static products array
+  const products = inventoryItems.map((item) => ({
+    id: item.id,
+    name: item.name,
+    price: item.sellingPrice,
+  }));
 
   useEffect(() => {
     // Check if the client exists when the contact changes
@@ -82,13 +86,21 @@ const OrderForm: React.FC<{
 
   const handleItemChange = (index: number, field: string, value: any) => {
     const newItems = [...items];
-    newItems[index][field] = value;
+    if (field === "rate" || field === "quantity") {
+      const numValue = value === "" ? 0 : Number(value);
+      newItems[index] = {
+        ...newItems[index],
+        [field]: isNaN(numValue) ? 0 : numValue,
+      };
+    } else {
+      newItems[index] = { ...newItems[index], [field]: value };
+    }
     setItems(newItems);
   };
 
   const handleReset = () => {
     setItems([{ product: "", rate: 0, quantity: 0 }]);
-    setDiscount(0);
+    setDiscount("");
     setClientName("");
     setClientContact("");
     setAddress("");
@@ -101,56 +113,156 @@ const OrderForm: React.FC<{
     setItems(newItems);
   };
 
+  const validatePhoneNumber = (phone: string) => {
+    // Check if phone starts with 0 (10 digits) or not (9 digits)
+    if (phone.startsWith("0")) {
+      return phone.length === 10 && /^0[17]\d{8}$/.test(phone);
+    }
+    return phone.length === 9 && /^[17]\d{8}$/.test(phone);
+  };
+
+  const showError = (message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(message);
+    } else {
+      Alert.alert("Error", message);
+    }
+  };
+
   const handleSubmit = () => {
+    if (!clientName.trim()) {
+      showError("Client name is required");
+      return;
+    }
+
+    if (!clientContact.trim()) {
+      showError("Client contact is required");
+      return;
+    }
+
+    if (!validatePhoneNumber(clientContact)) {
+      showError("Please enter a valid Kenyan phone number");
+      return;
+    }
+
+    if (items.length === 0) {
+      showError("Please add at least one item");
+      return;
+    }
+
+    // Validate items
+    for (const item of items) {
+      if (!item.product) {
+        showError("Please select a product for all items");
+        return;
+      }
+      if (isNaN(item.rate) || item.rate <= 0) {
+        showError("Please enter valid rates for all items");
+        return;
+      }
+      if (isNaN(item.quantity) || item.quantity <= 0) {
+        showError("Please enter valid quantities for all items");
+        return;
+      }
+    }
+
+    // Handle discount
+    const discountValue = discount ? parseFloat(discount) : 0;
     const total = items.reduce(
       (acc, item) => acc + item.rate * item.quantity,
       0
     );
+
     const order = {
-      orderDate: orderDate.toISOString().split("T")[0], // Format date
-      clientName,
+      orderDate: orderDate.toISOString().split("T")[0],
+      clientName: clientName.trim(),
       clientContact,
-      address,
+      address: address.trim(),
       items,
-      discount: parseFloat(discount.toString()),
-      grandTotal: total - parseFloat(discount.toString()),
+      discount: discountValue,
+      grandTotal: total - discountValue,
       paymentMethod,
       status,
     };
-    onSubmit(order);
-    onClose();
+
+    try {
+      onSubmit(order);
+      onClose();
+    } catch (error) {
+      showError("Failed to create order. Please try again.");
+    }
+  };
+
+  const DateInput = ({
+    value,
+    onChange,
+  }: {
+    value: Date;
+    onChange: (date: Date) => void;
+  }) => {
+    const [showPicker, setShowPicker] = useState(false);
+
+    const handleChange = (event: any, selectedDate?: Date) => {
+      setShowPicker(Platform.OS === "web");
+      if (selectedDate) {
+        onChange(selectedDate);
+      }
+    };
+
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Order Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowPicker(true)}
+        >
+          <TextInput
+            mode="outlined"
+            style={styles.datePickerInput}
+            value={value.toLocaleDateString()}
+            editable={false}
+            right={<TextInput.Icon icon="calendar" />}
+          />
+        </TouchableOpacity>
+        {showPicker && (
+          <View
+            style={
+              Platform.OS === "web" ? styles.webPickerContainer : undefined
+            }
+          >
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={value}
+              mode="date"
+              onChange={handleChange}
+              display={Platform.OS === "web" ? "inline" : "default"}
+            />
+          </View>
+        )}
+      </View>
+    );
   };
 
   return (
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
       <View style={styles.topSection}>
-        <Button
-          onPress={() => setShowDatePicker(true)}
-          style={styles.dateButton}
-        >
-          {orderDate.toISOString().split("T")[0]}
-        </Button>
-        {showDatePicker && (
-          <DateTimePicker
-            value={orderDate}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
+        <DateInput value={orderDate} onChange={setOrderDate} />
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Client Contact</Text>
           <TextInput
             value={clientContact}
             onChangeText={(value) => {
-              // Allow only numeric input
+              // Allow only numeric input and limit to 10 digits
               const numericValue = value.replace(/[^0-9]/g, "");
-              setClientContact(numericValue);
+              if (numericValue.length <= 10) {
+                setClientContact(numericValue);
+              }
             }}
             style={styles.input}
             keyboardType="numeric"
             mode="outlined"
+            maxLength={10}
           />
         </View>
         <View style={styles.inputGroup}>
@@ -184,7 +296,7 @@ const OrderForm: React.FC<{
               }
               style={styles.picker}
             >
-              <Picker.Item label="~~SELECT~~" value="" />
+              <Picker.Item label="Select a product" value="" />
               {products.map((product) => (
                 <Picker.Item
                   key={product.id}
@@ -236,10 +348,13 @@ const OrderForm: React.FC<{
             <View style={styles.discountRow}>
               <Text style={styles.label}>Discount</Text>
               <TextInput
-                value={discount.toString()}
-                onChangeText={(value) => setDiscount(parseFloat(value))}
+                value={discount}
+                onChangeText={(value) => {
+                  const numValue = value.replace(/[^0-9.]/g, "");
+                  setDiscount(numValue);
+                }}
                 keyboardType="numeric"
-                style={[styles.input, styles.discountInput]}
+                style={styles.discountInput}
                 mode="outlined"
               />
             </View>
@@ -256,11 +371,11 @@ const OrderForm: React.FC<{
             <Text>KES {discount}</Text>
           </View>
           <View style={styles.alignRow}>
-            <Text style={styles.label}>Grand Total:</Text>
-            <Text>
+            <Text style={styles.grandTotalLabel}>Grand Total:</Text>
+            <Text style={styles.grandTotalValue}>
               KES{" "}
               {items.reduce((acc, item) => acc + item.rate * item.quantity, 0) -
-                discount}
+                (discount ? parseFloat(discount) : 0)}
             </Text>
           </View>
         </View>
@@ -336,10 +451,14 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   input: {
-    flex: 2,
+    height: 40,
+    marginBottom: 8,
+    cursor: "pointer",
   },
   discountInput: {
-    width: "20%",
+    width: Platform.OS === "android" ? "50%" : "40%",
+    height: 40,
+    marginBottom: 8,
   },
   productLabel: {
     marginTop: 16,
@@ -356,7 +475,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   rowInput: {
-    flex: 1,
+    height: 40,
     marginHorizontal: 4,
   },
   bottomSection: {
@@ -404,11 +523,43 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    width: "100%",
+    marginBottom: 8,
   },
   alignRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 4,
+    padding: 8,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  grandTotalLabel: {
+    flex: 1,
+    fontWeight: "bold",
+    textAlign: "left",
+    fontSize: 18,
+    color: "#2c3e50",
+  },
+  grandTotalValue: {
+    fontWeight: "bold",
+    fontSize: 20,
+    color: "#2c3e50",
+  },
+  datePickerInput: {
+    height: 40,
+    marginBottom: 8,
+    cursor: "pointer",
+  },
+  webPickerContainer: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    backgroundColor: "white",
+    zIndex: 9999,
+    borderRadius: 8,
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
   },
 });
 

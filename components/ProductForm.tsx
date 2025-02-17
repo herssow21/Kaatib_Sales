@@ -13,42 +13,78 @@ const ProductForm: React.FC<{
   const [itemType, setItemType] = useState("product");
   const [name, setName] = useState(initialData?.name || "");
   const [buyingPrice, setBuyingPrice] = useState(
-    initialData?.buyingPrice?.toString() || "0.00"
+    initialData?.buyingPrice?.toString() || ""
   );
   const [sellingPrice, setSellingPrice] = useState(
-    initialData?.sellingPrice?.toString() || "0.00"
+    initialData?.sellingPrice?.toString() || ""
   );
   const [measuringUnit, setMeasuringUnit] = useState(
     initialData?.measuringUnit || ""
   );
   const [productCount, setProductCount] = useState(
-    initialData?.quantity?.toString() || "0"
+    initialData?.quantity?.toString() || ""
   );
   const [serviceCharges, setServiceCharges] = useState(
-    initialData?.serviceCharges?.toString() || "0.00"
+    initialData?.serviceCharges?.toString() || ""
   );
   const [category, setCategory] = useState(initialData?.category || "");
 
   const handleSubmit = () => {
-    const itemData = {
-      id: initialData?.id || generateId(),
-      name,
-      quantity: parseInt(productCount, 10),
-      category,
-      buyingPrice: parseFloat(buyingPrice),
-      sellingPrice: parseFloat(sellingPrice),
-      measuringUnit,
-      stockValue: parseFloat(buyingPrice) * parseInt(productCount, 10),
-      createdAt: new Date().toISOString(),
-      price: parseFloat(sellingPrice),
-    };
+    // Validate required fields
+    if (!name.trim()) {
+      Alert.alert("Error", "Name is required");
+      return;
+    }
+
+    if (!category) {
+      Alert.alert("Error", "Please select a category");
+      return;
+    }
+
+    if (itemType === "product") {
+      if (parseFloat(buyingPrice) <= 0) {
+        Alert.alert("Error", "Buying price must be greater than 0");
+        return;
+      }
+      if (parseFloat(sellingPrice) <= 0) {
+        Alert.alert("Error", "Selling price must be greater than 0");
+        return;
+      }
+      if (parseInt(productCount) < 0) {
+        Alert.alert("Error", "Product count cannot be negative");
+        return;
+      }
+    } else {
+      if (parseFloat(serviceCharges) <= 0) {
+        Alert.alert("Error", "Service charges must be greater than 0");
+        return;
+      }
+    }
 
     try {
+      const itemData = {
+        id: initialData?.id || generateId(),
+        name: name.trim(),
+        quantity: parseInt(productCount) || 0,
+        category,
+        buyingPrice: parseFloat(buyingPrice) || 0,
+        sellingPrice: parseFloat(sellingPrice) || 0,
+        measuringUnit: measuringUnit.trim(),
+        stockValue:
+          (parseFloat(buyingPrice) || 0) * (parseInt(productCount) || 0),
+        createdAt: new Date().toISOString(),
+        price: parseFloat(sellingPrice) || 0,
+      };
       onSubmit(itemData);
     } catch (error) {
       console.error("Item submission error:", error);
-      Alert.alert("Error", "Failed to submit item");
+      Alert.alert("Error", "Failed to submit item. Please try again.");
     }
+  };
+
+  const handleNumericInput = (value: string, setter: (val: string) => void) => {
+    const numericValue = value.replace(/[^0-9.]/g, "");
+    setter(numericValue);
   };
 
   return (
@@ -86,11 +122,11 @@ const ProductForm: React.FC<{
               <Text style={styles.label}>Buying Price</Text>
               <TextInput
                 mode="outlined"
-                placeholder="0.00"
+                placeholder="0"
                 value={buyingPrice}
-                onChangeText={setBuyingPrice}
-                keyboardType="decimal-pad"
-                style={styles.input}
+                onChangeText={(val) => handleNumericInput(val, setBuyingPrice)}
+                keyboardType="numeric"
+                style={[styles.input, { height: 40 }]}
               />
             </View>
 
@@ -98,11 +134,11 @@ const ProductForm: React.FC<{
               <Text style={styles.label}>Selling Price</Text>
               <TextInput
                 mode="outlined"
-                placeholder="0.00"
+                placeholder="0"
                 value={sellingPrice}
-                onChangeText={setSellingPrice}
-                keyboardType="decimal-pad"
-                style={styles.input}
+                onChangeText={(val) => handleNumericInput(val, setSellingPrice)}
+                keyboardType="numeric"
+                style={[styles.input, { height: 40 }]}
               />
             </View>
 
@@ -123,9 +159,9 @@ const ProductForm: React.FC<{
                 mode="outlined"
                 placeholder="0"
                 value={productCount}
-                onChangeText={setProductCount}
+                onChangeText={(val) => handleNumericInput(val, setProductCount)}
                 keyboardType="numeric"
-                style={styles.input}
+                style={[styles.input, { height: 40 }]}
               />
             </View>
           </>
@@ -147,9 +183,10 @@ const ProductForm: React.FC<{
               <Text style={styles.label}>Service Charges</Text>
               <TextInput
                 mode="outlined"
-                placeholder="0.00"
                 value={serviceCharges}
-                onChangeText={setServiceCharges}
+                onChangeText={(val) =>
+                  handleNumericInput(val, setServiceCharges)
+                }
                 keyboardType="decimal-pad"
                 style={styles.input}
               />
