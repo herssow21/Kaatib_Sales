@@ -12,6 +12,7 @@ import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useInventoryContext } from "../contexts/InventoryContext";
+import { useCategoryContext } from "../contexts/CategoryContext";
 
 interface OrderItem {
   product: string;
@@ -45,6 +46,7 @@ const OrderForm: React.FC<{
   onClose: () => void;
 }> = ({ onSubmit, onClose }) => {
   const { items: inventoryItems } = useInventoryContext();
+  const { categories } = useCategoryContext();
   const [orderDate, setOrderDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [clientName, setClientName] = useState("");
@@ -56,6 +58,7 @@ const OrderForm: React.FC<{
   const [discount, setDiscount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [status, setStatus] = useState("Partial");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   // Replace the static products array
   const products = inventoryItems.map((item) => ({

@@ -1,23 +1,27 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Platform, Modal } from "react-native";
 import {
-  Text,
-  Searchbar,
-  FAB,
-  List,
-  useTheme,
-  Button,
-  Card,
-} from "react-native-paper";
-import { router } from "expo-router";
+  StyleSheet,
+  View,
+  ScrollView,
+  Platform,
+  Modal,
+  FlatList,
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { Text, Searchbar, FAB, useTheme, Button } from "react-native-paper";
 import OrderForm from "../../components/OrderForm";
+import { useCategoryContext } from "../../contexts/CategoryContext";
 import { type Order } from "../types";
 
 export default function Orders() {
   const theme = useTheme();
+  const { categories } = useCategoryContext();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("date");
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormVisible, setFormVisible] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("today");
 
   const styles = StyleSheet.create({
     container: {
@@ -27,7 +31,6 @@ export default function Orders() {
     },
     header: {
       padding: 16,
-      paddingBottom: 8,
       backgroundColor: theme.colors.primary,
       borderBottomLeftRadius: 16,
       borderBottomRightRadius: 16,
@@ -37,31 +40,51 @@ export default function Orders() {
       fontSize: 24,
       color: theme.colors.onPrimary,
     },
-    subHeaderText: {
-      fontSize: 16,
-      color: theme.colors.onPrimary,
-    },
-    searchbar: {
+    tableContainer: {
       margin: 16,
       borderRadius: 8,
+      backgroundColor: "white",
+      elevation: 2,
     },
-    content: {
+    tableHeader: {
+      flexDirection: "row",
+      backgroundColor: theme.colors.primary,
+      padding: 12,
+      borderTopLeftRadius: 8,
+      borderTopRightRadius: 8,
+    },
+    headerCell: {
       flex: 1,
-    },
-    emptyText: {
+      color: theme.colors.onPrimary,
+      fontWeight: "bold",
       textAlign: "center",
-      padding: 16,
+    },
+    tableRow: {
+      flexDirection: "row",
+      padding: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "#e0e0e0",
+    },
+    tableCell: {
+      flex: 1,
+      textAlign: "center",
       color: "#666",
     },
-    fab: {
-      position: "absolute",
-      margin: 16,
-      right: 0,
-      bottom: 0,
+    statusBadge: {
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      alignSelf: "flex-start",
+    },
+    tableFooter: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: "#e0e0e0",
     },
     modalContainer: {
-      flex: 1,
-      justifyContent: "center",
       backgroundColor: "white",
       padding: 16,
       borderRadius: 8,
@@ -70,88 +93,240 @@ export default function Orders() {
       margin: 16,
       maxWidth: "99%",
       alignSelf: "center",
+      minHeight: "50%",
     },
-    noOrdersContainer: {
-      flex: 1,
-      justifyContent: "center",
+    filterPicker: {
+      width: 160,
+      height: 40,
+      marginRight: 16,
+      backgroundColor: "#f8f9fa",
+      borderRadius: 8,
+    },
+    filterContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
       alignItems: "center",
-    },
-    makeSaleButton: {
-      marginTop: 16,
-      backgroundColor: "#E0403F",
-      paddingVertical: 12,
-      paddingHorizontal: 24,
+      padding: 16,
+      backgroundColor: "white",
       borderRadius: 8,
-      elevation: 2,
+      margin: 16,
     },
-    orderCard: {
-      margin: 8,
-      borderRadius: 8,
-      elevation: 2,
+    filtersRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flex: 1,
     },
-    orderStatus: {
-      fontWeight: "bold",
-      color: theme.colors.secondary,
+    searchbar: {
+      width: "30%",
+      marginLeft: 16,
+    },
+    fab: {
+      position: "absolute",
+      margin: 16,
+      right: 0,
+      bottom: 0,
     },
   });
 
-  const handleAddOrder = (order: Order) => {
-    setOrders([...orders, order]);
-    setFormVisible(false);
+  const getFilteredOrders = () => {
+    let filtered = [...orders];
+
+    if (categoryFilter && categoryFilter !== "all") {
+      filtered = filtered.filter((order) => order.category === categoryFilter);
+    }
+
+    const now = new Date();
+    filtered = filtered.filter((order) => {
+      const orderDate = new Date(order.orderDate);
+      switch (timeFilter) {
+        case "today":
+          return orderDate.toDateString() === now.toDateString();
+        case "week":
+          const weekAgo = new Date(now.setDate(now.getDate() - 7));
+          return orderDate >= weekAgo;
+        case "month":
+          return (
+            orderDate.getMonth() === now.getMonth() &&
+            orderDate.getFullYear() === now.getFullYear()
+          );
+        case "year":
+          return orderDate.getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (order) =>
+          order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.clientContact.toString().includes(searchQuery) ||
+          order.id.includes(searchQuery)
+      );
+    }
+
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "date":
+          return (
+            new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+          );
+        case "name":
+          return a.clientName.localeCompare(b.clientName);
+        case "status":
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
   };
 
   return (
     <View style={styles.container}>
       <Modal visible={isFormVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalContainer}>
-          <OrderForm
-            onSubmit={(order) =>
-              handleAddOrder({ ...order, id: Date.now().toString() })
-            }
-            onClose={() => setFormVisible(false)}
-          />
-          <Button mode="outlined" onPress={() => setFormVisible(false)}>
-            Close
-          </Button>
-        </View>
+        <ScrollView>
+          <View style={styles.modalContainer}>
+            <OrderForm
+              onSubmit={(order) => {
+                setOrders((prev) => [
+                  ...prev,
+                  {
+                    ...order,
+                    id: Date.now().toString(),
+                    totalOrderItems: order.items.length,
+                    paymentStatus:
+                      order.status === "Completed"
+                        ? "Full Payment"
+                        : "No Payment",
+                    category: "clothing",
+                  },
+                ]);
+                setFormVisible(false);
+              }}
+              onClose={() => setFormVisible(false)}
+            />
+            <Button mode="outlined" onPress={() => setFormVisible(false)}>
+              Close
+            </Button>
+          </View>
+        </ScrollView>
       </Modal>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.headerText}>
-          Orders
+          Manage Orders
         </Text>
-        <Text style={styles.subHeaderText}>Manage your orders efficiently</Text>
       </View>
-      <Searchbar
-        placeholder="Search orders..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
-      <ScrollView style={styles.content}>
-        <List.Section>
-          <List.Subheader>Recent Orders</List.Subheader>
-          {orders.length === 0 ? (
-            <View style={styles.noOrdersContainer}>
-              <Text style={styles.emptyText}>Sorry, No Orders Made</Text>
+
+      <View style={styles.filterContainer}>
+        <View style={styles.filtersRow}>
+          <Picker
+            selectedValue={categoryFilter}
+            onValueChange={setCategoryFilter}
+            style={styles.filterPicker}
+          >
+            <Picker.Item label="All Categories" value="all" />
+            {categories.map((category) => (
+              <Picker.Item
+                key={category.id}
+                label={category.name}
+                value={category.id}
+              />
+            ))}
+          </Picker>
+
+          <Picker
+            selectedValue={sortBy}
+            onValueChange={setSortBy}
+            style={styles.filterPicker}
+          >
+            <Picker.Item label="Sort by Date" value="date" />
+            <Picker.Item label="Sort by Name" value="name" />
+            <Picker.Item label="Sort by Status" value="status" />
+          </Picker>
+
+          <Picker
+            selectedValue={timeFilter}
+            onValueChange={setTimeFilter}
+            style={styles.filterPicker}
+          >
+            <Picker.Item label="Today" value="today" />
+            <Picker.Item label="This Week" value="week" />
+            <Picker.Item label="This Month" value="month" />
+            <Picker.Item label="This Year" value="year" />
+          </Picker>
+        </View>
+        <Searchbar
+          placeholder="Search orders..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+        />
+      </View>
+
+      <View style={styles.tableContainer}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerCell, { flex: 1 }]}>Order No.</Text>
+          <Text style={[styles.headerCell, { flex: 1 }]}>Order Date</Text>
+          <Text style={[styles.headerCell, { flex: 1.2 }]}>Client Name</Text>
+          <Text style={[styles.headerCell, { flex: 1 }]}>Contact</Text>
+          <Text style={[styles.headerCell, { flex: 0.8 }]}>Items</Text>
+          <Text style={[styles.headerCell, { flex: 1 }]}>Payment Status</Text>
+          <Text style={[styles.headerCell, { flex: 0.8 }]}>Option</Text>
+        </View>
+
+        <FlatList
+          data={getFilteredOrders()}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{item.id}</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>
+                {new Date(item.orderDate).toLocaleDateString()}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 1.2 }]}>
+                {item.clientName}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>
+                {item.clientContact}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                {item.totalOrderItems}
+              </Text>
+              <View style={[styles.tableCell, { flex: 1 }]}>
+                <Text
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        item.paymentStatus === "Full Payment"
+                          ? "#e6f4ea"
+                          : "#fff3e0",
+                    },
+                  ]}
+                >
+                  {item.paymentStatus}
+                </Text>
+              </View>
+              <View style={[styles.tableCell, { flex: 0.8 }]}>
+                <Button mode="text" onPress={() => console.log("Action")}>
+                  Action ▼
+                </Button>
+              </View>
             </View>
-          ) : (
-            orders.map((order, index) => (
-              <Card key={index} style={styles.orderCard}>
-                <Card.Content>
-                  <Text variant="titleMedium">{order.clientName}</Text>
-                  <Text style={styles.orderStatus}>Status: {order.status}</Text>
-                  <Text>Total: KES {order.grandTotal}</Text>
-                </Card.Content>
-              </Card>
-            ))
           )}
-        </List.Section>
-      </ScrollView>
+        />
+      </View>
+      <View style={styles.tableFooter}>
+        <Text>
+          Showing {getFilteredOrders().length} of {orders.length} orders
+        </Text>
+      </View>
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={() => setFormVisible(true)}
-        label={orders.length === 0 ? "Make Sale" : "Add Order"}
+        label="Add Order"
       />
     </View>
   );
