@@ -9,24 +9,36 @@ import {
   ViewStyle,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { Text, Searchbar, FAB, useTheme, Button } from "react-native-paper";
+import {
+  Text,
+  Searchbar,
+  FAB,
+  useTheme,
+  Button,
+  Title,
+} from "react-native-paper";
 import OrderForm from "../../components/OrderForm";
 import { useCategoryContext } from "../../contexts/CategoryContext";
 import { type Order } from "../types";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useInventoryContext } from "../../contexts/InventoryContext";
 
 export default function Orders() {
   const theme = useTheme();
   const { categories } = useCategoryContext();
+  const { items: inventoryItems } = useInventoryContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormVisible, setFormVisible] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [timeFilter, setTimeFilter] = useState("today");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [lastOrderNumber, setLastOrderNumber] = useState(1);
+  const [isDetailsVisible, setDetailsVisible] = useState(false);
+  const [selectedOrderDetails, setSelectedOrderDetails] =
+    useState<Order | null>(null);
 
   const styles = StyleSheet.create({
     container: {
@@ -156,42 +168,79 @@ export default function Orders() {
     actionIcon: {
       marginRight: 0,
     },
+    filtersContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+      gap: 16,
+    },
+    filterGroup: {
+      flexDirection: "row",
+      gap: 16,
+      alignItems: "center",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    detailsSection: {
+      marginVertical: 16,
+      padding: 16,
+      backgroundColor: "#f8f9fa",
+      borderRadius: 8,
+    },
+    itemRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      padding: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: "#e0e0e0",
+    },
+    detailsFooter: {
+      marginTop: 16,
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: "#e0e0e0",
+    },
+    grandTotal: {
+      fontSize: 18,
+      fontWeight: "bold",
+      marginTop: 8,
+    },
+    actionButtons: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginTop: 24,
+      marginBottom: 16,
+    },
   });
 
   const getFilteredOrders = () => {
     let filtered = [...orders];
 
-    if (categoryFilter && categoryFilter !== "all") {
-      filtered = filtered.filter((order) => order.category === categoryFilter);
-    }
-
-    const now = new Date();
-    filtered = filtered.filter((order) => {
-      const orderDate = new Date(order.orderDate);
-      switch (timeFilter) {
-        case "today":
-          return orderDate.toDateString() === now.toDateString();
-        case "week":
-          const weekAgo = new Date(now.setDate(now.getDate() - 7));
-          return orderDate >= weekAgo;
-        case "month":
-          return (
-            orderDate.getMonth() === now.getMonth() &&
-            orderDate.getFullYear() === now.getFullYear()
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter((order) =>
+        order.items.some((item) => {
+          const inventoryItem = inventoryItems.find(
+            (inv) => inv.id === item.product
           );
-        case "year":
-          return orderDate.getFullYear() === now.getFullYear();
-        default:
-          return true;
-      }
-    });
+          return inventoryItem?.category === categoryFilter;
+        })
+      );
+    }
 
     if (searchQuery) {
       filtered = filtered.filter(
         (order) =>
+          order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.clientContact.toString().includes(searchQuery) ||
-          order.id.includes(searchQuery)
+          order.clientContact
+            .toString()
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
       );
     }
 
@@ -205,6 +254,10 @@ export default function Orders() {
           return a.clientName.localeCompare(b.clientName);
         case "status":
           return a.status.localeCompare(b.status);
+        case "paymentMode":
+          return a.paymentMethod
+            .toString()
+            .localeCompare(b.paymentMethod.toString());
         default:
           return 0;
       }
@@ -235,8 +288,92 @@ export default function Orders() {
   };
 
   const handleViewDetails = (order: Order) => {
-    console.log("View details for order:", order);
-    // You can add a modal or navigate to a details screen here
+    setSelectedOrderDetails(order);
+    setDetailsVisible(true);
+  };
+
+  const calculateSubtotal = (
+    items: Array<{
+      quantity: number;
+      rate: number;
+    }>
+  ) => {
+    return (
+      items?.reduce((sum, item) => sum + item.quantity * item.rate, 0) || 0
+    );
+  };
+
+  const handleDownload = async (order: Order) => {
+    // Implement PDF generation and download
+    console.log("Downloading order:", order.id);
+  };
+
+  const OrderDetailsModal = ({ order, visible, onClose }) => {
+    return (
+      <Modal visible={visible} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <ScrollView>
+            <View style={styles.modalHeader}>
+              <Title>Order Details - {order?.id}</Title>
+              <Button onPress={onClose}>Close</Button>
+            </View>
+
+            <View style={styles.detailsSection}>
+              <Title>Customer Information</Title>
+              <Text>Name: {order?.clientName}</Text>
+              <Text>Contact: {order?.clientContact}</Text>
+              <Text>Address: {order?.address}</Text>
+            </View>
+
+            <View style={styles.detailsSection}>
+              <Title>Order Information</Title>
+              <Text>
+                Date: {new Date(order?.orderDate).toLocaleDateString()}
+              </Text>
+              <Text>Payment Method: {order?.paymentMethod}</Text>
+              <Text>Payment Status: {order?.paymentStatus}</Text>
+            </View>
+
+            <View style={styles.detailsSection}>
+              <Title>Items</Title>
+              {order?.items.map((item, index) => (
+                <View key={index} style={styles.itemRow}>
+                  <Text>{item.product}</Text>
+                  <Text>Quantity: {item.quantity}</Text>
+                  <Text>Rate: {item.rate}</Text>
+                  <Text>Total: {item.quantity * item.rate}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.detailsFooter}>
+              <Text>Subtotal: {calculateSubtotal(order?.items)}</Text>
+              <Text>Discount: {order?.discount}</Text>
+              <Text style={styles.grandTotal}>
+                Grand Total: {order?.grandTotal}
+              </Text>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <Button
+                mode="contained"
+                onPress={() => handlePrint(order)}
+                icon="printer"
+              >
+                Print Receipt
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={() => handleDownload(order)}
+                icon="download"
+              >
+                Download PDF
+              </Button>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+    );
   };
 
   return (
@@ -341,6 +478,8 @@ export default function Orders() {
             <Picker.Item label="Sort by Date" value="date" />
             <Picker.Item label="Sort by Name" value="name" />
             <Picker.Item label="Sort by Status" value="status" />
+            <Picker.Item label="Sort by Payment Mode" value="paymentMode" />
+            <Picker.Item label="Sort by Category" value="category" />
           </Picker>
 
           <Picker
@@ -369,6 +508,7 @@ export default function Orders() {
           <Text style={[styles.headerCell, { flex: 0.8 }]}>Client Name</Text>
           <Text style={[styles.headerCell, { flex: 0.8 }]}>Contact</Text>
           <Text style={[styles.headerCell, { flex: 0.4 }]}>Items</Text>
+          <Text style={[styles.headerCell, { flex: 0.6 }]}>Mode</Text>
           <Text style={[styles.headerCell, { flex: 0.8 }]}>Payment Status</Text>
           <Text style={[styles.headerCell, { flex: 1 }]}>Option</Text>
         </View>
@@ -390,6 +530,9 @@ export default function Orders() {
                 </Text>
                 <Text style={[styles.tableCell, { flex: 0.4 }]}>
                   {item.totalOrderItems}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 0.6 }]}>
+                  {item.paymentMethod}
                 </Text>
                 <View style={[styles.tableCell, { flex: 0.8 }]}>
                   <Text
