@@ -21,6 +21,7 @@ interface OrderItem {
 }
 
 interface Order {
+  category: string;
   orderDate: string;
   clientName: string;
   clientContact: string;
@@ -41,24 +42,41 @@ const fetchClientByContact = (contact: string) => {
   return clients.find((client) => client.contact === contact);
 };
 
-const OrderForm: React.FC<{
+interface OrderFormProps {
   onSubmit: (order: Order) => void;
   onClose: () => void;
-}> = ({ onSubmit, onClose }) => {
+  initialData?: Order | null;
+}
+
+const OrderForm: React.FC<OrderFormProps> = ({
+  onSubmit,
+  onClose,
+  initialData,
+}) => {
   const { items: inventoryItems } = useInventoryContext();
   const { categories } = useCategoryContext();
-  const [orderDate, setOrderDate] = useState(new Date());
+  const [orderDate, setOrderDate] = useState(
+    initialData ? new Date(initialData.orderDate) : new Date()
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [clientName, setClientName] = useState("");
-  const [clientContact, setClientContact] = useState("");
-  const [address, setAddress] = useState("");
-  const [items, setItems] = useState<OrderItem[]>([
-    { product: "", rate: 0, quantity: 0 },
-  ]);
-  const [discount, setDiscount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
-  const [status, setStatus] = useState("Partial");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [clientName, setClientName] = useState(initialData?.clientName || "");
+  const [clientContact, setClientContact] = useState(
+    initialData?.clientContact?.toString() || ""
+  );
+  const [address, setAddress] = useState(initialData?.address || "");
+  const [items, setItems] = useState<OrderItem[]>(
+    initialData?.items || [{ product: "", rate: 0, quantity: 0 }]
+  );
+  const [discount, setDiscount] = useState(
+    initialData?.discount.toString() || ""
+  );
+  const [paymentMethod, setPaymentMethod] = useState(
+    initialData?.paymentMethod?.toString() || "Cash"
+  );
+  const [status, setStatus] = useState(initialData?.status || "Partial");
+  const [selectedCategory, setSelectedCategory] = useState(
+    initialData?.category || ""
+  );
 
   // Replace the static products array
   const products = inventoryItems.map((item) => ({
@@ -187,9 +205,11 @@ const OrderForm: React.FC<{
       paymentMethod,
       status,
     };
-
     try {
-      onSubmit(order);
+      onSubmit({
+        ...order,
+        category: "default", // Adding missing required category field
+      });
       onClose();
     } catch (error) {
       showError("Failed to create order. Please try again.");

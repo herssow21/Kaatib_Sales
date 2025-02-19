@@ -12,6 +12,9 @@ const Order = {
 export default Order; // Default export
 
 export interface Order {
+  address: string;
+  items: any[];
+  discount: number;
   id: string;
   orderDate: string | Date;
   clientName: string;
