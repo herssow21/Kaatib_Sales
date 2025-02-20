@@ -16,6 +16,7 @@ import {
   useTheme,
   Button,
   Title,
+  IconButton,
 } from "react-native-paper";
 import OrderForm from "../../components/OrderForm";
 import { useCategoryContext } from "../../contexts/CategoryContext";
@@ -43,8 +44,7 @@ export default function Orders() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
-      paddingTop: Platform.OS === "ios" ? 16 : 8,
+      backgroundColor: "#f5f5f5",
     },
     header: {
       padding: 16,
@@ -94,23 +94,21 @@ export default function Orders() {
       alignSelf: "flex-start",
     },
     tableFooter: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
       padding: 16,
       borderTopWidth: 1,
       borderTopColor: "#e0e0e0",
     },
     modalContainer: {
-      backgroundColor: "white",
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
       padding: 16,
+    },
+    modalContent: {
+      backgroundColor: "white",
       borderRadius: 8,
-      borderWidth: 1,
-      borderColor: "#E03F3E",
-      margin: 16,
-      maxWidth: "99%",
-      alignSelf: "center",
-      minHeight: "50%",
+      padding: 16,
+      maxHeight: "90%",
     },
     filterPicker: {
       width: 160,
@@ -146,10 +144,10 @@ export default function Orders() {
     },
     tableWrapper: {
       flex: 1,
-      margin: 16,
-      borderRadius: 8,
       backgroundColor: "white",
-      elevation: 2,
+      borderRadius: 8,
+      margin: 16,
+      overflow: "hidden",
     },
     tableScrollView: {
       flexGrow: 1,
@@ -215,6 +213,10 @@ export default function Orders() {
       justifyContent: "space-around",
       marginTop: 24,
       marginBottom: 16,
+    },
+    emptyState: {
+      padding: 16,
+      alignItems: "center",
     },
   });
 
@@ -308,76 +310,8 @@ export default function Orders() {
     console.log("Downloading order:", order.id);
   };
 
-  const OrderDetailsModal = ({ order, visible, onClose }) => {
-    return (
-      <Modal visible={visible} animationType="slide" transparent={true}>
-        <View style={styles.modalContainer}>
-          <ScrollView>
-            <View style={styles.modalHeader}>
-              <Title>Order Details - {order?.id}</Title>
-              <Button onPress={onClose}>Close</Button>
-            </View>
-
-            <View style={styles.detailsSection}>
-              <Title>Customer Information</Title>
-              <Text>Name: {order?.clientName}</Text>
-              <Text>Contact: {order?.clientContact}</Text>
-              <Text>Address: {order?.address}</Text>
-            </View>
-
-            <View style={styles.detailsSection}>
-              <Title>Order Information</Title>
-              <Text>
-                Date: {new Date(order?.orderDate).toLocaleDateString()}
-              </Text>
-              <Text>Payment Method: {order?.paymentMethod}</Text>
-              <Text>Payment Status: {order?.paymentStatus}</Text>
-            </View>
-
-            <View style={styles.detailsSection}>
-              <Title>Items</Title>
-              {order?.items.map((item, index) => (
-                <View key={index} style={styles.itemRow}>
-                  <Text>{item.product}</Text>
-                  <Text>Quantity: {item.quantity}</Text>
-                  <Text>Rate: {item.rate}</Text>
-                  <Text>Total: {item.quantity * item.rate}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.detailsFooter}>
-              <Text>Subtotal: {calculateSubtotal(order?.items)}</Text>
-              <Text>Discount: {order?.discount}</Text>
-              <Text style={styles.grandTotal}>
-                Grand Total: {order?.grandTotal}
-              </Text>
-            </View>
-
-            <View style={styles.actionButtons}>
-              <Button
-                mode="contained"
-                onPress={() => handlePrint(order)}
-                icon="printer"
-              >
-                Print Receipt
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={() => handleDownload(order)}
-                icon="download"
-              >
-                Download PDF
-              </Button>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
-    );
-  };
-
   return (
-    <View style={styles.container as ViewStyle}>
+    <View style={styles.container}>
       <Modal visible={isFormVisible} animationType="slide" transparent={true}>
         <ScrollView>
           <View style={styles.modalContainer as ViewStyle}>
@@ -512,104 +446,106 @@ export default function Orders() {
           <Text style={[styles.headerCell, { flex: 0.8 }]}>Payment Status</Text>
           <Text style={[styles.headerCell, { flex: 1 }]}>Option</Text>
         </View>
-        <ScrollView style={styles.tableScrollView}>
-          <FlatList
-            data={getFilteredOrders()}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>{item.id}</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {new Date(item.orderDate).toLocaleDateString()}
+
+        <FlatList
+          data={getFilteredOrders()}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 0.6 }]}>{item.id}</Text>
+              <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                {new Date(item.orderDate).toLocaleDateString()}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                {item.clientName}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                {item.clientContact}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 0.4 }]}>
+                {item.totalOrderItems}
+              </Text>
+              <Text style={[styles.tableCell, { flex: 0.6 }]}>
+                {item.paymentMethod}
+              </Text>
+              <View style={[styles.tableCell, { flex: 0.8 }]}>
+                <Text
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        item.paymentStatus === "Full Payment"
+                          ? "#e6f4ea"
+                          : "#fff3e0",
+                      color:
+                        item.paymentStatus === "Full Payment"
+                          ? "#34a853"
+                          : "#f57c00",
+                    },
+                  ]}
+                >
+                  {item.paymentStatus}
                 </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {item.clientName}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {item.clientContact}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.4 }]}>
-                  {item.totalOrderItems}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>
-                  {item.paymentMethod}
-                </Text>
-                <View style={[styles.tableCell, { flex: 0.8 }]}>
-                  <Text
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          item.paymentStatus === "Full Payment"
-                            ? "#e6f4ea"
-                            : "#fff3e0",
-                        color:
-                          item.paymentStatus === "Full Payment"
-                            ? "#34a853"
-                            : "#f57c00",
-                      },
-                    ]}
-                  >
-                    {item.paymentStatus}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, { flex: 1 }]}>
-                  <View style={styles.actionContainer}>
-                    <Button
-                      mode="text"
-                      onPress={() => handleEdit(item)}
-                      style={styles.actionButton}
-                      icon={({ size, color }) => (
-                        <MaterialIcons name="edit" size={20} color="#2c3e50" />
-                      )}
-                      children={""}
-                    />
-                    <Button
-                      mode="text"
-                      onPress={() => handlePrint(item)}
-                      style={styles.actionButton}
-                      icon={({ size, color }) => (
-                        <MaterialIcons name="print" size={20} color="#2c3e50" />
-                      )}
-                      children={""}
-                    />
-                    <Button
-                      mode="text"
-                      onPress={() => handleViewDetails(item)}
-                      style={styles.actionButton}
-                      icon={({ size, color }) => (
-                        <MaterialIcons
-                          name="visibility"
-                          size={20}
-                          color="#2c3e50"
-                        />
-                      )}
-                      children={""}
-                    />
-                    <Button
-                      mode="text"
-                      onPress={() => handleDelete(item.id)}
-                      style={styles.actionButton}
-                      icon={({ size, color }) => (
-                        <MaterialIcons
-                          name="delete"
-                          size={20}
-                          color="#e74c3c"
-                        />
-                      )}
-                      children={""}
-                    />
-                  </View>
+              </View>
+              <View style={[styles.tableCell, { flex: 1 }]}>
+                <View style={styles.actionContainer}>
+                  <Button
+                    mode="text"
+                    onPress={() => handleEdit(item)}
+                    style={styles.actionButton}
+                    icon={({ size, color }) => (
+                      <MaterialIcons name="edit" size={20} color="#2c3e50" />
+                    )}
+                    children={""}
+                  />
+                  <Button
+                    mode="text"
+                    onPress={() => handlePrint(item)}
+                    style={styles.actionButton}
+                    icon={({ size, color }) => (
+                      <MaterialIcons name="print" size={20} color="#2c3e50" />
+                    )}
+                    children={""}
+                  />
+                  <Button
+                    mode="text"
+                    onPress={() => handleViewDetails(item)}
+                    style={styles.actionButton}
+                    icon={({ size, color }) => (
+                      <MaterialIcons
+                        name="visibility"
+                        size={20}
+                        color="#2c3e50"
+                      />
+                    )}
+                    children={""}
+                  />
+                  <Button
+                    mode="text"
+                    onPress={() => handleDelete(item.id)}
+                    style={styles.actionButton}
+                    icon={({ size, color }) => (
+                      <MaterialIcons name="delete" size={20} color="#e74c3c" />
+                    )}
+                    children={""}
+                  />
                 </View>
               </View>
-            )}
-          />
-        </ScrollView>
-        <View style={styles.tableFooter}>
-          <Text>
-            Showing {getFilteredOrders().length} of {orders.length} orders
-          </Text>
-        </View>
+            </View>
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Text>No orders found</Text>
+            </View>
+          )}
+          ListFooterComponent={() => (
+            <View style={styles.tableFooter}>
+              <Text>
+                Showing {getFilteredOrders().length} of {orders.length} orders
+              </Text>
+            </View>
+          )}
+        />
       </View>
       <FAB
         icon="plus"
@@ -617,6 +553,90 @@ export default function Orders() {
         onPress={() => setFormVisible(true)}
         label="Add Order"
       />
+
+      {selectedOrderDetails && (
+        <Modal
+          visible={isDetailsVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setDetailsVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Title>Order Details - {selectedOrderDetails.id}</Title>
+                <IconButton
+                  icon="close"
+                  onPress={() => setDetailsVisible(false)}
+                />
+              </View>
+
+              <FlatList
+                data={[selectedOrderDetails]}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <>
+                    <View style={styles.detailsSection}>
+                      <Title>Customer Information</Title>
+                      <Text>Name: {item.clientName}</Text>
+                      <Text>Contact: {item.clientContact}</Text>
+                      <Text>Address: {item.address}</Text>
+                    </View>
+
+                    <View style={styles.detailsSection}>
+                      <Title>Order Information</Title>
+                      <Text>
+                        Date: {new Date(item.orderDate).toLocaleDateString()}
+                      </Text>
+                      <Text>Payment Method: {item.paymentMethod}</Text>
+                      <Text>Payment Status: {item.paymentStatus}</Text>
+                    </View>
+
+                    <View style={styles.detailsSection}>
+                      <Title>Items</Title>
+                      {item.items.map((orderItem, index) => (
+                        <View key={index} style={styles.itemRow}>
+                          <Text>{orderItem.product}</Text>
+                          <Text>Quantity: {orderItem.quantity}</Text>
+                          <Text>Rate: {orderItem.rate}</Text>
+                          <Text>
+                            Total: {orderItem.quantity * orderItem.rate}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View style={styles.detailsFooter}>
+                      <Text>Subtotal: {calculateSubtotal(item.items)}</Text>
+                      <Text>Discount: {item.discount}</Text>
+                      <Text style={styles.grandTotal}>
+                        Grand Total: {item.grandTotal}
+                      </Text>
+                    </View>
+
+                    <View style={styles.actionButtons}>
+                      <Button
+                        mode="contained"
+                        onPress={() => handlePrint(item)}
+                        icon="printer"
+                      >
+                        Print Receipt
+                      </Button>
+                      <Button
+                        mode="outlined"
+                        onPress={() => handleDownload(item)}
+                        icon="download"
+                      >
+                        Download PDF
+                      </Button>
+                    </View>
+                  </>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
