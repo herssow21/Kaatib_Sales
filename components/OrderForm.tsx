@@ -21,6 +21,7 @@ interface OrderItem {
 }
 
 interface Order {
+  id: string;
   category: string;
   orderDate: string;
   clientName: string;
@@ -31,6 +32,7 @@ interface Order {
   grandTotal: number;
   paymentMethod: string;
   status: string;
+  paymentStatus: string;
 }
 
 // Mock function to simulate fetching client data
@@ -48,6 +50,23 @@ interface OrderFormProps {
   initialData?: Order | null;
 }
 
+const initialFormState = {
+  clientName: "",
+  clientContact: "",
+  address: "",
+  orderDate: new Date().toISOString(),
+  paymentMethod: "Cash",
+  paymentStatus: "No Payment",
+  items: [
+    {
+      product: "",
+      quantity: 1,
+      rate: 0,
+    },
+  ],
+  discount: 0,
+};
+
 const OrderForm: React.FC<OrderFormProps> = ({
   onSubmit,
   onClose,
@@ -55,25 +74,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
 }) => {
   const { items: inventoryItems } = useInventoryContext();
   const { categories } = useCategoryContext();
-  const [orderDate, setOrderDate] = useState(
-    initialData ? new Date(initialData.orderDate) : new Date()
-  );
+  const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [clientName, setClientName] = useState(initialData?.clientName || "");
-  const [clientContact, setClientContact] = useState(
-    initialData?.clientContact?.toString() || ""
-  );
-  const [address, setAddress] = useState(initialData?.address || "");
-  const [items, setItems] = useState<OrderItem[]>(
-    initialData?.items || [{ product: "", rate: 0, quantity: 0 }]
-  );
-  const [discount, setDiscount] = useState(
-    initialData?.discount.toString() || ""
-  );
-  const [paymentMethod, setPaymentMethod] = useState(
-    initialData?.paymentMethod?.toString() || "Cash"
-  );
-  const [status, setStatus] = useState(initialData?.status || "Partial");
   const [selectedCategory, setSelectedCategory] = useState(
     initialData?.category || ""
   );
@@ -87,26 +89,33 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   useEffect(() => {
     // Check if the client exists when the contact changes
-    const client = fetchClientByContact(clientContact);
+    const client = fetchClientByContact(formData.clientContact);
     if (client) {
-      setClientName(client.name);
+      setFormData((prev) => ({ ...prev, clientName: client.name }));
     } else {
-      setClientName("");
+      setFormData((prev) => ({ ...prev, clientName: "" }));
     }
-  }, [clientContact]);
+  }, [formData.clientContact]);
+
+  useEffect(() => {
+    setFormData(initialData || initialFormState);
+  }, [initialData]);
 
   const handleDateChange = (event: any, selectedDate: Date | undefined) => {
-    const currentDate = selectedDate || orderDate;
+    const currentDate = selectedDate || formData.orderDate;
     setShowDatePicker(false);
-    setOrderDate(currentDate);
+    setFormData((prev) => ({ ...prev, orderDate: currentDate.toString() }));
   };
 
   const handleAddItem = () => {
-    setItems([...items, { product: "", rate: 0, quantity: 0 }]);
+    setFormData((prev) => ({
+      ...prev,
+      items: [...prev.items, { product: "", rate: 0, quantity: 0 }],
+    }));
   };
 
   const handleItemChange = (index: number, field: string, value: any) => {
-    const newItems = [...items];
+    const newItems = [...formData.items];
     if (field === "rate" || field === "quantity") {
       const numValue = value === "" ? 0 : Number(value);
       newItems[index] = {
@@ -116,22 +125,16 @@ const OrderForm: React.FC<OrderFormProps> = ({
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
-    setItems(newItems);
+    setFormData((prev) => ({ ...prev, items: newItems }));
   };
 
   const handleReset = () => {
-    setItems([{ product: "", rate: 0, quantity: 0 }]);
-    setDiscount("");
-    setClientName("");
-    setClientContact("");
-    setAddress("");
-    setPaymentMethod("Cash");
-    setStatus("Partial");
+    setFormData(initialFormState);
   };
 
   const handleDeleteItem = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
+    const newItems = formData.items.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, items: newItems }));
   };
 
   const validatePhoneNumber = (phone: string) => {
@@ -151,69 +154,75 @@ const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!clientName.trim()) {
-      showError("Client name is required");
-      return;
-    }
-
-    if (!clientContact.trim()) {
-      showError("Client contact is required");
-      return;
-    }
-
-    if (!validatePhoneNumber(clientContact)) {
-      showError("Please enter a valid Kenyan phone number");
-      return;
-    }
-
-    if (items.length === 0) {
-      showError("Please add at least one item");
-      return;
-    }
-
-    // Validate items
-    for (const item of items) {
-      if (!item.product) {
-        showError("Please select a product for all items");
-        return;
-      }
-      if (isNaN(item.rate) || item.rate <= 0) {
-        showError("Please enter valid rates for all items");
-        return;
-      }
-      if (isNaN(item.quantity) || item.quantity <= 0) {
-        showError("Please enter valid quantities for all items");
-        return;
-      }
-    }
-
-    // Handle discount
-    const discountValue = discount ? parseFloat(discount) : 0;
-    const total = items.reduce(
-      (acc, item) => acc + item.rate * item.quantity,
-      0
-    );
-
-    const order = {
-      orderDate: orderDate.toISOString().split("T")[0],
-      clientName: clientName.trim(),
-      clientContact,
-      address: address.trim(),
-      items,
-      discount: discountValue,
-      grandTotal: total - discountValue,
-      paymentMethod,
-      status,
-    };
     try {
-      onSubmit({
-        ...order,
-        category: "default", // Adding missing required category field
-      });
-      onClose();
+      if (!formData.clientName.trim()) {
+        showError("Client name is required");
+        return;
+      }
+
+      if (!formData.clientContact.trim()) {
+        showError("Client contact is required");
+        return;
+      }
+
+      if (!validatePhoneNumber(formData.clientContact)) {
+        showError("Please enter a valid Kenyan phone number");
+        return;
+      }
+
+      if (formData.items.length === 0) {
+        showError("Please add at least one item");
+        return;
+      }
+
+      // Validate items
+      for (const item of formData.items) {
+        if (!item.product) {
+          showError("Please select a product for all items");
+          return;
+        }
+        if (item.rate <= 0) {
+          showError("Please enter valid rates for all items");
+          return;
+        }
+        if (item.quantity <= 0) {
+          showError("Please enter valid quantities for all items");
+          return;
+        }
+      }
+
+      const total = formData.items.reduce(
+        (acc, item) => acc + item.rate * item.quantity,
+        0
+      );
+
+      const discountValue = formData.discount || 0;
+      const order: Order = {
+        id: initialData?.id || Date.now().toString(),
+        orderDate: formData.orderDate,
+        clientName: formData.clientName.trim(),
+        clientContact: formData.clientContact,
+        address: formData.address.trim(),
+        items: formData.items,
+        discount: discountValue,
+        grandTotal: total - discountValue,
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: formData.paymentStatus,
+        category: selectedCategory || "default",
+        status: formData.paymentStatus,
+      };
+
+      onSubmit(order);
+      handleClose();
     } catch (error) {
+      console.error("Order submission error:", error);
       showError("Failed to create order. Please try again.");
     }
+  };
+
+  const handleClose = () => {
+    setFormData(initialFormState);
+    onClose();
   };
 
   const DateInput = ({
@@ -270,16 +279,22 @@ const OrderForm: React.FC<OrderFormProps> = ({
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
       <View style={styles.topSection}>
-        <DateInput value={orderDate} onChange={setOrderDate} />
+        <DateInput
+          value={new Date(formData.orderDate)}
+          onChange={(date) => handleDateChange(null, date)}
+        />
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Client Contact</Text>
           <TextInput
-            value={clientContact}
+            value={formData.clientContact}
             onChangeText={(value) => {
               // Allow only numeric input and limit to 10 digits
               const numericValue = value.replace(/[^0-9]/g, "");
               if (numericValue.length <= 10) {
-                setClientContact(numericValue);
+                setFormData((prev) => ({
+                  ...prev,
+                  clientContact: numericValue,
+                }));
               }
             }}
             style={styles.input}
@@ -291,8 +306,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Client Name</Text>
           <TextInput
-            value={clientName}
-            onChangeText={setClientName}
+            value={formData.clientName}
+            onChangeText={(value) =>
+              setFormData((prev) => ({ ...prev, clientName: value }))
+            }
             style={styles.input}
             mode="outlined"
           />
@@ -300,15 +317,17 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Address (Optional)</Text>
           <TextInput
-            value={address}
-            onChangeText={setAddress}
+            value={formData.address}
+            onChangeText={(value) =>
+              setFormData((prev) => ({ ...prev, address: value }))
+            }
             style={styles.input}
             mode="outlined"
           />
         </View>
       </View>
 
-      {items.map((item, index) => (
+      {formData.items.map((item, index) => (
         <View key={index} style={styles.productRow}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Product</Text>
@@ -328,9 +347,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
                 />
               ))}
             </Picker>
-            <Text style={styles.productName}>
-              {item.product.length >= 5 ? item.product : ""}
-            </Text>
           </View>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Rate</Text>
@@ -371,10 +387,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <View style={styles.discountRow}>
               <Text style={styles.label}>Discount</Text>
               <TextInput
-                value={discount}
+                value={formData.discount.toString()}
                 onChangeText={(value) => {
                   const numValue = value.replace(/[^0-9.]/g, "");
-                  setDiscount(numValue);
+                  setFormData((prev) => ({
+                    ...prev,
+                    discount: parseFloat(numValue),
+                  }));
                 }}
                 keyboardType="numeric"
                 style={styles.discountInput}
@@ -386,19 +405,24 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <Text style={styles.label}>Subtotal:</Text>
             <Text>
               KES{" "}
-              {items.reduce((acc, item) => acc + item.rate * item.quantity, 0)}
+              {formData.items.reduce(
+                (acc, item) => acc + item.rate * item.quantity,
+                0
+              )}
             </Text>
           </View>
           <View style={styles.alignRow}>
             <Text style={styles.label}>Order Discount:</Text>
-            <Text>KES {discount}</Text>
+            <Text>KES {formData.discount}</Text>
           </View>
           <View style={styles.alignRow}>
             <Text style={styles.grandTotalLabel}>Grand Total:</Text>
             <Text style={styles.grandTotalValue}>
               KES{" "}
-              {items.reduce((acc, item) => acc + item.rate * item.quantity, 0) -
-                (discount ? parseFloat(discount) : 0)}
+              {formData.items.reduce(
+                (acc, item) => acc + item.rate * item.quantity,
+                0
+              ) - (formData.discount ? formData.discount : 0)}
             </Text>
           </View>
         </View>
@@ -406,8 +430,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <View style={styles.rightColumn}>
           <Text style={styles.label}>Payment Method</Text>
           <Picker
-            selectedValue={paymentMethod}
-            onValueChange={(itemValue) => setPaymentMethod(itemValue)}
+            selectedValue={formData.paymentMethod}
+            onValueChange={(itemValue) =>
+              setFormData((prev) => ({ ...prev, paymentMethod: itemValue }))
+            }
             style={styles.picker}
           >
             <Picker.Item label="Cash" value="Cash" />
@@ -416,8 +442,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
           </Picker>
           <Text style={styles.label}>Payment Status</Text>
           <Picker
-            selectedValue={status}
-            onValueChange={(itemValue) => setStatus(itemValue)}
+            selectedValue={formData.paymentStatus}
+            onValueChange={(itemValue) =>
+              setFormData((prev) => ({ ...prev, paymentStatus: itemValue }))
+            }
             style={styles.picker}
           >
             <Picker.Item label="Partial" value="Partial" />
@@ -442,6 +470,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
           Save Order
         </Button>
       </View>
+      <Button onPress={handleClose}>Cancel</Button>
     </ScrollView>
   );
 };
@@ -465,8 +494,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputGroup: {
-    flexDirection: "column",
-    marginBottom: 12,
+    flex: 1,
+    marginRight: 8,
   },
   label: {
     flex: 1,
@@ -523,8 +552,13 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   picker: {
-    marginBottom: 12,
-    flex: 1,
+    minHeight: 40,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
   button: {
     flex: 1,

@@ -12,20 +12,23 @@ const Order = {
 export default Order; // Default export
 
 export interface Order {
-  address: string;
-  items: any[];
-  discount: number;
+  category: string;
   id: string;
-  orderDate: string | Date;
   clientName: string;
-  clientContact: ReactNode;
-  totalOrderItems: number;
+  clientContact: string;
+  address: string;
+  orderDate: string;
+  paymentMethod: string;
   paymentStatus: string;
-  paymentMethod: ReactNode;
+  totalOrderItems: number;
+  items: {
+    product: string;
+    quantity: number;
+    rate: number;
+  }[];
+  discount: number;
   grandTotal: number;
   status: string;
-  category: string;
-  // Add other properties as needed
 }
 
 export type RouteNames = 
