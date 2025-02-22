@@ -48,6 +48,29 @@ export default function Orders() {
 
   const isMobile = Platform.OS === "android" || Platform.OS === "ios";
 
+  const getPaymentStatusStyle = (status: string) => {
+    switch (status) {
+      case "Completed":
+        return {
+          backgroundColor: "#dcfce7",
+          color: "#166534",
+          borderColor: "#86efac",
+        };
+      case "Partial":
+        return {
+          backgroundColor: "#fff7ed",
+          color: "#9a3412",
+          borderColor: "#fdba74",
+        };
+      default:
+        return {
+          backgroundColor: "#fef2f2",
+          color: "#991b1b",
+          borderColor: "#fecaca",
+        };
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -107,9 +130,13 @@ export default function Orders() {
     },
     statusBadge: {
       paddingVertical: 4,
-      paddingHorizontal: 12,
+      paddingHorizontal: 8,
       borderRadius: 12,
-      alignSelf: "flex-start",
+      borderWidth: 1,
+      fontSize: 12,
+      fontWeight: "500",
+      textAlign: "center",
+      overflow: "hidden",
     },
     tableFooter: {
       padding: 16,
@@ -733,16 +760,7 @@ export default function Orders() {
                       <Text
                         style={[
                           styles.statusBadge,
-                          {
-                            backgroundColor:
-                              item.paymentStatus === "Full Payment"
-                                ? "#e6f4ea"
-                                : "#fff3e0",
-                            color:
-                              item.paymentStatus === "Full Payment"
-                                ? "#34a853"
-                                : "#f57c00",
-                          },
+                          getPaymentStatusStyle(item.paymentStatus),
                         ]}
                       >
                         {item.paymentStatus}
@@ -824,23 +842,16 @@ export default function Orders() {
                   {item.paymentMethod}
                 </Text>
                 <View style={[styles.tableCell, { flex: 0.8 }]}>
-                  <Text
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          item.paymentStatus === "Full Payment"
-                            ? "#e6f4ea"
-                            : "#fff3e0",
-                        color:
-                          item.paymentStatus === "Full Payment"
-                            ? "#34a853"
-                            : "#f57c00",
-                      },
-                    ]}
-                  >
-                    {item.paymentStatus}
-                  </Text>
+                  <View style={styles.statusContainer}>
+                    <Text
+                      style={[
+                        styles.statusBadge,
+                        getPaymentStatusStyle(item.paymentStatus),
+                      ]}
+                    >
+                      {item.paymentStatus}
+                    </Text>
+                  </View>
                 </View>
                 <View style={[styles.tableCell, { flex: 1 }]}>
                   <View style={styles.actionContainer}>
