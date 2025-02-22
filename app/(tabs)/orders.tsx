@@ -150,9 +150,12 @@ export default function Orders() {
       position: "absolute",
       right: 10,
       top: 10,
-      backgroundColor: "white",
-      borderRadius: 20,
       zIndex: 1,
+    },
+    closeIcon: {
+      backgroundColor: "#ff3b30",
+      borderRadius: 20,
+      padding: 4,
     },
     filterPicker: {
       width: 160,
@@ -546,47 +549,20 @@ export default function Orders() {
         visible={isFormVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={handleFormClose}
+        onRequestClose={() => setFormVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <IconButton
+              icon="close"
+              iconColor="white"
+              style={[styles.closeButton, styles.closeIcon]}
+              onPress={() => setFormVisible(false)}
+            />
             <OrderForm
-              initialData={
-                selectedOrder
-                  ? {
-                      ...selectedOrder,
-                      category: selectedOrder.category || "",
-                      clientContact: String(selectedOrder.clientContact),
-                      paymentMethod: String(selectedOrder.paymentMethod),
-                      orderDate:
-                        typeof selectedOrder.orderDate === "string"
-                          ? selectedOrder.orderDate
-                          : selectedOrder.orderDate
-                          ? new Date(selectedOrder.orderDate).toISOString()
-                          : new Date().toISOString(),
-                    }
-                  : {
-                      clientContact: "",
-                      paymentMethod: "",
-                      orderDate: new Date().toISOString(),
-                      items: [],
-                      id: "",
-                      totalOrderItems: 0,
-                      paymentStatus: "pending",
-                      clientName: "",
-                      address: "",
-                      discount: 0,
-                      grandTotal: 0,
-                      status: "pending",
-                      category: "",
-                    }
-              }
-              onSubmit={(
-                order: import("d:/Work_Space/React_Native_Projects/Kaatib_Sales/app/types").Order
-              ) => {
-                return handleFormSubmit(order);
-              }}
-              onClose={handleFormClose}
+              onSubmit={handleFormSubmit}
+              onClose={() => setFormVisible(false)}
+              initialData={selectedOrder}
             />
           </View>
         </View>
@@ -924,12 +900,14 @@ export default function Orders() {
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
+              <IconButton
+                icon="close"
+                iconColor="white"
+                style={[styles.closeButton, styles.closeIcon]}
+                onPress={() => setDetailsVisible(false)}
+              />
               <View style={styles.modalHeader}>
                 <Title>Order Details - {selectedOrderDetails.id}</Title>
-                <IconButton
-                  icon="close"
-                  onPress={() => setDetailsVisible(false)}
-                />
               </View>
 
               <FlatList

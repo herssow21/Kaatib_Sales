@@ -79,6 +79,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [selectedCategory, setSelectedCategory] = useState(
     initialData?.category || ""
   );
+  const [amountPaid, setAmountPaid] = useState(0);
 
   // Replace the static products array
   const products = inventoryItems.map((item) => ({
@@ -275,6 +276,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
     );
   };
 
+  const handleOpenModal = () => {
+    setFormData(initialFormState);
+    handleAddItem();
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
@@ -425,9 +431,33 @@ const OrderForm: React.FC<OrderFormProps> = ({
               ) - (formData.discount ? formData.discount : 0)}
             </Text>
           </View>
+
+          <View style={styles.alignRow}>
+            <Text style={styles.label}>Balance:</Text>
+            <Text style={styles.grandTotalValue}>
+              KES{" "}
+              {formData.items.reduce(
+                (acc, item) => acc + item.rate * item.quantity,
+                0
+              ) -
+                (formData.discount ? formData.discount : 0) -
+                amountPaid}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.rightColumn}>
+          <View style={styles.alignRow}>
+            <Text style={styles.label}>Amount Paid:</Text>
+            <TextInput
+              mode="outlined"
+              value={amountPaid.toString()}
+              onChangeText={(value) => setAmountPaid(parseFloat(value) || 0)}
+              keyboardType="numeric"
+              style={styles.amountPaidInput}
+            />
+          </View>
+
           <Text style={styles.label}>Payment Method</Text>
           <Picker
             selectedValue={formData.paymentMethod}
@@ -448,6 +478,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             }
             style={styles.picker}
           >
+            <Picker.Item label="No Payment" value="No Payment" />
             <Picker.Item label="Partial" value="Partial" />
             <Picker.Item label="Completed" value="Completed" />
           </Picker>
@@ -470,7 +501,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
           Save Order
         </Button>
       </View>
-      <Button onPress={handleClose}>Cancel</Button>
+      {/* <Button onPress={handleClose}>Cancel</Button> */}
     </ScrollView>
   );
 };
@@ -617,6 +648,11 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     borderRadius: 8,
     boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+  },
+  amountPaidInput: {
+    width: Platform.OS === "android" ? "50%" : "40%",
+    height: 40,
+    marginBottom: 8,
   },
 });
 
