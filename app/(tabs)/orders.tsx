@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
@@ -34,6 +34,7 @@ export default function Orders() {
   const { items: inventoryItems } = useInventoryContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [orders, setOrders] = useState<Order[]>([]);
   const [isFormVisible, setFormVisible] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -45,6 +46,9 @@ export default function Orders() {
   const [selectedOrderDetails, setSelectedOrderDetails] =
     useState<Order | null>(null);
   const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isTimeMenuVisible, setTimeMenuVisible] = useState(false);
+  const [isSortMenuVisible, setSortMenuVisible] = useState(false);
 
   const isMobile = Platform.OS === "android" || Platform.OS === "ios";
 
@@ -96,47 +100,49 @@ export default function Orders() {
     tableHeader: {
       flexDirection: "row",
       backgroundColor: theme.colors.primary,
-      padding: 12,
-      borderTopLeftRadius: 8,
-      borderTopRightRadius: 8,
-      borderBottomWidth: 2,
-      borderBottomColor: "rgba(255,255,255,0.3)",
-      borderStyle: "dotted",
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      width: "100%",
     },
     headerCell: {
-      flex: 1,
       color: theme.colors.onPrimary,
-      fontWeight: "bold",
-      textAlign: "center",
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "left",
+      paddingHorizontal: 8,
       borderRightWidth: 2,
       borderRightColor: "rgba(255,255,255,0.3)",
       borderStyle: "dotted",
-      paddingHorizontal: 8,
     },
     tableRow: {
       flexDirection: "row",
-      minHeight: 40,
-      alignItems: "center",
       borderBottomWidth: 1,
-      borderBottomColor: "#e0e0e0",
-      borderStyle: "dotted",
+      borderBottomColor: "#e5e7eb",
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      alignItems: "center",
+      backgroundColor: "white",
+      width: "100%",
     },
     tableCell: {
-      flex: 1,
-      padding: 8,
-      textAlign: "center",
-      color: "#666",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
       justifyContent: "center",
+      borderRightWidth: 2,
+      borderRightColor: "#ddd",
+      borderStyle: "dotted",
+    },
+    tableCellText: {
+      fontSize: 13,
+      color: "#374151",
     },
     statusBadge: {
+      paddingHorizontal: 4,
       paddingVertical: 4,
-      paddingHorizontal: 8,
-      borderRadius: 12,
-      borderWidth: 1,
+      borderRadius: 4,
       fontSize: 12,
-      fontWeight: "500",
+      fontWeight: "600",
       textAlign: "center",
-      overflow: "hidden",
     },
     tableFooter: {
       padding: 16,
@@ -240,14 +246,8 @@ export default function Orders() {
     },
     actionContainer: {
       flexDirection: "row",
-      gap: 8,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 8,
-      minWidth: 160,
-      borderLeftWidth: 2,
-      borderLeftColor: "#ddd",
-      borderStyle: "dotted",
+      justifyContent: "flex-end",
+      gap: 4,
     },
     actionButton: {
       minWidth: 40,
@@ -300,9 +300,8 @@ export default function Orders() {
     },
     actionButtons: {
       flexDirection: "row",
-      gap: 4,
+      gap: 2,
       justifyContent: "center",
-      alignItems: "center",
     },
     emptyState: {
       padding: 16,
@@ -311,10 +310,11 @@ export default function Orders() {
     mobileTableRow: {
       flexDirection: "row",
       backgroundColor: "white",
+      width: "100%",
       borderBottomWidth: 2,
       borderBottomColor: "#ddd",
       borderStyle: "dotted",
-      minHeight: 48,
+      minHeight: 40,
     },
     mobileCell: {
       justifyContent: "center",
@@ -359,12 +359,13 @@ export default function Orders() {
     mobileTableHeader: {
       flexDirection: "row",
       backgroundColor: theme.colors.primary,
+      width: "100%",
       borderBottomWidth: 2,
       borderBottomColor: "rgba(255,255,255,0.3)",
       borderStyle: "dotted",
     },
     mobileHeaderCell: {
-      padding: 12,
+      padding: 8,
       color: theme.colors.onPrimary,
       fontWeight: "bold",
       textAlign: "center",
@@ -373,7 +374,7 @@ export default function Orders() {
       borderStyle: "dotted",
     },
     mobileTableCell: {
-      padding: 8,
+      padding: 4,
       textAlign: "center",
       borderRightWidth: 2,
       borderRightColor: "#ddd",
@@ -381,52 +382,96 @@ export default function Orders() {
       justifyContent: "center",
     },
     statusContainer: {
-      width: 160,
+      width: 100,
       padding: 8,
       borderRightWidth: 2,
       borderRightColor: "#ddd",
       borderStyle: "dotted",
-      alignItems: "center",
-      justifyContent: "center",
     },
-    actionsContainer: {
-      width: 160,
-      padding: 8,
-      borderRightWidth: 1,
-      borderRightColor: "#ddd",
-      borderStyle: "dotted",
+    actionsCell: {
+      width: "16%",
+      borderRightWidth: 0,
+      paddingRight: 8,
+      paddingLeft: 8,
     },
     mobileTableContainer: {
       minWidth: 980,
+      width: "100%",
     },
+    filterButton: {
+      marginVertical: 8,
+      marginHorizontal: 4,
+    },
+    webFilters: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 16,
+    },
+    sortButton: {
+      marginVertical: 8,
+    },
+    orderNoCell: { width: "10%" },
+    categoryCell: { width: "10%", alignItems: "center" },
+    dateCell: { width: "10%" },
+    clientCell: { width: "15%" },
+    contactCell: { width: "11%" },
+    itemsCell: { width: "8%", alignItems: "center" },
+    modeCell: { width: "7%" },
+    statusCell: { width: "13%" },
   });
 
   const getFilteredOrders = () => {
     let filtered = [...orders];
 
-    if (categoryFilter !== "all") {
+    // Apply category filter
+    if (selectedCategory !== "all") {
       filtered = filtered.filter((order) =>
-        order.items.some((item) => {
+        order.items.some((orderItem) => {
           const inventoryItem = inventoryItems.find(
-            (inv) => inv.id === item.product
+            (invItem) =>
+              invItem.name.toLowerCase() === orderItem.product.toLowerCase()
           );
-          return inventoryItem?.category === categoryFilter;
+          return (
+            inventoryItem?.category.toLowerCase() ===
+            selectedCategory.toLowerCase()
+          );
         })
       );
     }
 
+    // Apply search filter first - this should search through ALL orders
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (order) =>
-          order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.clientContact
-            .toString()
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+          order.id.toLowerCase().includes(query) ||
+          order.clientName.toLowerCase().includes(query) ||
+          order.clientContact.toLowerCase().includes(query)
       );
+    } else {
+      // Only apply time filter if there's no search query
+      const now = new Date();
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      filtered = filtered.filter((order) => {
+        const orderDate = new Date(order.orderDate);
+        switch (timeFilter) {
+          case "today":
+            return orderDate >= startOfDay;
+          case "week":
+            return orderDate >= startOfWeek;
+          case "month":
+            return orderDate >= startOfMonth;
+          default:
+            return true;
+        }
+      });
     }
 
+    // Apply sorting
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case "date":
@@ -436,11 +481,22 @@ export default function Orders() {
         case "name":
           return a.clientName.localeCompare(b.clientName);
         case "status":
-          return a.status.localeCompare(b.status);
+          return a.paymentStatus.localeCompare(b.paymentStatus);
         case "paymentMode":
-          return a.paymentMethod
-            .toString()
-            .localeCompare(b.paymentMethod.toString());
+          return a.paymentMethod.localeCompare(b.paymentMethod);
+        case "category":
+          const getCategoryString = (order) => {
+            return order.items
+              .map((item) => {
+                const inventoryItem = inventoryItems.find(
+                  (inv) => inv.name.toLowerCase() === item.product.toLowerCase()
+                );
+                return inventoryItem?.category || "";
+              })
+              .filter(Boolean)
+              .join(",");
+          };
+          return getCategoryString(a).localeCompare(getCategoryString(b));
         default:
           return 0;
       }
@@ -570,6 +626,170 @@ export default function Orders() {
     return subtotal - (discount || 0);
   };
 
+  const getCategoryIcon = (order: Order) => {
+    const categories = order.items
+      .map((item) => {
+        const inventoryItem = inventoryItems.find(
+          (inv) => inv.name.toLowerCase() === item.product.toLowerCase()
+        );
+        return inventoryItem?.category || "";
+      })
+      .filter(Boolean);
+
+    const uniqueCategories = [...new Set(categories)];
+
+    if (uniqueCategories.length === 0) {
+      return (
+        <Text style={{ color: "#666", fontSize: 14, textAlign: "center" }}>
+          -
+        </Text>
+      );
+    }
+
+    return (
+      <View style={{ flexDirection: "row", gap: 4, justifyContent: "center" }}>
+        {uniqueCategories.map((category, index) => {
+          const letter = category.charAt(0).toUpperCase();
+          const colors = {
+            N: { bg: "#e3f2fd", text: "#1565c0" }, // Normal
+            E: { bg: "#fce7f3", text: "#9d174d" }, // Express
+          };
+          const colorSet = colors[letter] || { bg: "#f3f4f6", text: "#4b5563" };
+
+          return (
+            <Text
+              key={index}
+              style={{
+                backgroundColor: colorSet.bg,
+                color: colorSet.text,
+                fontSize: Platform.OS === "android" ? 12 : 14,
+                fontWeight: "600",
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 4,
+                textAlign: "center",
+                minWidth: 28,
+                elevation: Platform.OS === "android" ? 2 : 0,
+              }}
+            >
+              {letter}
+            </Text>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const filteredOrders = useMemo(() => {
+    let filtered = [...orders];
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((order) =>
+        order.items.some((orderItem) => {
+          const inventoryItem = inventoryItems.find(
+            (invItem) =>
+              invItem.name.toLowerCase() === orderItem.product.toLowerCase()
+          );
+          return (
+            inventoryItem?.category.toLowerCase() ===
+            selectedCategory.toLowerCase()
+          );
+        })
+      );
+    }
+
+    // Apply other filters (time, search, etc.)
+    if (timeFilter !== "all") {
+      const now = new Date();
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      filtered = filtered.filter((order) => {
+        const orderDate = new Date(order.orderDate);
+        switch (timeFilter) {
+          case "today":
+            return orderDate >= startOfDay;
+          case "week":
+            return orderDate >= startOfWeek;
+          case "month":
+            return orderDate >= startOfMonth;
+          default:
+            return true;
+        }
+      });
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.id.toLowerCase().includes(query) ||
+          order.clientName.toLowerCase().includes(query) ||
+          order.clientContact.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [orders, selectedCategory, timeFilter, searchQuery, inventoryItems]);
+
+  // Add "All Orders" option to time period picker
+  const timePeriods = [
+    { label: "All Orders", value: "all" },
+    { label: "Today", value: "today" },
+    { label: "This Week", value: "week" },
+    { label: "This Month", value: "month" },
+  ];
+
+  const getSortedOrders = (orders: Order[]) => {
+    return [...orders].sort((a, b) => {
+      switch (sortBy) {
+        case "date":
+          return sortOrder === "desc"
+            ? new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+            : new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime();
+
+        case "name":
+          return sortOrder === "desc"
+            ? b.clientName.localeCompare(a.clientName)
+            : a.clientName.localeCompare(b.clientName);
+
+        case "status":
+          return sortOrder === "desc"
+            ? b.paymentStatus.localeCompare(a.paymentStatus)
+            : a.paymentStatus.localeCompare(b.paymentStatus);
+
+        case "paymentMode":
+          return sortOrder === "desc"
+            ? b.paymentMethod.localeCompare(a.paymentMethod)
+            : a.paymentMethod.localeCompare(b.paymentMethod);
+
+        case "category":
+          const getCategoryString = (order: Order) => {
+            return order.items
+              .map((item) => {
+                const inventoryItem = inventoryItems.find(
+                  (inv) => inv.name.toLowerCase() === item.product.toLowerCase()
+                );
+                return inventoryItem?.category || "";
+              })
+              .filter(Boolean)
+              .join(",");
+          };
+          const categoryA = getCategoryString(a);
+          const categoryB = getCategoryString(b);
+          return sortOrder === "desc"
+            ? categoryB.localeCompare(categoryA)
+            : categoryA.localeCompare(categoryB);
+
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const displayOrders = getSortedOrders(filteredOrders);
+
   return (
     <View style={styles.container}>
       <Modal
@@ -617,45 +837,61 @@ export default function Orders() {
                   mode="outlined"
                   onPress={() => setIsCategoryMenuVisible(true)}
                 >
-                  {categoryFilter === "all" ? "All Categories" : "Category"}
+                  {selectedCategory === "all" ? "All Categories" : "Category"}
                 </Button>
               }
             >
               <Menu.Item
                 onPress={() => {
-                  setCategoryFilter("all");
+                  setSelectedCategory("all");
                   setIsCategoryMenuVisible(false);
                 }}
                 title="All Categories"
               />
-              {categories.map((cat) => (
+              {categories.map((category) => (
                 <Menu.Item
-                  key={cat.id}
+                  key={category.id}
                   onPress={() => {
-                    setCategoryFilter(cat.id);
+                    setSelectedCategory(category.name);
                     setIsCategoryMenuVisible(false);
                   }}
-                  title={cat.name}
+                  title={category.name}
                 />
               ))}
             </Menu>
-            <SegmentedButtons
-              value={timeFilter}
-              onValueChange={setTimeFilter}
-              buttons={[
-                { value: "today", label: "Today" },
-                { value: "week", label: "Week" },
-                { value: "month", label: "Month" },
-              ]}
-            />
+            <Menu
+              visible={isTimeMenuVisible}
+              onDismiss={() => setTimeMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setTimeMenuVisible(true)}
+                  style={styles.filterButton}
+                >
+                  {timePeriods.find((p) => p.value === timeFilter)?.label ||
+                    "Select Period"}
+                </Button>
+              }
+            >
+              {timePeriods.map((period) => (
+                <Menu.Item
+                  key={period.value}
+                  onPress={() => {
+                    setTimeFilter(period.value);
+                    setTimeMenuVisible(false);
+                  }}
+                  title={period.label}
+                />
+              ))}
+            </Menu>
           </View>
         </View>
       ) : (
         <View style={styles.filterContainer}>
           <View style={styles.filtersRow}>
             <Picker
-              selectedValue={categoryFilter}
-              onValueChange={setCategoryFilter}
+              selectedValue={selectedCategory}
+              onValueChange={(value) => setSelectedCategory(value)}
               style={styles.filterPicker}
             >
               <Picker.Item label="All Categories" value="all" />
@@ -663,32 +899,102 @@ export default function Orders() {
                 <Picker.Item
                   key={category.id}
                   label={category.name}
-                  value={category.id}
+                  value={category.name}
                 />
               ))}
             </Picker>
 
-            <Picker
-              selectedValue={sortBy}
-              onValueChange={setSortBy}
-              style={styles.filterPicker}
-            >
-              <Picker.Item label="Sort by Date" value="date" />
-              <Picker.Item label="Sort by Name" value="name" />
-              <Picker.Item label="Sort by Status" value="status" />
-              <Picker.Item label="Sort by Payment Mode" value="paymentMode" />
-              <Picker.Item label="Sort by Category" value="category" />
-            </Picker>
+            {Platform.OS === "web" ? (
+              <View style={styles.webFilters}>
+                <Picker
+                  selectedValue={sortBy}
+                  onValueChange={(value) => setSortBy(value)}
+                  style={styles.filterPicker}
+                >
+                  <Picker.Item label="Sort by Date" value="date" />
+                  <Picker.Item label="Sort by Name" value="name" />
+                  <Picker.Item label="Sort by Status" value="status" />
+                  <Picker.Item
+                    label="Sort by Payment Mode"
+                    value="paymentMode"
+                  />
+                  <Picker.Item label="Sort by Category" value="category" />
+                </Picker>
+                <IconButton
+                  icon={
+                    sortOrder === "desc" ? "sort-descending" : "sort-ascending"
+                  }
+                  onPress={() =>
+                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                  }
+                />
+              </View>
+            ) : (
+              <Menu
+                visible={isSortMenuVisible}
+                onDismiss={() => setSortMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setSortMenuVisible(true)}
+                    style={styles.sortButton}
+                  >
+                    {`Sort by ${
+                      sortBy.charAt(0).toUpperCase() + sortBy.slice(1)
+                    }`}
+                  </Button>
+                }
+              >
+                <Menu.Item
+                  onPress={() => {
+                    setSortBy("date");
+                    setSortMenuVisible(false);
+                  }}
+                  title="Sort by Date"
+                />
+                <Menu.Item
+                  onPress={() => {
+                    setSortBy("name");
+                    setSortMenuVisible(false);
+                  }}
+                  title="Sort by Name"
+                />
+                <Menu.Item
+                  onPress={() => {
+                    setSortBy("status");
+                    setSortMenuVisible(false);
+                  }}
+                  title="Sort by Status"
+                />
+                <Menu.Item
+                  onPress={() => {
+                    setSortBy("paymentMode");
+                    setSortMenuVisible(false);
+                  }}
+                  title="Sort by Payment Mode"
+                />
+                <Menu.Item
+                  onPress={() => {
+                    setSortBy("category");
+                    setSortMenuVisible(false);
+                  }}
+                  title="Sort by Category"
+                />
+              </Menu>
+            )}
 
             <Picker
               selectedValue={timeFilter}
               onValueChange={setTimeFilter}
               style={styles.filterPicker}
             >
-              <Picker.Item label="Today" value="today" />
-              <Picker.Item label="This Week" value="week" />
-              <Picker.Item label="This Month" value="month" />
-              <Picker.Item label="This Year" value="year" />
+              {timePeriods.map((period) => (
+                <Picker.Item
+                  key={period.value}
+                  label={period.label}
+                  value={period.value}
+                />
+              ))}
             </Picker>
           </View>
           <Searchbar
@@ -705,13 +1011,16 @@ export default function Orders() {
           <ScrollView horizontal>
             <View style={styles.mobileTableContainer}>
               <FlatList
-                data={getFilteredOrders()}
+                data={displayOrders}
                 keyExtractor={(item) => item.id}
                 stickyHeaderIndices={[0]}
                 ListHeaderComponent={() => (
                   <View style={styles.mobileTableHeader}>
                     <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
                       Order No.
+                    </Text>
+                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
+                      Category
                     </Text>
                     <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
                       Date
@@ -728,19 +1037,28 @@ export default function Orders() {
                     <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
                       Mode
                     </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 160 }]}>
-                      Payment Status
+                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
+                      Status
                     </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 200 }]}>
+                    <Text style={[styles.mobileHeaderCell, { width: 160 }]}>
                       Actions
                     </Text>
                   </View>
                 )}
                 renderItem={({ item }) => (
                   <View style={styles.mobileTableRow}>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {item.id}
-                    </Text>
+                    <View style={[styles.mobileTableCell, { width: 100 }]}>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <Text style={styles.tableCellText}>{item.id}</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.mobileTableCell, { width: 100 }]}>
+                      <View style={{ flexDirection: "row", margin: 16 }}>
+                        {getCategoryIcon(item)}
+                      </View>
+                    </View>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
                       {new Date(item.orderDate).toLocaleDateString()}
                     </Text>
@@ -756,7 +1074,7 @@ export default function Orders() {
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
                       {item.paymentMethod}
                     </Text>
-                    <View style={styles.statusContainer}>
+                    <View style={[styles.statusContainer, { width: 100 }]}>
                       <Text
                         style={[
                           styles.statusBadge,
@@ -766,7 +1084,7 @@ export default function Orders() {
                         {item.paymentStatus}
                       </Text>
                     </View>
-                    <View style={styles.actionsContainer}>
+                    <View style={styles.actionContainer}>
                       <View style={styles.actionButtons}>
                         <IconButton
                           icon="eye"
@@ -796,8 +1114,7 @@ export default function Orders() {
                 ListFooterComponent={() => (
                   <View style={styles.tableFooter}>
                     <Text>
-                      Showing {getFilteredOrders().length} of {orders.length}{" "}
-                      orders
+                      Showing {displayOrders.length} of {orders.length} orders
                     </Text>
                   </View>
                 )}
@@ -808,71 +1125,89 @@ export default function Orders() {
       ) : (
         <View style={styles.tableWrapper}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, { flex: 0.6 }]}>Order No.</Text>
-            <Text style={[styles.headerCell, { flex: 0.8 }]}>Order Date</Text>
-            <Text style={[styles.headerCell, { flex: 0.8 }]}>Client Name</Text>
-            <Text style={[styles.headerCell, { flex: 0.8 }]}>Contact</Text>
-            <Text style={[styles.headerCell, { flex: 0.4 }]}>Items</Text>
-            <Text style={[styles.headerCell, { flex: 0.6 }]}>Mode</Text>
-            <Text style={[styles.headerCell, { flex: 0.8 }]}>
-              Payment Status
+            <Text style={[styles.headerCell, styles.orderNoCell]}>
+              Order No.
             </Text>
-            <Text style={[styles.headerCell, { flex: 1 }]}>Actions</Text>
+            <Text style={[styles.headerCell, styles.categoryCell]}>
+              Category
+            </Text>
+            <Text style={[styles.headerCell, styles.dateCell]}>Date</Text>
+            <Text style={[styles.headerCell, styles.clientCell]}>
+              Client Name
+            </Text>
+            <Text style={[styles.headerCell, styles.contactCell]}>Contact</Text>
+            <Text style={[styles.headerCell, styles.itemsCell]}>Items</Text>
+            <Text style={[styles.headerCell, styles.modeCell]}>Mode</Text>
+            <Text style={[styles.headerCell, styles.statusCell]}>Status</Text>
+            <Text style={[styles.headerCell, styles.actionsCell]}>Actions</Text>
           </View>
 
           <FlatList
-            data={getFilteredOrders()}
+            data={displayOrders}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>{item.id}</Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {new Date(item.orderDate).toLocaleDateString()}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {item.clientName}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.8 }]}>
-                  {item.clientContact}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.4 }]}>
-                  {item.totalOrderItems}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 0.6 }]}>
-                  {item.paymentMethod}
-                </Text>
-                <View style={[styles.tableCell, { flex: 0.8 }]}>
-                  <View style={styles.statusContainer}>
-                    <Text
-                      style={[
-                        styles.statusBadge,
-                        getPaymentStatusStyle(item.paymentStatus),
-                      ]}
-                    >
-                      {item.paymentStatus}
-                    </Text>
-                  </View>
+                <View style={[styles.tableCell, styles.orderNoCell]}>
+                  <Text style={styles.tableCellText}>{item.id}</Text>
                 </View>
-                <View style={[styles.tableCell, { flex: 1 }]}>
-                  <View style={styles.actionContainer}>
+                <View style={[styles.tableCell, styles.categoryCell]}>
+                  {getCategoryIcon(item)}
+                </View>
+                <View style={[styles.tableCell, styles.dateCell]}>
+                  <Text style={styles.tableCellText}>
+                    {new Date(item.orderDate).toLocaleDateString()}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.clientCell]}>
+                  <Text style={styles.tableCellText} numberOfLines={1}>
+                    {item.clientName}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.contactCell]}>
+                  <Text style={styles.tableCellText} numberOfLines={1}>
+                    {item.clientContact}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.itemsCell]}>
+                  <Text style={styles.tableCellText}>
+                    {item.totalOrderItems}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.modeCell]}>
+                  <Text style={styles.tableCellText} numberOfLines={1}>
+                    {item.paymentMethod}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.statusCell]}>
+                  <Text
+                    style={[
+                      styles.statusBadge,
+                      getPaymentStatusStyle(item.paymentStatus),
+                    ]}
+                  >
+                    {item.paymentStatus}
+                  </Text>
+                </View>
+                <View style={[styles.tableCell, styles.actionsCell]}>
+                  <View style={styles.actionButtons}>
                     <IconButton
                       icon="eye"
-                      size={20}
+                      size={18}
                       onPress={() => handleViewDetails(item)}
                     />
                     <IconButton
                       icon="pencil"
-                      size={20}
+                      size={18}
                       onPress={() => handleEdit(item)}
                     />
                     <IconButton
                       icon="printer"
-                      size={20}
+                      size={18}
                       onPress={() => handlePrint(item)}
                     />
                     <IconButton
                       icon="delete"
-                      size={20}
+                      size={18}
                       iconColor="#e74c3c"
                       onPress={() => handleDelete(item.id)}
                     />
@@ -888,7 +1223,7 @@ export default function Orders() {
             ListFooterComponent={() => (
               <View style={styles.tableFooter}>
                 <Text>
-                  Showing {getFilteredOrders().length} of {orders.length} orders
+                  Showing {displayOrders.length} of {orders.length} orders
                 </Text>
               </View>
             )}
