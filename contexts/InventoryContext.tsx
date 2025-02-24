@@ -4,10 +4,11 @@ import { generateId } from "../utils/idGenerator";
 interface InventoryItem {
   id: string;
   name: string;
-  quantity: number;
-  price: number;
+  type: "product" | "service";
   category: string;
   createdAt: string;
+  charges?: number; // for services
+  quantity: number;
   buyingPrice: number;
   sellingPrice: number;
   stockValue: number;
@@ -30,7 +31,18 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [items, setItems] = useState<InventoryItem[]>([]);
 
   const addItem = (item: InventoryItem) => {
-    setItems((prevItems) => [...prevItems, { ...item, id: generateId() }]);
+    const newItem = {
+      ...item,
+      id: generateId(),
+      // For services: set charges as sellingPrice, others as 0 or dash
+      ...(item.type === "service" && {
+        sellingPrice: item.charges || 0,
+        quantity: 0,
+        buyingPrice: 0,
+        stockValue: 0,
+      }),
+    };
+    setItems((prevItems) => [...prevItems, newItem]);
   };
 
   const editItem = (updatedItem: InventoryItem) => {

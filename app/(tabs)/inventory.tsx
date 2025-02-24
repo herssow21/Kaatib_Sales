@@ -42,6 +42,8 @@ interface InventoryItem {
   stockValue: number;
   measuringUnit?: string;
   price: number;
+  type: "product" | "service";
+  charges?: number; // for services
 }
 
 const InventoryScreen = () => {
@@ -72,10 +74,13 @@ const InventoryScreen = () => {
     0
   );
   const estimatedSales = items.reduce(
-    (total, item) => total + item.price * (item.quantity || 0),
+    (total, item) => total + item.sellingPrice * (item.quantity || 0),
     0
   );
-  const totalStockValue = estimatedSales;
+  const totalStockValue = items.reduce(
+    (total, item) => total + item.buyingPrice * (item.quantity || 0),
+    0
+  );
 
   const sortOptions = [
     { label: "Most Recent", value: "recent" },
@@ -399,6 +404,11 @@ const InventoryScreen = () => {
     tableScrollView: {
       maxHeight: "70%",
     },
+    tableCellText: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: "#2c3e50",
+    },
   });
   return (
     <View style={styles.container}>
@@ -618,7 +628,7 @@ const InventoryScreen = () => {
                         { width: 80 },
                       ]}
                     >
-                      {item.quantity}
+                      {item.type === "service" ? "-" : item.quantity}
                     </Text>
                     <Text
                       style={[
@@ -626,13 +636,17 @@ const InventoryScreen = () => {
                         { width: 100 },
                       ]}
                     >
-                      KES {item.buyingPrice.toFixed(2)}
+                      {item.type === "service"
+                        ? "-"
+                        : `KES ${(item.buyingPrice || 0).toFixed(2)}`}
                     </Text>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      KES {item.sellingPrice.toFixed(2)}
+                      KES {(item.sellingPrice || 0).toFixed(2)}
                     </Text>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      KES {item.stockValue.toFixed(2)}
+                      {item.type === "service"
+                        ? "-"
+                        : `KES ${(item.stockValue || 0).toFixed(2)}`}
                     </Text>
                     <View
                       style={[
@@ -881,23 +895,20 @@ const InventoryScreen = () => {
                         {item.category}
                       </Text>
                       <Text style={styles.tableCell as TextStyle}>
-                        {item.quantity}
+                        {item.type === "service" ? "-" : item.quantity}
                       </Text>
                       <Text style={styles.tableCell as TextStyle}>
-                        KES{" "}
-                        {item.buyingPrice
-                          ? item.buyingPrice.toFixed(2)
-                          : "0.00"}
+                        {item.type === "service"
+                          ? "-"
+                          : `KES ${(item.buyingPrice || 0).toFixed(2)}`}
                       </Text>
                       <Text style={styles.tableCell}>
-                        KES{" "}
-                        {item.sellingPrice
-                          ? item.sellingPrice.toFixed(2)
-                          : "0.00"}
+                        KES {(item.sellingPrice || 0).toFixed(2)}
                       </Text>
                       <Text style={styles.tableCell}>
-                        KES{" "}
-                        {item.stockValue ? item.stockValue.toFixed(2) : "0.00"}
+                        {item.type === "service"
+                          ? "-"
+                          : `KES ${(item.stockValue || 0).toFixed(2)}`}
                       </Text>
                       <View style={styles.actionsContainer}>
                         <Button
@@ -972,11 +983,13 @@ const InventoryScreen = () => {
               stockValue: data.buyingPrice * data.quantity,
               createdAt: new Date().toISOString(),
               price: data.sellingPrice,
+              type: data.type,
+              charges: data.charges,
             };
             if (selectedItem) {
-              editItem(itemData);
+              editItem(itemData as Required<InventoryItem>);
             } else {
-              addItem(itemData);
+              addItem(itemData as Required<InventoryItem>);
             }
             setItemModalVisible(false);
           }}

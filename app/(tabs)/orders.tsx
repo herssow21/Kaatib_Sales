@@ -100,16 +100,16 @@ export default function Orders() {
     tableHeader: {
       flexDirection: "row",
       backgroundColor: theme.colors.primary,
-      paddingVertical: 12,
+      paddingVertical: 8,
       paddingHorizontal: 8,
       width: "100%",
     },
     headerCell: {
       color: theme.colors.onPrimary,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: "600",
       textAlign: "left",
-      paddingHorizontal: 8,
+      paddingHorizontal: 6,
       borderRightWidth: 2,
       borderRightColor: "rgba(255,255,255,0.3)",
       borderStyle: "dotted",
@@ -118,14 +118,14 @@ export default function Orders() {
       flexDirection: "row",
       borderBottomWidth: 1,
       borderBottomColor: "#e5e7eb",
-      paddingVertical: 12,
+      paddingVertical: 2,
       paddingHorizontal: 8,
       alignItems: "center",
       backgroundColor: "white",
       width: "100%",
     },
     tableCell: {
-      paddingHorizontal: 8,
+      paddingHorizontal: 6,
       paddingVertical: 4,
       justifyContent: "center",
       borderRightWidth: 2,
@@ -301,7 +301,7 @@ export default function Orders() {
     actionButtons: {
       flexDirection: "row",
       gap: 2,
-      justifyContent: "center",
+      justifyContent: "flex-start",
     },
     emptyState: {
       padding: 16,
@@ -399,14 +399,15 @@ export default function Orders() {
       width: "100%",
     },
     filterButton: {
-      marginVertical: 8,
-      marginHorizontal: 4,
+      height: 40,
+      justifyContent: "center",
     },
     webFilters: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      marginBottom: 16,
+      marginBottom: 4,
+      height: 48,
     },
     sortButton: {
       marginVertical: 8,
@@ -1055,7 +1056,7 @@ export default function Orders() {
                       </View>
                     </View>
                     <View style={[styles.mobileTableCell, { width: 100 }]}>
-                      <View style={{ flexDirection: "row", margin: 16 }}>
+                      <View style={{ flexDirection: "row", margin: 4 }}>
                         {getCategoryIcon(item)}
                       </View>
                     </View>

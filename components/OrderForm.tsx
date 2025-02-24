@@ -80,6 +80,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
     initialData?.category || ""
   );
   const [amountPaid, setAmountPaid] = useState(0);
+  const [product, setProduct] = useState("");
+  const [rate, setRate] = useState("");
+  const [quantity, setQuantity] = useState("");
 
   // Replace the static products array
   const products = inventoryItems.map((item) => ({
@@ -246,7 +249,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Order Date</Text>
         <TouchableOpacity
-          style={styles.dateButton}
+          style={styles.input}
           onPress={() => setShowPicker(true)}
         >
           <TextInput
@@ -279,6 +282,26 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const handleOpenModal = () => {
     setFormData(initialFormState);
     handleAddItem();
+  };
+
+  const handleProductChange = (selectedProduct: string, index: number) => {
+    const selectedItem = inventoryItems.find(
+      (item) => item.name === selectedProduct
+    );
+
+    if (selectedItem) {
+      const updatedItems = [...formData.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        product: selectedProduct,
+        rate:
+          selectedItem.type === "service"
+            ? selectedItem.charges
+            : selectedItem.sellingPrice,
+        quantity: 1, // Set default quantity to 1
+      };
+      setFormData((prev) => ({ ...prev, items: updatedItems }));
+    }
   };
 
   return (
@@ -334,51 +357,52 @@ const OrderForm: React.FC<OrderFormProps> = ({
       </View>
 
       {formData.items.map((item, index) => (
-        <View key={index} style={styles.productRow}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Product</Text>
+        <View key={index} style={styles.itemRow}>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Product/Service</Text>
             <Picker
               selectedValue={item.product}
-              onValueChange={(value) =>
-                handleItemChange(index, "product", value)
-              }
+              onValueChange={(value) => handleProductChange(value, index)}
               style={styles.picker}
             >
-              <Picker.Item label="Select a product" value="" />
-              {products.map((product) => (
+              <Picker.Item label="Select a product/service" value="" />
+              {inventoryItems.map((invItem) => (
                 <Picker.Item
-                  key={product.id}
-                  label={product.name}
-                  value={product.name}
+                  key={invItem.id}
+                  label={invItem.name}
+                  value={invItem.name}
                 />
               ))}
             </Picker>
           </View>
-          <View style={styles.inputGroup}>
+
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Rate</Text>
             <TextInput
-              value={item.rate.toString()}
-              onChangeText={(value) =>
-                handleItemChange(index, "rate", parseFloat(value))
-              }
-              keyboardType="numeric"
-              style={styles.rowInput}
               mode="outlined"
+              value={item.rate?.toString() || "0"}
+              editable={false}
+              style={styles.input}
             />
           </View>
-          <View style={styles.inputGroup}>
+
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Quantity</Text>
             <TextInput
-              value={item.quantity.toString()}
+              mode="outlined"
+              value={item.quantity?.toString() || "1"}
               onChangeText={(value) =>
                 handleItemChange(index, "quantity", parseInt(value))
               }
               keyboardType="numeric"
-              style={styles.rowInput}
-              mode="outlined"
+              style={styles.input}
             />
           </View>
-          <TouchableOpacity onPress={() => handleDeleteItem(index)}>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteItem(index)}
+          >
             <MaterialIcons name="delete" size={24} color="red" />
           </TouchableOpacity>
         </View>
@@ -551,36 +575,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  productRow: {
+  itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
   },
-  rowInput: {
-    height: 40,
-    marginHorizontal: 4,
-  },
-  bottomSection: {
-    flexDirection: Platform.OS === "android" ? "column" : "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 8,
-  },
-  leftColumn: {
-    width: Platform.OS === "android" ? "98%" : "48%",
-  },
-  rightColumn: {
-    width: Platform.OS === "android" ? "98%" : "48%",
-  },
-  dateButton: {
-    marginBottom: 12,
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
-    textAlign: "left",
+  formGroup: {
+    flex: 1,
+    marginRight: 8,
   },
   picker: {
     minHeight: 40,
@@ -653,6 +656,23 @@ const styles = StyleSheet.create({
     width: Platform.OS === "android" ? "50%" : "40%",
     height: 40,
     marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  bottomSection: {
+    flexDirection: Platform.OS === "android" ? "column" : "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+    backgroundColor: "#f8f9fa",
+    padding: 12,
+    borderRadius: 8,
+  },
+  leftColumn: {
+    width: Platform.OS === "android" ? "98%" : "48%",
+  },
+  rightColumn: {
+    width: Platform.OS === "android" ? "98%" : "48%",
   },
 });
 

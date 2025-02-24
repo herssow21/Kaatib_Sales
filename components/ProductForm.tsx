@@ -10,7 +10,7 @@ const ProductForm: React.FC<{
   categories: { id: string; name: string }[];
   onClose: () => void;
 }> = ({ initialData, onSubmit, categories, onClose }) => {
-  const [itemType, setItemType] = useState("product");
+  const [itemType, setItemType] = useState(initialData?.type || "product");
   const [name, setName] = useState(initialData?.name || "");
   const [buyingPrice, setBuyingPrice] = useState(
     initialData?.buyingPrice?.toString() || ""
@@ -25,7 +25,7 @@ const ProductForm: React.FC<{
     initialData?.quantity?.toString() || ""
   );
   const [serviceCharges, setServiceCharges] = useState(
-    initialData?.serviceCharges?.toString() || ""
+    initialData?.charges?.toString() || ""
   );
   const [category, setCategory] = useState(initialData?.category || "");
 
@@ -65,15 +65,27 @@ const ProductForm: React.FC<{
       const itemData = {
         id: initialData?.id || generateId(),
         name: name.trim(),
-        quantity: parseInt(productCount) || 0,
+        type: itemType,
         category,
-        buyingPrice: parseFloat(buyingPrice) || 0,
-        sellingPrice: parseFloat(sellingPrice) || 0,
-        measuringUnit: measuringUnit.trim(),
-        stockValue:
-          (parseFloat(buyingPrice) || 0) * (parseInt(productCount) || 0),
         createdAt: new Date().toISOString(),
-        price: parseFloat(sellingPrice) || 0,
+        ...(itemType === "product"
+          ? {
+              quantity: parseInt(productCount) || 0,
+              buyingPrice: parseFloat(buyingPrice) || 0,
+              sellingPrice: parseFloat(sellingPrice) || 0,
+              measuringUnit: measuringUnit.trim(),
+              stockValue:
+                (parseFloat(buyingPrice) || 0) * (parseInt(productCount) || 0),
+              price: parseFloat(sellingPrice) || 0,
+            }
+          : {
+              charges: parseFloat(serviceCharges) || 0,
+              sellingPrice: parseFloat(serviceCharges) || 0, // Use charges as selling price
+              quantity: 0,
+              buyingPrice: 0,
+              stockValue: 0,
+              price: parseFloat(serviceCharges) || 0, // Use charges as price
+            }),
       };
       onSubmit(itemData);
     } catch (error) {
