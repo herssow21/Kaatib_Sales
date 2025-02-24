@@ -105,6 +105,26 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setFormData(initialData || initialFormState);
   }, [initialData]);
 
+  useEffect(() => {
+    const grandTotal =
+      formData.items.reduce((acc, item) => acc + item.rate * item.quantity, 0) -
+      (formData.discount || 0);
+
+    const balance = grandTotal - amountPaid;
+
+    let newStatus = "No Payment";
+    if (balance === 0 && grandTotal > 0) {
+      newStatus = "Completed";
+    } else if (amountPaid > 0 && balance > 0) {
+      newStatus = "Partial";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      paymentStatus: newStatus,
+    }));
+  }, [amountPaid, formData.items, formData.discount]);
+
   const handleDateChange = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || formData.orderDate;
     setShowDatePicker(false);
@@ -505,6 +525,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <Picker.Item label="No Payment" value="No Payment" />
             <Picker.Item label="Partial" value="Partial" />
             <Picker.Item label="Completed" value="Completed" />
+            <Picker.Item label="Closed" value="Closed" />
           </Picker>
         </View>
       </View>
