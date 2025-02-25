@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, FlatList, Alert } from "react-native";
+import { StyleSheet, View, FlatList, Alert, Platform } from "react-native";
 import { TextInput, Button, Text, Card } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { generateId } from "../utils/idGenerator";
@@ -10,90 +10,106 @@ const CategoryForm: React.FC<{
 }> = ({ initialData, onClose }) => {
   const { categories, addCategory, editCategory, removeCategory } =
     useCategoryContext();
-  const [categoryName, setCategoryName] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [initialDataState, setInitialData] = useState<{
-    id?: string;
+  const [categoryName, setCategoryName] = useState(initialData?.name || "");
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
     name: string;
   } | null>(null);
 
-  // Set category name when initialData changes
   useEffect(() => {
     if (initialData) {
       setCategoryName(initialData.name);
-      setIsEditing(true);
-    } else {
-      // Reset the form when initialData is null
-      setCategoryName("");
-      setIsEditing(false);
+      setEditingItem(
+        initialData.id
+          ? {
+              id: initialData.id,
+              name: initialData.name,
+            }
+          : null
+      );
     }
   }, [initialData]);
 
   const handleSubmit = () => {
     if (!categoryName.trim()) {
-      Alert.alert("Error", "Category name is required");
+      if (Platform.OS === "web") {
+        window.alert("Category name is required");
+      } else {
+        Alert.alert("Error", "Category name is required");
+      }
       return;
     }
 
-    // Check for duplicates
     const isDuplicate = categories.some(
-      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+      (cat) =>
+        cat.name.toLowerCase() === categoryName.trim().toLowerCase() &&
+        cat.id !== editingItem?.id
     );
 
-    if (isEditing) {
-      // If editing, allow the same name
-      if (isDuplicate && categoryName !== initialData?.name) {
+    if (isDuplicate) {
+      if (Platform.OS === "web") {
+        window.alert("Category name already exists");
+      } else {
         Alert.alert("Error", "Category name already exists");
-        return;
       }
-      if (initialData) {
-        // Only update if the name has changed
-        if (categoryName !== initialData.name) {
-          editCategory({ id: initialData.id, name: categoryName });
-          Alert.alert("Success", "Category updated successfully.");
-        } else {
-          Alert.alert("Info", "No changes made to the category.");
-        }
-      }
-    } else {
-      // If adding, prevent duplicates
-      if (isDuplicate) {
-        Alert.alert("Error", "Category name already exists");
-        return;
-      }
-      addCategory({ id: generateId(), name: categoryName });
-      Alert.alert("Success", "Category created successfully.");
+      return;
     }
 
-    setCategoryName(""); // Reset the input field
-    onClose(); // Close the form after submission
+    try {
+      if (editingItem?.id) {
+        editCategory({
+          id: editingItem.id,
+          name: categoryName.trim(),
+        });
+      } else {
+        addCategory({
+          id: generateId(),
+          name: categoryName.trim(),
+        });
+      }
+      setCategoryName("");
+      setEditingItem(null);
+      onClose();
+    } catch (error) {
+      console.error("Error submitting category:", error);
+      if (Platform.OS === "web") {
+        window.alert("Failed to save category");
+      } else {
+        Alert.alert("Error", "Failed to save category");
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      "Confirm Deletion",
-      "Are you sure you want to delete this category?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          onPress: () => {
-            removeCategory(id);
-            Alert.alert("Success", "Category deleted successfully.");
-          },
-        },
-      ]
-    );
+    const confirmDelete = () => {
+      try {
+        removeCategory(id);
+        Alert.alert("Success", "Category deleted successfully");
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        Alert.alert("Error", "Failed to delete category");
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to delete this category?")) {
+        confirmDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Category",
+        "Are you sure you want to delete this category?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", onPress: confirmDelete, style: "destructive" },
+        ]
+      );
+    }
   };
 
   const handleEdit = (item: { id: string; name: string }) => {
     setCategoryName(item.name);
-    setIsEditing(true);
-    // Set initialData to the item being edited
-    setInitialData(item);
+    setEditingItem(item);
   };
 
   return (
@@ -107,7 +123,7 @@ const CategoryForm: React.FC<{
           style={styles.input}
         />
         <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-          {isEditing ? "Update Category" : "Add Category"}
+          {editingItem ? "Update Category" : "Add Category"}
         </Button>
       </View>
       <FlatList

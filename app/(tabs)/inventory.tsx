@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   ViewStyle,
   TextStyle,
+  Platform,
 } from "react-native";
 import {
   Text,
@@ -115,26 +116,26 @@ const InventoryScreen = () => {
   };
 
   const handleDeleteItem = (id: string) => {
-    Alert.alert(
-      "Delete Item",
-      "Are you sure you want to delete this item?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            removeItem(id);
-            // Optional: Add feedback
-            Alert.alert("Success", "Item deleted successfully");
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    const confirmDelete = () => {
+      try {
+        removeItem(id);
+        Alert.alert("Success", "Item deleted successfully");
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        Alert.alert("Error", "Failed to delete item");
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to delete this item?")) {
+        confirmDelete();
+      }
+    } else {
+      Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", onPress: confirmDelete, style: "destructive" },
+      ]);
+    }
   };
 
   const sortedItems = [...items]
@@ -953,24 +954,35 @@ const InventoryScreen = () => {
       {/* Category Modal */}
       <Modal
         visible={isCategoryModalVisible}
-        onDismiss={() => setCategoryModalVisible(false)}
+        onDismiss={() => {
+          setCategoryModalVisible(false);
+          setSelectedItem(null);
+        }}
       >
         <CategoryForm
-          initialData={selectedItem}
-          onClose={() => setCategoryModalVisible(false)}
+          onClose={() => {
+            setCategoryModalVisible(false);
+            setSelectedItem(null);
+          }}
         />
       </Modal>
 
       {/* Item Modal */}
       <Modal
         visible={isItemModalVisible}
-        onDismiss={() => setItemModalVisible(false)}
+        onDismiss={() => {
+          setItemModalVisible(false);
+          setSelectedItem(null);
+        }}
         contentContainerStyle={styles.modalContainer}
       >
         <ProductForm
           initialData={selectedItem}
           categories={categories}
-          onClose={() => setItemModalVisible(false)}
+          onClose={() => {
+            setItemModalVisible(false);
+            setSelectedItem(null);
+          }}
           onSubmit={(data) => {
             const itemData: InventoryItem = {
               id: selectedItem ? selectedItem.id : generateSimpleId(),

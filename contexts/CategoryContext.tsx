@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { generateId } from "../utils/idGenerator";
 
 interface Category {
@@ -34,13 +34,28 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const editCategory = (updatedCategory: Category) => {
-    setCategories((prevCategories) =>
-      prevCategories.map((cat) =>
-        cat.id === updatedCategory.id
-          ? { ...cat, name: updatedCategory.name }
-          : cat
-      )
-    );
+    try {
+      setCategories((prevCategories) =>
+        prevCategories.map((cat) =>
+          cat.id === updatedCategory.id
+            ? { ...cat, name: updatedCategory.name }
+            : cat
+        )
+      );
+
+      if (Platform.OS === "web") {
+        window.alert("Category updated successfully");
+      } else {
+        Alert.alert("Success", "Category updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+      if (Platform.OS === "web") {
+        window.alert("Failed to update category");
+      } else {
+        Alert.alert("Error", "Failed to update category");
+      }
+    }
   };
 
   const removeCategory = (id: string) => {

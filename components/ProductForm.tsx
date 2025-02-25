@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Alert } from "react-native";
+import { StyleSheet, View, ScrollView, Alert, Platform } from "react-native";
 import { TextInput, Button, SegmentedButtons, Text } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import { generateId } from "../utils/idGenerator";
@@ -29,34 +29,42 @@ const ProductForm: React.FC<{
   );
   const [category, setCategory] = useState(initialData?.category || "");
 
+  const showError = (message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(message);
+    } else {
+      Alert.alert("Error", message);
+    }
+  };
+
   const handleSubmit = () => {
     // Validate required fields
     if (!name.trim()) {
-      Alert.alert("Error", "Name is required");
+      showError("Please enter a name");
       return;
     }
 
     if (!category) {
-      Alert.alert("Error", "Please select a category");
+      showError("Please select a category");
       return;
     }
 
-    if (itemType === "product") {
-      if (parseFloat(buyingPrice) <= 0) {
-        Alert.alert("Error", "Buying price must be greater than 0");
-        return;
-      }
-      if (parseFloat(sellingPrice) <= 0) {
-        Alert.alert("Error", "Selling price must be greater than 0");
-        return;
-      }
-      if (parseInt(productCount) < 0) {
-        Alert.alert("Error", "Product count cannot be negative");
+    if (itemType === "service") {
+      if (!serviceCharges || parseFloat(serviceCharges) < 0) {
+        showError("Please enter valid service charges (greater than 0)");
         return;
       }
     } else {
-      if (parseFloat(serviceCharges) <= 0) {
-        Alert.alert("Error", "Service charges must be greater than 0");
+      if (!buyingPrice || parseFloat(buyingPrice) <= 0) {
+        showError("Please enter valid buying price");
+        return;
+      }
+      if (!sellingPrice || parseFloat(sellingPrice) <= 0) {
+        showError("Please enter valid selling price");
+        return;
+      }
+      if (!productCount || parseInt(productCount) <= 0) {
+        showError("Please enter valid quantity");
         return;
       }
     }
@@ -90,7 +98,7 @@ const ProductForm: React.FC<{
       onSubmit(itemData);
     } catch (error) {
       console.error("Item submission error:", error);
-      Alert.alert("Error", "Failed to submit item. Please try again.");
+      showError("Failed to submit item. Please try again.");
     }
   };
 
@@ -116,8 +124,34 @@ const ProductForm: React.FC<{
           style={styles.segmentedButtons}
         />
 
-        {itemType === "product" ? (
-          // Product Form
+        {itemType === "service" ? (
+          <>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Service Name</Text>
+              <TextInput
+                mode="outlined"
+                placeholder="Enter service name"
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Service Charges</Text>
+              <TextInput
+                mode="outlined"
+                placeholder="0"
+                value={serviceCharges}
+                onChangeText={(val) =>
+                  handleNumericInput(val, setServiceCharges)
+                }
+                keyboardType="numeric"
+                style={[styles.input, { height: 40 }]}
+              />
+            </View>
+          </>
+        ) : (
           <>
             <View style={styles.formGroup}>
               <Text style={styles.label}>Product Name</Text>
@@ -174,33 +208,6 @@ const ProductForm: React.FC<{
                 onChangeText={(val) => handleNumericInput(val, setProductCount)}
                 keyboardType="numeric"
                 style={[styles.input, { height: 40 }]}
-              />
-            </View>
-          </>
-        ) : (
-          // Service Form
-          <>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Service Name</Text>
-              <TextInput
-                mode="outlined"
-                placeholder="Enter service name"
-                value={name}
-                onChangeText={setName}
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Service Charges</Text>
-              <TextInput
-                mode="outlined"
-                value={serviceCharges}
-                onChangeText={(val) =>
-                  handleNumericInput(val, setServiceCharges)
-                }
-                keyboardType="decimal-pad"
-                style={styles.input}
               />
             </View>
           </>
