@@ -83,6 +83,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [product, setProduct] = useState("");
   const [rate, setRate] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredItems = inventoryItems.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Replace the static products array
   const products = inventoryItems.map((item) => ({
@@ -324,6 +329,25 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }
   };
 
+  const renderProductSelection = (index: number, selectedProduct: string) => (
+    <View style={styles.productSelectionContainer}>
+      <Picker
+        selectedValue={selectedProduct}
+        onValueChange={(value) => handleProductChange(value, index)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Select a product/service" value="" />
+        {filteredItems.map((item) => (
+          <Picker.Item
+            key={item.id}
+            label={`${item.name} (${item.type})`}
+            value={item.name}
+          />
+        ))}
+      </Picker>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
@@ -337,7 +361,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
           <TextInput
             value={formData.clientContact}
             onChangeText={(value) => {
-              // Allow only numeric input and limit to 10 digits
               const numericValue = value.replace(/[^0-9]/g, "");
               if (numericValue.length <= 10) {
                 setFormData((prev) => ({
@@ -376,26 +399,20 @@ const OrderForm: React.FC<OrderFormProps> = ({
         </View>
       </View>
 
-      {formData.items.map((item, index) => (
-        <View key={index} style={styles.itemRow}>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Product/Service</Text>
-            <Picker
-              selectedValue={item.product}
-              onValueChange={(value) => handleProductChange(value, index)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select a product/service" value="" />
-              {inventoryItems.map((invItem) => (
-                <Picker.Item
-                  key={invItem.id}
-                  label={invItem.name}
-                  value={invItem.name}
-                />
-              ))}
-            </Picker>
-          </View>
+      <View style={styles.searchSection}>
+        <Text style={styles.label}>Search Products/Services</Text>
+        <TextInput
+          mode="outlined"
+          placeholder="Type to search..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+        />
+      </View>
 
+      {formData.items.map((item, index) => (
+        <View key={index} style={styles.itemContainer}>
+          {renderProductSelection(index, item.product)}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Rate</Text>
             <TextInput
@@ -405,7 +422,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
               style={styles.input}
             />
           </View>
-
           <View style={styles.formGroup}>
             <Text style={styles.label}>Quantity</Text>
             <TextInput
@@ -418,7 +434,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
               style={styles.input}
             />
           </View>
-
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={() => handleDeleteItem(index)}
@@ -596,7 +611,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  itemRow: {
+  itemContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -694,6 +709,17 @@ const styles = StyleSheet.create({
   },
   rightColumn: {
     width: Platform.OS === "android" ? "98%" : "48%",
+  },
+  searchSection: {
+    marginBottom: 20,
+    paddingHorizontal: 16,
+  },
+  searchInput: {
+    backgroundColor: "white",
+  },
+  productSelectionContainer: {
+    flex: 1,
+    marginRight: 8,
   },
 });
 
