@@ -25,6 +25,7 @@ import CategoryForm from "../../components/CategoryForm";
 import ProductForm from "../../components/ProductForm";
 import * as DocumentPicker from "expo-document-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { formatMoney } from "../../utils/formatters";
 
 function generateSimpleId(): string {
   const timestamp = Date.now().toString(36);
@@ -467,7 +468,7 @@ const InventoryScreen = () => {
                     Estimated Sales
                   </Text>
                   <Text style={styles.statValue as TextStyle}>
-                    KES {estimatedSales.toFixed(2)}
+                    {formatMoney(estimatedSales)}
                   </Text>
                 </Card.Content>
               </Card>
@@ -475,7 +476,7 @@ const InventoryScreen = () => {
                 <Card.Content>
                   <Text style={styles.statLabel}>Total Stock Value</Text>
                   <Text style={styles.statValue}>
-                    KES {totalStockValue.toFixed(2)}
+                    {formatMoney(totalStockValue)}
                   </Text>
                 </Card.Content>
               </Card>
@@ -639,15 +640,15 @@ const InventoryScreen = () => {
                     >
                       {item.type === "service"
                         ? "-"
-                        : `KES ${(item.buyingPrice || 0).toFixed(2)}`}
+                        : formatMoney(item.buyingPrice || 0)}
                     </Text>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      KES {(item.sellingPrice || 0).toFixed(2)}
+                      {formatMoney(item.sellingPrice || 0)}
                     </Text>
                     <Text style={[styles.mobileTableCell, { width: 100 }]}>
                       {item.type === "service"
                         ? "-"
-                        : `KES ${(item.stockValue || 0).toFixed(2)}`}
+                        : formatMoney(item.stockValue || 0)}
                     </Text>
                     <View
                       style={[
@@ -747,7 +748,7 @@ const InventoryScreen = () => {
                   Estimated Sales
                 </Text>
                 <Text style={styles.statValue as TextStyle}>
-                  KES {estimatedSales.toFixed(2)}
+                  {formatMoney(estimatedSales)}
                 </Text>
               </Card.Content>
             </Card>
@@ -757,7 +758,7 @@ const InventoryScreen = () => {
                   Total Stock Value
                 </Text>
                 <Text style={styles.statValue as TextStyle}>
-                  KES {totalStockValue.toFixed(2)}
+                  {formatMoney(totalStockValue)}
                 </Text>
               </Card.Content>
             </Card>
@@ -901,15 +902,15 @@ const InventoryScreen = () => {
                       <Text style={styles.tableCell as TextStyle}>
                         {item.type === "service"
                           ? "-"
-                          : `KES ${(item.buyingPrice || 0).toFixed(2)}`}
+                          : formatMoney(item.buyingPrice || 0)}
                       </Text>
                       <Text style={styles.tableCell}>
-                        KES {(item.sellingPrice || 0).toFixed(2)}
+                        {formatMoney(item.sellingPrice || 0)}
                       </Text>
                       <Text style={styles.tableCell}>
                         {item.type === "service"
                           ? "-"
-                          : `KES ${(item.stockValue || 0).toFixed(2)}`}
+                          : formatMoney(item.stockValue || 0)}
                       </Text>
                       <View style={styles.actionsContainer}>
                         <Button
