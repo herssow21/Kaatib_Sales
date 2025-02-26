@@ -261,45 +261,29 @@ const OrderForm: React.FC<OrderFormProps> = ({
     value: Date;
     onChange: (date: Date) => void;
   }) => {
-    const [showPicker, setShowPicker] = useState(false);
+    const [dateString, setDateString] = useState(value.toLocaleDateString());
 
-    const handleChange = (event: any, selectedDate?: Date) => {
-      setShowPicker(Platform.OS === "web");
-      if (selectedDate) {
-        onChange(selectedDate);
+    const handleDateChange = (text: string) => {
+      setDateString(text);
+      const parsedDate = new Date(text);
+      if (!isNaN(parsedDate.getTime())) {
+        onChange(parsedDate);
       }
     };
 
     return (
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Order Date</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowPicker(true)}
-        >
+        <View style={styles.dateInputContainer}>
           <TextInput
             mode="outlined"
             style={styles.datePickerInput}
-            value={value.toLocaleDateString()}
-            editable={false}
+            value={dateString}
+            onChangeText={handleDateChange}
+            placeholder="MM/DD/YYYY"
             right={<TextInput.Icon icon="calendar" />}
           />
-        </TouchableOpacity>
-        {showPicker && (
-          <View
-            style={
-              Platform.OS === "web" ? styles.webPickerContainer : undefined
-            }
-          >
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={value}
-              mode="date"
-              onChange={handleChange}
-              display={Platform.OS === "web" ? "inline" : "default"}
-            />
-          </View>
-        )}
+        </View>
       </View>
     );
   };
@@ -720,6 +704,30 @@ const styles = StyleSheet.create({
   productSelectionContainer: {
     flex: 1,
     marginRight: 8,
+  },
+  dateInputContainer: {
+    position: "relative",
+    width: "100%",
+    zIndex: 1000,
+  },
+  webDatePickerContainer: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    backgroundColor: "white",
+    zIndex: 1001,
+    padding: 20,
+    borderRadius: 8,
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    marginTop: 4,
+  },
+  webDatePicker: {
+    width: 320,
+    height: 320,
+  },
+  datePickerButton: {
+    width: "100%",
+    cursor: "pointer",
   },
 });
 
