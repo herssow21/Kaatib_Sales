@@ -38,37 +38,6 @@ const ProductForm: React.FC<{
   };
 
   const handleSubmit = () => {
-    // Validate required fields
-    if (!name.trim()) {
-      showError("Please enter a name");
-      return;
-    }
-
-    if (!category) {
-      showError("Please select a category");
-      return;
-    }
-
-    if (itemType === "service") {
-      if (!serviceCharges || parseFloat(serviceCharges) < 0) {
-        showError("Please enter valid service charges (greater than 0)");
-        return;
-      }
-    } else {
-      if (!buyingPrice || parseFloat(buyingPrice) <= 0) {
-        showError("Please enter valid buying price");
-        return;
-      }
-      if (!sellingPrice || parseFloat(sellingPrice) <= 0) {
-        showError("Please enter valid selling price");
-        return;
-      }
-      if (!productCount || parseInt(productCount) <= 0) {
-        showError("Please enter valid quantity");
-        return;
-      }
-    }
-
     try {
       const itemData = {
         id: initialData?.id || generateId(),
@@ -88,13 +57,22 @@ const ProductForm: React.FC<{
             }
           : {
               charges: parseFloat(serviceCharges) || 0,
-              sellingPrice: parseFloat(serviceCharges) || 0, // Use charges as selling price
+              sellingPrice: parseFloat(serviceCharges) || 0,
               quantity: 0,
               buyingPrice: 0,
               stockValue: 0,
-              price: parseFloat(serviceCharges) || 0, // Use charges as price
+              price: parseFloat(serviceCharges) || 0,
             }),
       };
+
+      // Check for selling price lower than buying price
+      if (itemData.sellingPrice < itemData.buyingPrice) {
+        showError("Selling price cannot be lower than buying price.");
+        return; // Keep the modal open
+      }
+
+      // Additional mobile-specific logic can be added here
+
       onSubmit(itemData);
     } catch (error) {
       console.error("Item submission error:", error);

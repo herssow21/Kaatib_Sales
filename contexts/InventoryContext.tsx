@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
 import { generateId } from "../utils/idGenerator";
+import { Alert, Platform } from "react-native";
 
 interface InventoryItem {
+  measuringUnit: string;
+  price: number;
   id: string;
   name: string;
   type: "product" | "service";
@@ -30,22 +33,60 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [items, setItems] = useState<InventoryItem[]>([]);
 
+  const showError = (message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(message);
+    } else {
+      Alert.alert("Error", message);
+    }
+  };
+
   const addItem = (item: InventoryItem) => {
-    const newItem = {
-      ...item,
-      id: generateId(),
-      // For services: set charges as sellingPrice, others as 0 or dash
-      ...(item.type === "service" && {
-        sellingPrice: item.charges || 0,
-        quantity: 0,
-        buyingPrice: 0,
-        stockValue: 0,
-      }),
-    };
-    setItems((prevItems) => [...prevItems, newItem]);
+    try {
+      const exists = items.some(
+        (existingItem) =>
+          existingItem.name.toLowerCase() === item.name.toLowerCase()
+      );
+
+      if (exists) {
+        showError("An item with this name already exists.");
+        return; // Prevent adding the item but keep the form open
+      }
+
+      if (item.sellingPrice < item.buyingPrice) {
+        showError("Selling price cannot be lower than buying price.");
+        return; // Prevent adding the item but keep the form open
+      }
+
+      const newItem = {
+        ...item,
+        id: generateId(),
+        ...(item.type === "service" && {
+          sellingPrice: item.charges || 0,
+          quantity: 0,
+          buyingPrice: 0,
+          stockValue: 0,
+        }),
+      };
+      setItems((prevItems) => [...prevItems, newItem]);
+    } catch (error) {
+      console.error("Error adding item:", error);
+    }
   };
 
   const editItem = (updatedItem: InventoryItem) => {
+    // Check for duplicates when editing
+    const exists = items.some(
+      (item) =>
+        item.name.toLowerCase() === updatedItem.name.toLowerCase() &&
+        item.id !== updatedItem.id // Ensure we don't compare with itself
+    );
+
+    if (exists) {
+      showError("An item with this name already exists.");
+      return; // Prevent renaming to an existing item
+    }
+
     setItems((prevItems) =>
       prevItems.map((item) => (item.id === updatedItem.id ? updatedItem : item))
     );

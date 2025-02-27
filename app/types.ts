@@ -35,4 +35,19 @@ export type RouteNames =
   | "Home"
   | "Profile"
   | "UserManagementScreen"
-  | "OtherRoutes"; 
+  | "OtherRoutes";
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  category: string;
+  buyingPrice: number;
+  sellingPrice: number;
+  measuringUnit: string;
+  stockValue: number;
+  createdAt: string;
+  price: number;
+  type: 'product' | 'service';
+  charges?: number;
+}

@@ -26,6 +26,7 @@ import ProductForm from "../../components/ProductForm";
 import * as DocumentPicker from "expo-document-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatMoney } from "../../utils/formatters";
+import RestockForm from "../../components/RestockForm";
 
 function generateSimpleId(): string {
   const timestamp = Date.now().toString(36);
@@ -1013,14 +1014,21 @@ const InventoryScreen = () => {
       <Modal
         visible={isBulkRestoreModalVisible}
         onDismiss={() => setBulkRestoreModalVisible(false)}
+        contentContainerStyle={styles.modalContainer}
       >
-        <View style={styles.bulkRestoreContainer}>
-          <Text>Upload Excel File for Bulk Restore</Text>
-          <Button onPress={handleBulkRestore}>Upload</Button>
-          <Button onPress={() => setBulkRestoreModalVisible(false)}>
-            Cancel
-          </Button>
-        </View>
+        <RestockForm
+          items={items.map((item) => ({
+            ...item,
+            measuringUnit: item.measuringUnit || "unit",
+            price: item.price || 0,
+          }))}
+          onClose={() => setBulkRestoreModalVisible(false)}
+          onSubmit={(selectedItems) => {
+            console.log("Selected items for restock:", selectedItems);
+            // Implement your restock logic here
+            setBulkRestoreModalVisible(false);
+          }}
+        />
       </Modal>
     </View>
   );

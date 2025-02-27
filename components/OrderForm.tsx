@@ -84,6 +84,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [rate, setRate] = useState("");
   const [quantity, setQuantity] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [orderDate, setOrderDate] = useState(new Date());
 
   const filteredItems = inventoryItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -107,7 +108,18 @@ const OrderForm: React.FC<OrderFormProps> = ({
   }, [formData.clientContact]);
 
   useEffect(() => {
-    setFormData(initialData || initialFormState);
+    if (initialData && initialData.orderDate) {
+      const parsedDate = new Date(initialData.orderDate);
+      if (!isNaN(parsedDate.getTime())) {
+        setOrderDate(parsedDate);
+      } else {
+        console.error(
+          "Invalid date format in initialData:",
+          initialData.orderDate
+        );
+        setOrderDate(new Date()); // Fallback to current date if invalid
+      }
+    }
   }, [initialData]);
 
   useEffect(() => {
@@ -130,10 +142,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }));
   }, [amountPaid, formData.items, formData.discount]);
 
-  const handleDateChange = (event: any, selectedDate: Date | undefined) => {
-    const currentDate = selectedDate || formData.orderDate;
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || orderDate;
     setShowDatePicker(false);
-    setFormData((prev) => ({ ...prev, orderDate: currentDate.toString() }));
+    setOrderDate(currentDate);
+    setFormData((prev) => ({ ...prev, orderDate: currentDate.toISOString() }));
   };
 
   const handleAddItem = () => {
@@ -254,40 +267,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     onClose();
   };
 
-  const DateInput = ({
-    value,
-    onChange,
-  }: {
-    value: Date;
-    onChange: (date: Date) => void;
-  }) => {
-    const [dateString, setDateString] = useState(value.toLocaleDateString());
-
-    const handleDateChange = (text: string) => {
-      setDateString(text);
-      const parsedDate = new Date(text);
-      if (!isNaN(parsedDate.getTime())) {
-        onChange(parsedDate);
-      }
-    };
-
-    return (
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Order Date</Text>
-        <View style={styles.dateInputContainer}>
-          <TextInput
-            mode="outlined"
-            style={styles.datePickerInput}
-            value={dateString}
-            onChangeText={handleDateChange}
-            placeholder="MM/DD/YYYY"
-            right={<TextInput.Icon icon="calendar" />}
-          />
-        </View>
-      </View>
-    );
-  };
-
   const handleOpenModal = () => {
     setFormData(initialFormState);
     handleAddItem();
@@ -336,10 +315,39 @@ const OrderForm: React.FC<OrderFormProps> = ({
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
       <View style={styles.topSection}>
-        <DateInput
-          value={new Date(formData.orderDate)}
-          onChange={(date) => handleDateChange(null, date)}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Order Date</Text>
+          {Platform.OS === "web" ? (
+            <TextInput
+              value={orderDate.toISOString().split("T")[0]} // Format date for input
+              onChangeText={(text) => {
+                const newDate = new Date(text);
+                if (!isNaN(newDate.getTime())) {
+                  setOrderDate(newDate);
+                } else {
+                  showError("Invalid date format. Please use YYYY-MM-DD.");
+                }
+              }}
+              style={styles.input}
+              mode="outlined"
+              placeholder="YYYY-MM-DD"
+            />
+          ) : (
+            <>
+              <Button onPress={() => setShowDatePicker(true)}>
+                {orderDate.toLocaleDateString()}
+              </Button>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={orderDate}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                />
+              )}
+            </>
+          )}
+        </View>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Client Contact</Text>
           <TextInput
