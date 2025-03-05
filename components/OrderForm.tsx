@@ -84,7 +84,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [rate, setRate] = useState("");
   const [quantity, setQuantity] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [orderDate, setOrderDate] = useState(new Date());
+  const [orderDate, setOrderDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
   const filteredItems = inventoryItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -109,16 +111,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   useEffect(() => {
     if (initialData && initialData.orderDate) {
-      const parsedDate = new Date(initialData.orderDate);
-      if (!isNaN(parsedDate.getTime())) {
-        setOrderDate(parsedDate);
-      } else {
-        console.error(
-          "Invalid date format in initialData:",
-          initialData.orderDate
-        );
-        setOrderDate(new Date()); // Fallback to current date if invalid
-      }
+      setOrderDate(new Date(initialData.orderDate).toISOString().split("T")[0]);
     }
   }, [initialData]);
 
@@ -142,11 +135,18 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }));
   }, [amountPaid, formData.items, formData.discount]);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || orderDate;
+  const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+    const currentDate = selectedDate || new Date();
+    setOrderDate(currentDate.toISOString().split("T")[0]);
+    setFormData((prev) => ({
+      ...prev,
+      orderDate: currentDate.toISOString().split("T")[0],
+    }));
     setShowDatePicker(false);
-    setOrderDate(currentDate);
-    setFormData((prev) => ({ ...prev, orderDate: currentDate.toISOString() }));
+  };
+
+  const toggleDatePicker = () => {
+    setShowDatePicker((prev) => !prev);
   };
 
   const handleAddItem = () => {
@@ -317,36 +317,35 @@ const OrderForm: React.FC<OrderFormProps> = ({
       <View style={styles.topSection}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Order Date</Text>
-          {Platform.OS === "web" ? (
+          <View style={styles.dateInputContainer}>
             <TextInput
-              value={orderDate.toISOString().split("T")[0]} // Format date for input
-              onChangeText={(text) => {
-                const newDate = new Date(text);
-                if (!isNaN(newDate.getTime())) {
-                  setOrderDate(newDate);
-                } else {
-                  showError("Invalid date format. Please use YYYY-MM-DD.");
-                }
-              }}
-              style={styles.input}
+              value={orderDate}
+              onFocus={toggleDatePicker}
+              style={styles.dateInput}
               mode="outlined"
-              placeholder="YYYY-MM-DD"
-            />
-          ) : (
-            <>
-              <Button onPress={() => setShowDatePicker(true)}>
-                {orderDate.toLocaleDateString()}
-              </Button>
-              {showDatePicker && (
-                <DateTimePicker
-                  value={orderDate}
-                  mode="date"
-                  display="default"
-                  onChange={handleDateChange}
+              editable={false}
+              right={
+                <TextInput.Icon
+                  icon={() => (
+                    <MaterialIcons
+                      name="calendar-today"
+                      size={24}
+                      color="black"
+                      onPress={toggleDatePicker}
+                    />
+                  )}
                 />
-              )}
-            </>
-          )}
+              }
+            />
+            {showDatePicker && (
+              <DateTimePicker
+                value={new Date(orderDate)}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+              />
+            )}
+          </View>
         </View>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Client Contact</Text>
@@ -666,19 +665,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#2c3e50",
   },
-  datePickerInput: {
-    height: 40,
-    marginBottom: 8,
-    cursor: "pointer",
+  dateInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  webPickerContainer: {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    backgroundColor: "white",
-    zIndex: 9999,
-    borderRadius: 8,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+  dateInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  calendarIcon: {
+    cursor: "pointer",
   },
   amountPaidInput: {
     width: Platform.OS === "android" ? "50%" : "40%",
@@ -713,10 +709,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  dateInputContainer: {
-    position: "relative",
-    width: "100%",
-    zIndex: 1000,
+  datePickerInput: {
+    height: 40,
+    marginBottom: 8,
+    cursor: "pointer",
+  },
+  webPickerContainer: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    backgroundColor: "white",
+    zIndex: 9999,
+    borderRadius: 8,
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
   },
   webDatePickerContainer: {
     position: "absolute",
