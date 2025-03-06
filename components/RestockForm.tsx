@@ -32,9 +32,11 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [selectedItems, setSelectedItems] = useState<
     {
       id: string;
+      name: string;
       quantity: number;
       buyingPrice: number;
       sellingPrice: number;
+      currentStock: number;
     }[]
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -44,27 +46,29 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
-  const [receiptImage, setReceiptImage] = useState(null); // For file/image attachment
+  const [receiptImage, setReceiptImage] = useState(null);
 
   const filteredItems = items
-    .filter((item) => item.type === "product") // Only include products
+    .filter((item) => item.type === "product")
     .filter((item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleItemSelect = (itemId: string) => {
-    if (selectedItems.find((item) => item.id === itemId)) {
-      setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
-    } else {
-      const selectedItem = items.find((item) => item.id === itemId);
-      if (selectedItem) {
+    const selectedItem = items.find((item) => item.id === itemId);
+    if (selectedItem) {
+      if (selectedItems.find((item) => item.id === itemId)) {
+        setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
+      } else {
         setSelectedItems([
           ...selectedItems,
           {
             id: selectedItem.id,
+            name: selectedItem.name,
             quantity: 0,
             buyingPrice: selectedItem.buyingPrice,
             sellingPrice: selectedItem.sellingPrice,
+            currentStock: selectedItem.quantity,
           },
         ]);
       }
@@ -79,8 +83,12 @@ const RestockForm: React.FC<RestockFormProps> = ({
     const updatedItems = selectedItems.map((item) => ({
       ...item,
       quantity: newQuantity,
-      buyingPrice: parseFloat(newBuyingPrice),
-      sellingPrice: parseFloat(newSellingPrice),
+      buyingPrice: isBuyingPriceEditable
+        ? parseFloat(newBuyingPrice)
+        : item.buyingPrice,
+      sellingPrice: isSellingPriceEditable
+        ? parseFloat(newSellingPrice)
+        : item.sellingPrice,
     }));
     onSubmit(updatedItems);
     setModalVisible(false);
@@ -88,10 +96,10 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
   const handleFileSelection = async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      type: "*/*", // Allow all file types
+      type: "*/*",
     });
     if (result.type === "success") {
-      setReceiptImage(result.uri); // Store the file URI
+      setReceiptImage(result.uri);
     }
   };
 
@@ -120,7 +128,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
         </Button>
       </View>
 
-      <ScrollView style={styles.itemList}>
+      <ScrollView style={styles.scrollContainer}>
         <View style={styles.tableHeader}>
           <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
           <Text style={[styles.headerCell, { flex: 0.25 }]}>Current Stock</Text>
@@ -153,7 +161,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
               onPress={() => setModalVisible(false)}
               style={styles.cancelButton}
             >
-              <Text style={{ color: "white" }}>✖</Text>
+              <Text style={{ color: "white" }}>Close</Text>
             </Button>
           </View>
 
@@ -186,7 +194,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
           {selectedItems.map((item) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
-              <Text style={[styles.cell, { flex: 0.25 }]}>{item.quantity}</Text>
+              <Text style={[styles.cell, { flex: 0.25 }]}>
+                {item.currentStock}
+              </Text>
               <TextInput
                 style={[styles.cell, { flex: 0.25, margin: 5 }]}
                 keyboardType="numeric"
@@ -196,15 +206,23 @@ const RestockForm: React.FC<RestockFormProps> = ({
                 style={[styles.cell, { flex: 0.25, margin: 5 }]}
                 keyboardType="numeric"
                 editable={isBuyingPriceEditable}
-                value={newBuyingPrice}
-                onChangeText={setNewBuyingPrice}
+                value={
+                  isBuyingPriceEditable
+                    ? newBuyingPrice
+                    : item.buyingPrice.toString()
+                }
+                onChangeText={(text) => setNewBuyingPrice(text)}
               />
               <TextInput
                 style={[styles.cell, { flex: 0.25, margin: 5 }]}
                 keyboardType="numeric"
                 editable={isSellingPriceEditable}
-                value={newSellingPrice}
-                onChangeText={setNewSellingPrice}
+                value={
+                  isSellingPriceEditable
+                    ? newSellingPrice
+                    : item.sellingPrice.toString()
+                }
+                onChangeText={(text) => setNewSellingPrice(text)}
               />
               <Text style={[styles.cell, { flex: 0.25 }]}>
                 {newQuantity * parseFloat(item.buyingPrice.toString())}
@@ -265,7 +283,7 @@ const styles = StyleSheet.create({
   viewButton: {
     minWidth: 150,
   },
-  itemList: {
+  scrollContainer: {
     flex: 1,
   },
   tableHeader: {
