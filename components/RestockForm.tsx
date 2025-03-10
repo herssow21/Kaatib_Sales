@@ -43,7 +43,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
     }[]
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [newQuantity, setNewQuantity] = useState(0);
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [newBuyingPrice, setNewBuyingPrice] = useState("");
   const [newSellingPrice, setNewSellingPrice] = useState("");
   const [applyImmediately, setApplyImmediately] = useState(false);
@@ -86,9 +86,11 @@ const RestockForm: React.FC<RestockFormProps> = ({
     const updatedItems = selectedItems.map((item) => {
       const existingItem = items.find((i) => i.id === item.id);
       if (existingItem) {
-        const updatedQuantity = existingItem.quantity + newQuantity;
+        const quantityToAdd = quantities[item.id] || 0;
+        const updatedQuantity = existingItem.quantity + quantityToAdd;
+
         const updatedBuyingPrice = isBuyingPriceEditable
-          ? parseFloat(newBuyingPrice)
+          ? parseFloat(newBuyingPrice) || existingItem.buyingPrice
           : existingItem.buyingPrice;
 
         return {
@@ -96,7 +98,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
           quantity: updatedQuantity,
           buyingPrice: updatedBuyingPrice,
           sellingPrice: isSellingPriceEditable
-            ? parseFloat(newSellingPrice)
+            ? parseFloat(newSellingPrice) || existingItem.sellingPrice
             : existingItem.sellingPrice,
         };
       }
@@ -174,112 +176,123 @@ const RestockForm: React.FC<RestockFormProps> = ({
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, styles.boldTitle]}>
-              Update Stock Information
-            </Text>
-            <Button
-              mode="outlined"
-              onPress={() => setModalVisible(false)}
-              style={styles.cancelButton}
-            >
-              <Text style={{ color: "white" }}>Close</Text>
-            </Button>
-          </View>
-
-          <View style={styles.toggleContainer}>
-            <Checkbox
-              status={isBuyingPriceEditable ? "checked" : "unchecked"}
-              onPress={() => setIsBuyingPriceEditable(!isBuyingPriceEditable)}
-            />
-            <Text>Change Buying Price</Text>
-            <Checkbox
-              status={isSellingPriceEditable ? "checked" : "unchecked"}
-              onPress={() => setIsSellingPriceEditable(!isSellingPriceEditable)}
-            />
-            <Text>Change Selling Price</Text>
-          </View>
-
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>In Stock</Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>Qty</Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>
-              Buying Price
-            </Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>
-              Selling Price
-            </Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>
-              Restock Value Total
-            </Text>
-          </View>
-
-          {selectedItems.map((item) => (
-            <View key={item.id} style={styles.tableRow}>
-              <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
-              <Text style={[styles.cell, { flex: 0.25 }]}>
-                {item.currentStock}
+        <ScrollView style={styles.scrollContainer}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, styles.boldTitle]}>
+                Update Stock Information
               </Text>
-              <TextInput
-                style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                keyboardType="numeric"
-                onChangeText={(text) => setNewQuantity(parseInt(text) || 0)}
+              <Button
+                mode="outlined"
+                onPress={() => setModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={{ color: "white" }}>Close</Text>
+              </Button>
+            </View>
+
+            <View style={styles.toggleContainer}>
+              <Checkbox
+                status={isBuyingPriceEditable ? "checked" : "unchecked"}
+                onPress={() => setIsBuyingPriceEditable(!isBuyingPriceEditable)}
               />
-              <TextInput
-                style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                keyboardType="numeric"
-                editable={isBuyingPriceEditable}
-                value={
-                  isBuyingPriceEditable
-                    ? newBuyingPrice
-                    : item.buyingPrice.toString()
+              <Text>Change Buying Price</Text>
+              <Checkbox
+                status={isSellingPriceEditable ? "checked" : "unchecked"}
+                onPress={() =>
+                  setIsSellingPriceEditable(!isSellingPriceEditable)
                 }
-                onChangeText={(text) => setNewBuyingPrice(text)}
               />
-              <TextInput
-                style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                keyboardType="numeric"
-                editable={isSellingPriceEditable}
-                value={
-                  isSellingPriceEditable
-                    ? newSellingPrice
-                    : item.sellingPrice.toString()
-                }
-                onChangeText={(text) => setNewSellingPrice(text)}
-              />
-              <Text style={[styles.cell, { flex: 0.25 }]}>
-                {newQuantity * parseFloat(item.buyingPrice.toString())}
+              <Text>Change Selling Price</Text>
+            </View>
+
+            <View style={styles.tableHeader}>
+              <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
+              <Text style={[styles.headerCell, { flex: 0.25 }]}>In Stock</Text>
+              <Text style={[styles.headerCell, { flex: 0.25 }]}>Qty</Text>
+              <Text style={[styles.headerCell, { flex: 0.25 }]}>
+                Buying Price
+              </Text>
+              <Text style={[styles.headerCell, { flex: 0.25 }]}>
+                Selling Price
+              </Text>
+              <Text style={[styles.headerCell, { flex: 0.25 }]}>
+                Restock Value Total
               </Text>
             </View>
-          ))}
 
-          <View style={styles.immediateUpdateContainer}>
-            <Checkbox
-              status={applyImmediately ? "checked" : "unchecked"}
-              onPress={() => setApplyImmediately(!applyImmediately)}
-            />
-            <Text>Apply new buying/selling prices immediately</Text>
+            {selectedItems.map((item) => (
+              <View key={item.id} style={styles.tableRow}>
+                <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
+                <Text style={[styles.cell, { flex: 0.25 }]}>
+                  {item.currentStock}
+                </Text>
+                <TextInput
+                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
+                  keyboardType="numeric"
+                  value={quantities[item.id]?.toString() || "0"}
+                  onChangeText={(text) =>
+                    setQuantities({
+                      ...quantities,
+                      [item.id]: parseInt(text) || 0,
+                    })
+                  }
+                />
+                <TextInput
+                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
+                  keyboardType="numeric"
+                  editable={isBuyingPriceEditable}
+                  value={
+                    isBuyingPriceEditable
+                      ? newBuyingPrice
+                      : item.buyingPrice.toString()
+                  }
+                  onChangeText={(text) => setNewBuyingPrice(text)}
+                />
+                <TextInput
+                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
+                  keyboardType="numeric"
+                  editable={isSellingPriceEditable}
+                  value={
+                    isSellingPriceEditable
+                      ? newSellingPrice
+                      : item.sellingPrice.toString()
+                  }
+                  onChangeText={(text) => setNewSellingPrice(text)}
+                />
+                <Text style={[styles.cell, { flex: 0.25 }]}>
+                  {quantities[item.id] *
+                    parseFloat(item.buyingPrice.toString()) || 0}
+                </Text>
+              </View>
+            ))}
+
+            <View style={styles.immediateUpdateContainer}>
+              <Checkbox
+                status={applyImmediately ? "checked" : "unchecked"}
+                onPress={() => setApplyImmediately(!applyImmediately)}
+              />
+              <Text>Apply new buying/selling prices immediately</Text>
+            </View>
+
+            <Text style={styles.attachmentLabel}>
+              Add files/image of Receipt or Goods Received Note
+            </Text>
+            <TouchableOpacity
+              style={styles.receiptInput}
+              onPress={handleFileSelection}
+            >
+              <Text>Click to find file or drop here</Text>
+            </TouchableOpacity>
+            <Button
+              mode="contained"
+              onPress={handleApplyChanges}
+              style={styles.applyButton}
+            >
+              Save New Stock
+            </Button>
           </View>
-
-          <Text style={styles.attachmentLabel}>
-            Add files/image of Receipt or Goods Received Note
-          </Text>
-          <TouchableOpacity
-            style={styles.receiptInput}
-            onPress={handleFileSelection}
-          >
-            <Text>Click to find file or drop here</Text>
-          </TouchableOpacity>
-          <Button
-            mode="contained"
-            onPress={handleApplyChanges}
-            style={styles.applyButton}
-          >
-            Save New Stock
-          </Button>
-        </View>
+        </ScrollView>
       </Modal>
     </View>
   );
