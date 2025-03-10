@@ -22,6 +22,7 @@ interface InventoryContextType {
   addItem: (item: InventoryItem) => void;
   editItem: (updatedItem: InventoryItem) => void;
   removeItem: (id: string) => void;
+  updateItem: (updatedItem: InventoryItem) => void;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(
@@ -45,11 +46,12 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const exists = items.some(
         (existingItem) =>
-          existingItem.name.toLowerCase() === item.name.toLowerCase()
+          existingItem.name.toLowerCase() === item.name.toLowerCase() &&
+          existingItem.category === item.category
       );
 
       if (exists) {
-        showError("An item with this name already exists.");
+        showError("An item with this name already exists in this category.");
         return; // Prevent adding the item but keep the form open
       }
 
@@ -96,8 +98,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
+  const updateItem = (updatedItem: InventoryItem) => {
+    setItems((prevItems) =>
+      prevItems.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    );
+  };
+
   return (
-    <InventoryContext.Provider value={{ items, addItem, editItem, removeItem }}>
+    <InventoryContext.Provider
+      value={{ items, addItem, editItem, removeItem, updateItem }}
+    >
       {children}
     </InventoryContext.Provider>
   );

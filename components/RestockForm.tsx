@@ -5,6 +5,7 @@ import {
   ScrollView,
   Modal,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Text, TextInput, Button, Checkbox } from "react-native-paper";
 import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
@@ -21,12 +22,14 @@ interface RestockFormProps {
     }[]
   ) => void;
   onClose: () => void;
+  updateItem: (updatedItem: InventoryItem) => void;
 }
 
 const RestockForm: React.FC<RestockFormProps> = ({
   items,
   onSubmit,
   onClose,
+  updateItem,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<
@@ -80,17 +83,37 @@ const RestockForm: React.FC<RestockFormProps> = ({
   };
 
   const handleApplyChanges = () => {
-    const updatedItems = selectedItems.map((item) => ({
-      ...item,
-      quantity: newQuantity,
-      buyingPrice: isBuyingPriceEditable
-        ? parseFloat(newBuyingPrice)
-        : item.buyingPrice,
-      sellingPrice: isSellingPriceEditable
-        ? parseFloat(newSellingPrice)
-        : item.sellingPrice,
-    }));
-    onSubmit(updatedItems);
+    const updatedItems = selectedItems.map((item) => {
+      const existingItem = items.find((i) => i.id === item.id);
+      if (existingItem) {
+        const updatedQuantity = existingItem.quantity + newQuantity;
+        const updatedBuyingPrice = isBuyingPriceEditable
+          ? parseFloat(newBuyingPrice)
+          : existingItem.buyingPrice;
+
+        return {
+          ...existingItem,
+          quantity: updatedQuantity,
+          buyingPrice: updatedBuyingPrice,
+          sellingPrice: isSellingPriceEditable
+            ? parseFloat(newSellingPrice)
+            : existingItem.sellingPrice,
+        };
+      }
+      return item;
+    });
+
+    try {
+      updatedItems.forEach((updatedItem) => {
+        updateItem(updatedItem);
+      });
+
+      Alert.alert("Success", "Stock updated successfully!");
+      onSubmit(updatedItems);
+    } catch (error) {
+      Alert.alert("Error", "Failed to update stock. Please try again.");
+    }
+
     setModalVisible(false);
   };
 
@@ -188,7 +211,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
             <Text style={[styles.headerCell, { flex: 0.25 }]}>
               Selling Price
             </Text>
-            <Text style={[styles.headerCell, { flex: 0.25 }]}>Total</Text>
+            <Text style={[styles.headerCell, { flex: 0.25 }]}>
+              Restock Value Total
+            </Text>
           </View>
 
           {selectedItems.map((item) => (

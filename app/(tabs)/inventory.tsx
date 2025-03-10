@@ -53,7 +53,8 @@ const InventoryScreen = () => {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { items, addItem, editItem, removeItem } = useInventoryContext();
+  const { items, addItem, editItem, removeItem, updateItem } =
+    useInventoryContext();
   const { categories } = useCategoryContext();
 
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -1028,6 +1029,7 @@ const InventoryScreen = () => {
             // Implement your restock logic here
             setBulkRestoreModalVisible(false);
           }}
+          updateItem={updateItem}
         />
       </Modal>
     </View>
