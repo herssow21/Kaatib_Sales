@@ -70,7 +70,7 @@ const initialFormState = {
 const OrderForm: React.FC<OrderFormProps> = ({
   onSubmit,
   onClose,
-  initialData,
+  initialData = null,
 }) => {
   const { items: inventoryItems } = useInventoryContext();
   const { categories } = useCategoryContext();
@@ -85,7 +85,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [quantity, setQuantity] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [orderDate, setOrderDate] = useState(
-    new Date().toISOString().split("T")[0]
+    initialData?.orderDate || new Date().toISOString().split("T")[0]
   );
 
   const filteredItems = inventoryItems.filter((item) =>

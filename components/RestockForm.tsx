@@ -176,7 +176,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide">
-        <ScrollView style={styles.scrollContainer}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, styles.boldTitle]}>
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
   scrollContainer: {
-    flex: 1,
+    flexGrow: 1,
   },
   tableHeader: {
     flexDirection: "row",
@@ -340,20 +340,24 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    flexWrap: "wrap",
   },
   cell: {
     fontSize: 14,
     padding: 8,
+    flex: 1,
   },
   modalContainer: {
     flex: 1,
+    maxHeight: "90%",
     padding: 20,
     justifyContent: "flex-start",
+    paddingHorizontal: 10,
+    backgroundColor: "white",
   },
   modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "flex-start",
     marginBottom: 20,
   },
   modalTitle: {
