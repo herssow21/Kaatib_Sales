@@ -31,7 +31,7 @@ export interface Order {
   status: string;
 }
 
-export type RouteNames = 
+export type RouteNames =
   | "Home"
   | "Profile"
   | "UserManagementScreen"
@@ -48,6 +48,8 @@ export interface InventoryItem {
   stockValue: number;
   createdAt: string;
   price: number;
-  type: 'product' | 'service';
+  type: "product" | "service";
   charges?: number;
+  futureBuyingPrice?: number;
+  futureSellingPrice?: number;
 }

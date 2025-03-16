@@ -15,15 +15,18 @@ interface InventoryItem {
   buyingPrice: number;
   sellingPrice: number;
   stockValue: number;
+  futureBuyingPrice?: number;
+  futureSellingPrice?: number;
 }
 
-interface InventoryContextType {
+type InventoryContextType = {
   items: InventoryItem[];
   addItem: (item: InventoryItem) => void;
-  editItem: (updatedItem: InventoryItem) => void;
-  removeItem: (id: string) => void;
-  updateItem: (updatedItem: InventoryItem) => void;
-}
+  updateItem: (item: InventoryItem) => void;
+  deleteItem: (id: string) => void;
+  handleSale: (itemId: string, quantitySold: number) => void;
+  handleOrderSale: (orderItems: { itemId: string; quantity: number }[]) => void;
+};
 
 const InventoryContext = createContext<InventoryContextType | undefined>(
   undefined
@@ -104,9 +107,83 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  const handleSale = (itemId: string, quantitySold: number) => {
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id === itemId) {
+          const newQuantity = Math.max(0, item.quantity - quantitySold);
+
+          // Check if stock is depleted and there are future prices to apply
+          const shouldUpdatePrices =
+            newQuantity === 0 &&
+            (item.futureBuyingPrice !== undefined ||
+              item.futureSellingPrice !== undefined);
+
+          return {
+            ...item,
+            quantity: newQuantity,
+            // Apply future prices if stock depleted
+            ...(shouldUpdatePrices && {
+              buyingPrice: item.futureBuyingPrice || item.buyingPrice,
+              sellingPrice: item.futureSellingPrice || item.sellingPrice,
+              futureBuyingPrice: undefined,
+              futureSellingPrice: undefined,
+            }),
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleOrderSale = (
+    orderItems: { itemId: string; quantity: number }[]
+  ) => {
+    setItems((prevItems) => {
+      const updatedItems = prevItems.map((item) => {
+        const soldItem = orderItems.find(
+          (orderItem) => orderItem.itemId === item.id
+        );
+        if (soldItem) {
+          const newQuantity = Math.max(0, item.quantity - soldItem.quantity);
+          console.log(
+            `Updating ${item.name} from ${item.quantity} to ${newQuantity}`
+          ); // Debug log
+
+          const shouldUpdatePrices =
+            newQuantity === 0 &&
+            (item.futureBuyingPrice !== undefined ||
+              item.futureSellingPrice !== undefined);
+
+          return {
+            ...item,
+            quantity: newQuantity,
+            ...(shouldUpdatePrices && {
+              buyingPrice: item.futureBuyingPrice || item.buyingPrice,
+              sellingPrice: item.futureSellingPrice || item.sellingPrice,
+              futureBuyingPrice: undefined,
+              futureSellingPrice: undefined,
+            }),
+          };
+        }
+        return item;
+      });
+
+      return updatedItems;
+    });
+  };
+
   return (
     <InventoryContext.Provider
-      value={{ items, addItem, editItem, removeItem, updateItem }}
+      value={{
+        items,
+        addItem,
+        editItem,
+        removeItem,
+        updateItem,
+        handleSale,
+        handleOrderSale,
+      }}
     >
       {children}
     </InventoryContext.Provider>

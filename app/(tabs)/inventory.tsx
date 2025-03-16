@@ -18,6 +18,7 @@ import {
   Modal,
   SegmentedButtons,
   Menu,
+  IconButton,
 } from "react-native-paper";
 import { useInventoryContext } from "../../contexts/InventoryContext";
 import { useCategoryContext } from "../../contexts/CategoryContext";
@@ -53,7 +54,7 @@ const InventoryScreen = () => {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { items, addItem, editItem, removeItem, updateItem } =
+  const { items, addItem, editItem, removeItem, updateItem, handleSale } =
     useInventoryContext();
   const { categories } = useCategoryContext();
 
@@ -174,6 +175,21 @@ const InventoryScreen = () => {
       console.error("Document selection failed or was canceled.");
     }
     setBulkRestoreModalVisible(false);
+  };
+
+  const processSale = (item: InventoryItem, quantitySold: number) => {
+    if (quantitySold > item.quantity) {
+      Alert.alert("Error", "Cannot sell more than available stock");
+      return;
+    }
+
+    try {
+      handleSale(item.id, quantitySold);
+      Alert.alert("Success", "Sale processed successfully");
+    } catch (error) {
+      Alert.alert("Error", "Failed to process sale");
+      console.error(error);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -413,7 +429,37 @@ const InventoryScreen = () => {
       fontWeight: "bold",
       color: "#2c3e50",
     },
+    actionButtons: {
+      flexDirection: "row",
+      gap: 8,
+    },
   });
+
+  const renderItemActions = (item: InventoryItem) => (
+    <View style={styles.actionButtons}>
+      <IconButton
+        icon="pencil"
+        onPress={() => {
+          setSelectedItem(item);
+          setItemModalVisible(true);
+        }}
+      />
+      <IconButton
+        icon="delete"
+        onPress={() => {
+          Alert.alert(
+            "Confirm Delete",
+            "Are you sure you want to delete this item?",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Delete", onPress: () => removeItem(item.id) },
+            ]
+          );
+        }}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {isMobile ? (
@@ -658,37 +704,7 @@ const InventoryScreen = () => {
                         { width: 100, flexDirection: "row" },
                       ]}
                     >
-                      <Button
-                        mode="text"
-                        onPress={() => {
-                          setSelectedItem(item);
-                          setItemModalVisible(true);
-                        }}
-                        icon={() => (
-                          <MaterialCommunityIcons
-                            name="pencil"
-                            size={20}
-                            color={theme.colors.primary}
-                          />
-                        )}
-                        children={""}
-                      >
-                        {/* Empty children prop */}
-                      </Button>
-                      <Button
-                        mode="text"
-                        onPress={() => handleDeleteItem(item.id)}
-                        icon={() => (
-                          <MaterialCommunityIcons
-                            name="delete"
-                            size={20}
-                            color={theme.colors.error}
-                          />
-                        )}
-                        children={""}
-                      >
-                        {/* Empty children prop */}
-                      </Button>
+                      {renderItemActions(item)}
                     </View>
                   </View>
                 ))}
@@ -915,35 +931,7 @@ const InventoryScreen = () => {
                           : formatMoney(item.stockValue || 0)}
                       </Text>
                       <View style={styles.actionsContainer}>
-                        <Button
-                          mode="text"
-                          onPress={() => {
-                            setSelectedItem(item);
-                            setItemModalVisible(true);
-                          }}
-                          icon={() => (
-                            <MaterialCommunityIcons
-                              name="pencil"
-                              size={20}
-                              color={theme.colors.primary}
-                            />
-                          )}
-                          children={""}
-                        ></Button>
-                        <Button
-                          mode="text"
-                          onPress={() => handleDeleteItem(item.id)}
-                          icon={() => (
-                            <MaterialCommunityIcons
-                              name="delete"
-                              size={20}
-                              color={theme.colors.error}
-                            />
-                          )}
-                          children={""}
-                        >
-                          {/* Empty children prop */}
-                        </Button>
+                        {renderItemActions(item)}
                       </View>
                     </View>
                   ))}
@@ -1015,18 +1003,22 @@ const InventoryScreen = () => {
       <Modal
         visible={isBulkRestoreModalVisible}
         onDismiss={() => setBulkRestoreModalVisible(false)}
-        contentContainerStyle={styles.modalContainer}
+        contentContainerStyle={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "white",
+          padding: Platform.OS === "web" ? 20 : 0,
+          margin: Platform.OS === "web" ? 40 : 0,
+        }}
       >
         <RestockForm
-          items={items.map((item) => ({
-            ...item,
-            measuringUnit: item.measuringUnit || "unit",
-            price: item.price || 0,
-          }))}
+          items={items}
           onClose={() => setBulkRestoreModalVisible(false)}
           onSubmit={(selectedItems) => {
             console.log("Selected items for restock:", selectedItems);
-            // Implement your restock logic here
             setBulkRestoreModalVisible(false);
           }}
           updateItem={updateItem}

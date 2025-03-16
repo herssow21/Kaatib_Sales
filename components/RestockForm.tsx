@@ -6,6 +6,7 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { Text, TextInput, Button, Checkbox } from "react-native-paper";
 import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
@@ -44,8 +45,12 @@ const RestockForm: React.FC<RestockFormProps> = ({
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
-  const [newBuyingPrice, setNewBuyingPrice] = useState("");
-  const [newSellingPrice, setNewSellingPrice] = useState("");
+  const [newBuyingPrices, setNewBuyingPrices] = useState<{
+    [key: string]: string;
+  }>({});
+  const [newSellingPrices, setNewSellingPrices] = useState<{
+    [key: string]: string;
+  }>({});
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
@@ -89,17 +94,49 @@ const RestockForm: React.FC<RestockFormProps> = ({
         const quantityToAdd = quantities[item.id] || 0;
         const updatedQuantity = existingItem.quantity + quantityToAdd;
 
-        const updatedBuyingPrice = isBuyingPriceEditable
-          ? parseFloat(newBuyingPrice) || existingItem.buyingPrice
-          : existingItem.buyingPrice;
+        // Handle price updates based on applyImmediately checkbox
+        let updatedBuyingPrice = existingItem.buyingPrice;
+        let updatedSellingPrice = existingItem.sellingPrice;
+
+        if (isBuyingPriceEditable) {
+          const newBuyingPrice =
+            parseFloat(newBuyingPrices[item.id]) || existingItem.buyingPrice;
+          if (applyImmediately) {
+            updatedBuyingPrice = newBuyingPrice;
+          } else {
+            // Store new price to apply after current stock is depleted
+            updatedBuyingPrice =
+              existingItem.quantity === 0
+                ? newBuyingPrice
+                : existingItem.buyingPrice;
+            // Store the future price in a new field
+            existingItem.futureBuyingPrice = newBuyingPrice;
+          }
+        }
+
+        if (isSellingPriceEditable) {
+          const newSellingPrice =
+            parseFloat(newSellingPrices[item.id]) || existingItem.sellingPrice;
+          if (applyImmediately) {
+            updatedSellingPrice = newSellingPrice;
+          } else {
+            // Store new price to apply after current stock is depleted
+            updatedSellingPrice =
+              existingItem.quantity === 0
+                ? newSellingPrice
+                : existingItem.sellingPrice;
+            // Store the future price in a new field
+            existingItem.futureSellingPrice = newSellingPrice;
+          }
+        }
 
         return {
           ...existingItem,
           quantity: updatedQuantity,
           buyingPrice: updatedBuyingPrice,
-          sellingPrice: isSellingPriceEditable
-            ? parseFloat(newSellingPrice) || existingItem.sellingPrice
-            : existingItem.sellingPrice,
+          sellingPrice: updatedSellingPrice,
+          futureBuyingPrice: existingItem.futureBuyingPrice,
+          futureSellingPrice: existingItem.futureSellingPrice,
         };
       }
       return item;
@@ -109,7 +146,6 @@ const RestockForm: React.FC<RestockFormProps> = ({
       updatedItems.forEach((updatedItem) => {
         updateItem(updatedItem);
       });
-
       Alert.alert("Success", "Stock updated successfully!");
       onSubmit(updatedItems);
     } catch (error) {
@@ -130,9 +166,14 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium" style={styles.title}>
-        Bulk Restock
-      </Text>
+      <View style={styles.headerContainer}>
+        <Text variant="headlineMedium" style={styles.modalTitle}>
+          Bulk Restock
+        </Text>
+        <Button mode="outlined" onPress={onClose} style={styles.closeButton}>
+          Close
+        </Button>
+      </View>
 
       <View style={styles.searchContainer}>
         <TextInput
@@ -143,6 +184,34 @@ const RestockForm: React.FC<RestockFormProps> = ({
           style={styles.searchInput}
           right={<TextInput.Icon icon="magnify" />}
         />
+      </View>
+
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerCell, { flex: 0.2 }]}>Select</Text>
+          <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
+          <Text style={[styles.headerCell, { flex: 0.3 }]}>Current Stock</Text>
+        </View>
+
+        {filteredItems.map((item) => (
+          <View key={item.id} style={styles.tableRow}>
+            <View style={{ flex: 0.2, alignItems: "center" }}>
+              <Checkbox
+                status={
+                  selectedItems.some((selected) => selected.id === item.id)
+                    ? "checked"
+                    : "unchecked"
+                }
+                onPress={() => handleItemSelect(item.id)}
+              />
+            </View>
+            <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
+            <Text style={[styles.cell, { flex: 0.3 }]}>{item.quantity}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <View style={styles.footer}>
         <Button
           mode="contained"
           onPress={handleViewRestockList}
@@ -153,120 +222,246 @@ const RestockForm: React.FC<RestockFormProps> = ({
         </Button>
       </View>
 
-      <ScrollView style={styles.scrollContainer}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
-          <Text style={[styles.headerCell, { flex: 0.25 }]}>Current Stock</Text>
-        </View>
-
-        {filteredItems.map((item) => (
-          <View key={item.id} style={styles.tableRow}>
-            <Checkbox
-              status={
-                selectedItems.some((selected) => selected.id === item.id)
-                  ? "checked"
-                  : "unchecked"
-              }
-              onPress={() => handleItemSelect(item.id)}
-            />
-            <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
-            <Text style={[styles.cell, { flex: 0.25 }]}>{item.quantity}</Text>
-          </View>
-        ))}
-      </ScrollView>
-
       <Modal visible={modalVisible} animationType="slide">
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, styles.boldTitle]}>
-                Update Stock Information
-              </Text>
-              <Button
-                mode="outlined"
-                onPress={() => setModalVisible(false)}
-                style={styles.cancelButton}
-              >
-                <Text style={{ color: "white" }}>Close</Text>
-              </Button>
-            </View>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={styles.closeButton}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Update Stock Information</Text>
+          </View>
 
-            <View style={styles.toggleContainer}>
-              <Checkbox
-                status={isBuyingPriceEditable ? "checked" : "unchecked"}
-                onPress={() => setIsBuyingPriceEditable(!isBuyingPriceEditable)}
-              />
-              <Text>Change Buying Price</Text>
-              <Checkbox
-                status={isSellingPriceEditable ? "checked" : "unchecked"}
-                onPress={() =>
-                  setIsSellingPriceEditable(!isSellingPriceEditable)
-                }
-              />
-              <Text>Change Selling Price</Text>
-            </View>
+          <View style={styles.toggleContainer}>
+            <Checkbox
+              status={isBuyingPriceEditable ? "checked" : "unchecked"}
+              onPress={() => setIsBuyingPriceEditable(!isBuyingPriceEditable)}
+            />
+            <Text>Change Buying Price</Text>
+            <Checkbox
+              status={isSellingPriceEditable ? "checked" : "unchecked"}
+              onPress={() => setIsSellingPriceEditable(!isSellingPriceEditable)}
+            />
+            <Text>Change Selling Price</Text>
+          </View>
 
-            <View style={styles.tableHeader}>
-              <Text style={[styles.headerCell, { flex: 0.5 }]}>Item</Text>
-              <Text style={[styles.headerCell, { flex: 0.25 }]}>In Stock</Text>
-              <Text style={[styles.headerCell, { flex: 0.25 }]}>Qty</Text>
-              <Text style={[styles.headerCell, { flex: 0.25 }]}>
-                Buying Price
-              </Text>
-              <Text style={[styles.headerCell, { flex: 0.25 }]}>
-                Selling Price
-              </Text>
-              <Text style={[styles.headerCell, { flex: 0.25 }]}>
-                Restock Value Total
-              </Text>
-            </View>
+          <View style={styles.tableWrapper}>
+            {Platform.OS === "web" ? (
+              // Web Layout
+              <View style={styles.tableContent}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.headerCell, { flex: 1, minWidth: 200 }]}>
+                    Item
+                  </Text>
+                  <Text
+                    style={[styles.headerCell, { flex: 0.5, minWidth: 100 }]}
+                  >
+                    In Stock
+                  </Text>
+                  <Text
+                    style={[styles.headerCell, { flex: 0.5, minWidth: 100 }]}
+                  >
+                    Qty
+                  </Text>
+                  <Text
+                    style={[styles.headerCell, { flex: 0.6, minWidth: 120 }]}
+                  >
+                    Buy Price
+                  </Text>
+                  <Text
+                    style={[styles.headerCell, { flex: 0.6, minWidth: 120 }]}
+                  >
+                    Sell Price
+                  </Text>
+                  <Text
+                    style={[styles.headerCell, { flex: 0.8, minWidth: 150 }]}
+                  >
+                    Total Value
+                  </Text>
+                </View>
 
-            {selectedItems.map((item) => (
-              <View key={item.id} style={styles.tableRow}>
-                <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
-                <Text style={[styles.cell, { flex: 0.25 }]}>
-                  {item.currentStock}
-                </Text>
-                <TextInput
-                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                  keyboardType="numeric"
-                  value={quantities[item.id]?.toString() || "0"}
-                  onChangeText={(text) =>
-                    setQuantities({
-                      ...quantities,
-                      [item.id]: parseInt(text) || 0,
-                    })
-                  }
-                />
-                <TextInput
-                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                  keyboardType="numeric"
-                  editable={isBuyingPriceEditable}
-                  value={
-                    isBuyingPriceEditable
-                      ? newBuyingPrice
-                      : item.buyingPrice.toString()
-                  }
-                  onChangeText={(text) => setNewBuyingPrice(text)}
-                />
-                <TextInput
-                  style={[styles.cell, { flex: 0.25, margin: 5 }]}
-                  keyboardType="numeric"
-                  editable={isSellingPriceEditable}
-                  value={
-                    isSellingPriceEditable
-                      ? newSellingPrice
-                      : item.sellingPrice.toString()
-                  }
-                  onChangeText={(text) => setNewSellingPrice(text)}
-                />
-                <Text style={[styles.cell, { flex: 0.25 }]}>
-                  {quantities[item.id] *
-                    parseFloat(item.buyingPrice.toString()) || 0}
-                </Text>
+                <ScrollView style={styles.tableBody}>
+                  {selectedItems.map((item) => (
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.cell, { flex: 1, minWidth: 200 }]}>
+                        {item.name}
+                      </Text>
+                      <Text style={[styles.cell, { flex: 0.5, minWidth: 100 }]}>
+                        {item.currentStock}
+                      </Text>
+                      <View style={[styles.cell, { flex: 0.5, minWidth: 100 }]}>
+                        <TextInput
+                          style={styles.input}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                          value={quantities[item.id]?.toString() || "0"}
+                          onChangeText={(text) => {
+                            const numericValue = text.replace(/[^0-9]/g, "");
+                            setQuantities({
+                              ...quantities,
+                              [item.id]: parseInt(numericValue) || 0,
+                            });
+                          }}
+                        />
+                      </View>
+                      <View style={[styles.cell, { flex: 0.6, minWidth: 120 }]}>
+                        <TextInput
+                          style={styles.input}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                          editable={isBuyingPriceEditable}
+                          value={
+                            isBuyingPriceEditable
+                              ? newBuyingPrices[item.id] ||
+                                item.buyingPrice.toString()
+                              : item.buyingPrice.toString()
+                          }
+                          onChangeText={(text) => {
+                            const numericValue = text.replace(/[^0-9.]/g, "");
+                            setNewBuyingPrices((prev) => ({
+                              ...prev,
+                              [item.id]: numericValue,
+                            }));
+                          }}
+                        />
+                      </View>
+                      <View style={[styles.cell, { flex: 0.6, minWidth: 120 }]}>
+                        <TextInput
+                          style={styles.input}
+                          keyboardType="number-pad"
+                          returnKeyType="done"
+                          editable={isSellingPriceEditable}
+                          value={
+                            isSellingPriceEditable
+                              ? newSellingPrices[item.id] ||
+                                item.sellingPrice.toString()
+                              : item.sellingPrice.toString()
+                          }
+                          onChangeText={(text) => {
+                            const numericValue = text.replace(/[^0-9.]/g, "");
+                            setNewSellingPrices((prev) => ({
+                              ...prev,
+                              [item.id]: numericValue,
+                            }));
+                          }}
+                        />
+                      </View>
+                      <Text style={[styles.cell, { flex: 0.8, minWidth: 150 }]}>
+                        {quantities[item.id] *
+                          (isBuyingPriceEditable && newBuyingPrices[item.id]
+                            ? parseFloat(newBuyingPrices[item.id])
+                            : parseFloat(item.buyingPrice.toString())) || 0}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-            ))}
+            ) : (
+              // Mobile Layout
+              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                <View style={styles.mobileTableContent}>
+                  <View style={styles.tableHeader}>
+                    <Text style={[styles.headerCell, { width: 200 }]}>
+                      Item
+                    </Text>
+                    <Text style={[styles.headerCell, { width: 100 }]}>
+                      In Stock
+                    </Text>
+                    <Text style={[styles.headerCell, { width: 100 }]}>Qty</Text>
+                    <Text style={[styles.headerCell, { width: 120 }]}>
+                      Buy Price
+                    </Text>
+                    <Text style={[styles.headerCell, { width: 120 }]}>
+                      Sell Price
+                    </Text>
+                    <Text style={[styles.headerCell, { width: 150 }]}>
+                      Total Value
+                    </Text>
+                  </View>
 
+                  <ScrollView style={styles.tableBody}>
+                    {selectedItems.map((item) => (
+                      <View key={item.id} style={styles.tableRow}>
+                        <Text style={[styles.cell, { width: 200 }]}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.cell, { width: 100 }]}>
+                          {item.currentStock}
+                        </Text>
+                        <View style={[styles.cell, { width: 100 }]}>
+                          <TextInput
+                            style={styles.mobileInput}
+                            keyboardType="numeric"
+                            returnKeyType="done"
+                            value={quantities[item.id]?.toString() || "0"}
+                            onChangeText={(text) => {
+                              const numericValue = text.replace(/[^0-9]/g, "");
+                              setQuantities({
+                                ...quantities,
+                                [item.id]: parseInt(numericValue) || 0,
+                              });
+                            }}
+                          />
+                        </View>
+                        <View style={[styles.cell, { width: 120 }]}>
+                          <TextInput
+                            style={styles.mobileInput}
+                            keyboardType="numeric"
+                            returnKeyType="done"
+                            editable={isBuyingPriceEditable}
+                            value={
+                              isBuyingPriceEditable
+                                ? newBuyingPrices[item.id] ||
+                                  item.buyingPrice.toString()
+                                : item.buyingPrice.toString()
+                            }
+                            onChangeText={(text) => {
+                              const numericValue = text.replace(/[^0-9.]/g, "");
+                              setNewBuyingPrices((prev) => ({
+                                ...prev,
+                                [item.id]: numericValue,
+                              }));
+                            }}
+                          />
+                        </View>
+                        <View style={[styles.cell, { width: 120 }]}>
+                          <TextInput
+                            style={styles.mobileInput}
+                            keyboardType="numeric"
+                            returnKeyType="done"
+                            editable={isSellingPriceEditable}
+                            value={
+                              isSellingPriceEditable
+                                ? newSellingPrices[item.id] ||
+                                  item.sellingPrice.toString()
+                                : item.sellingPrice.toString()
+                            }
+                            onChangeText={(text) => {
+                              const numericValue = text.replace(/[^0-9.]/g, "");
+                              setNewSellingPrices((prev) => ({
+                                ...prev,
+                                [item.id]: numericValue,
+                              }));
+                            }}
+                          />
+                        </View>
+                        <Text style={[styles.cell, { width: 150 }]}>
+                          {quantities[item.id] *
+                            (isBuyingPriceEditable && newBuyingPrices[item.id]
+                              ? parseFloat(newBuyingPrices[item.id])
+                              : parseFloat(item.buyingPrice.toString())) || 0}
+                        </Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+
+          <View style={styles.footer}>
             <View style={styles.immediateUpdateContainer}>
               <Checkbox
                 status={applyImmediately ? "checked" : "unchecked"}
@@ -292,7 +487,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
               Save New Stock
             </Button>
           </View>
-        </ScrollView>
+        </View>
       </Modal>
     </View>
   );
@@ -304,7 +499,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "white",
   },
-  title: {
+  modalTitle: {
     marginBottom: 16,
     fontWeight: "bold",
     fontSize: 24,
@@ -326,61 +521,49 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: "row",
-    padding: 12,
     backgroundColor: "#f5f5f5",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
   headerCell: {
+    padding: 16,
     fontWeight: "bold",
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
-    flexWrap: "wrap",
+    alignItems: "center",
+    minHeight: 50,
   },
   cell: {
-    fontSize: 14,
     padding: 8,
-    flex: 1,
+    justifyContent: "center",
   },
   modalContainer: {
     flex: 1,
-    maxHeight: "90%",
     padding: 20,
-    justifyContent: "flex-start",
-    paddingHorizontal: 10,
     backgroundColor: "white",
+    width: "100%",
   },
   modalHeader: {
-    flexDirection: "column",
-    alignItems: "flex-start",
+    width: "100%",
     marginBottom: 20,
   },
-  modalTitle: {
-    fontSize: 20,
-    marginBottom: 20,
+  closeButton: {
+    alignSelf: "flex-end",
+    padding: 8,
   },
-  boldTitle: {
+  closeButtonText: {
+    color: "#FF6B6B",
+    fontSize: 22,
     fontWeight: "bold",
   },
+
   applyButton: {
     backgroundColor: "#d9534f", // Red color for the button
     marginTop: 20,
-  },
-  cancelButton: {
-    backgroundColor: "red",
-    color: "white",
-    alignSelf: "flex-end",
-    marginTop: 20,
-    borderRadius: 90, // Make it circular
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
   },
   immediateUpdateContainer: {
     flexDirection: "row",
@@ -403,7 +586,64 @@ const styles = StyleSheet.create({
   toggleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 10,
+    gap: 8,
+    marginBottom: 16,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  footer: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    paddingTop: 20,
+  },
+  cellContainer: {
+    flex: 1,
+    padding: 8,
+  },
+  tableContainer: {
+    minWidth: "100%",
+  },
+  horizontalScroll: {
+    flex: 1,
+  },
+  tableWrapper: {
+    flex: 1,
+    width: "100%",
+  },
+  tableContent: {
+    flex: 1,
+    width: "100%",
+  },
+  tableBody: {
+    flex: 1,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 4,
+    padding: 8,
+    height: 36,
+    width: "100%",
+    backgroundColor: "white",
+    textAlign: "right",
+  },
+  mobileTableContent: {
+    minWidth: Platform.OS === "web" ? "100%" : "auto",
+  },
+  mobileInput: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 4,
+    padding: 8,
+    height: 36,
+    minWidth: 80,
+    backgroundColor: "white",
+    textAlign: "right",
   },
 });
 
