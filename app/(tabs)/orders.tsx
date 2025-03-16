@@ -811,6 +811,7 @@ export default function Orders() {
               onSubmit={handleFormSubmit}
               onClose={() => setFormVisible(false)}
               initialData={selectedOrder}
+              orders={orders}
             />
           </View>
         </View>

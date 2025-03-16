@@ -48,6 +48,7 @@ interface OrderFormProps {
   onSubmit: (order: Order) => void;
   onClose: () => void;
   initialData?: Order | null;
+  orders: Order[];
 }
 
 const initialFormState = {
@@ -71,8 +72,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
   onSubmit,
   onClose,
   initialData = null,
+  orders,
 }) => {
-  const { items: inventoryItems } = useInventoryContext();
+  const { items: inventoryItems, updateItem } = useInventoryContext();
   const { categories } = useCategoryContext();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -197,6 +199,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   const handleSubmit = () => {
     try {
+      // Validation checks
       if (!formData.clientName.trim()) {
         showError("Client name is required");
         return;
@@ -208,7 +211,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       }
 
       if (!validatePhoneNumber(formData.clientContact)) {
-        showError("Please enter a valid Kenyan phone number");
+        showError("Please enter a valid phone number");
         return;
       }
 
@@ -217,48 +220,50 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
 
-      // Validate items
-      for (const item of formData.items) {
-        if (!item.product) {
-          showError("Please select a product for all items");
-          return;
-        }
-        if (item.rate <= 0) {
-          showError("Please enter valid rates for all items");
-          return;
-        }
-        if (item.quantity <= 0) {
-          showError("Please enter valid quantities for all items");
-          return;
-        }
-      }
-
       const total = formData.items.reduce(
         (acc, item) => acc + item.rate * item.quantity,
         0
       );
 
-      const discountValue = formData.discount || 0;
-      const order: Order = {
-        id: initialData?.id || Date.now().toString(),
+      const newOrder: Order = {
+        id: `ORD-${(orders?.length || 0 + 1).toString().padStart(3, "0")}`,
         orderDate: formData.orderDate,
         clientName: formData.clientName.trim(),
         clientContact: formData.clientContact,
         address: formData.address.trim(),
         items: formData.items,
-        discount: discountValue,
-        grandTotal: total - discountValue,
+        discount: formData.discount,
+        grandTotal: total - formData.discount,
         paymentMethod: formData.paymentMethod,
         paymentStatus: formData.paymentStatus,
         category: selectedCategory || "default",
-        status: formData.paymentStatus,
+        status: "Pending",
       };
 
-      onSubmit(order);
-      handleClose();
+      // Update inventory stock based on the order items
+      formData.items.forEach((item) => {
+        const inventoryItem = inventoryItems.find(
+          (i) => i.name === item.product
+        );
+        if (inventoryItem) {
+          const updatedQuantity = inventoryItem.quantity - item.quantity;
+          if (updatedQuantity < 0) {
+            Alert.alert("Error", "Not enough stock for " + item.product);
+            return;
+          }
+          // Update the inventory item
+          updateItem({ ...inventoryItem, quantity: updatedQuantity });
+        } else {
+          console.error("Inventory item not found:", item.product);
+          showError("Item not found in inventory: " + item.product);
+        }
+      });
+
+      onSubmit(newOrder);
+      setFormData(initialFormState); // Reset form
     } catch (error) {
       console.error("Order submission error:", error);
-      showError("Failed to create order. Please try again.");
+      showError("Failed to submit order");
     }
   };
 
@@ -310,6 +315,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
       </Picker>
     </View>
   );
+
+  const handleViewItem = (item: OrderItem) => {
+    Alert.alert(
+      "Item Details",
+      `Product: ${item.product}\nRate: ${item.rate}\nQuantity: ${item.quantity}`
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -741,6 +753,9 @@ const styles = StyleSheet.create({
   datePickerButton: {
     width: "100%",
     cursor: "pointer",
+  },
+  viewButton: {
+    marginLeft: 8,
   },
 });
 

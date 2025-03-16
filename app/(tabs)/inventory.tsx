@@ -192,6 +192,13 @@ const InventoryScreen = () => {
     }
   };
 
+  const handleViewItem = (item: InventoryItem) => {
+    Alert.alert(
+      "Item Details",
+      `Name: ${item.name}\nStock: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}`
+    );
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -457,6 +464,7 @@ const InventoryScreen = () => {
           );
         }}
       />
+      <IconButton icon="eye" onPress={() => handleViewItem(item)} />
     </View>
   );
 
