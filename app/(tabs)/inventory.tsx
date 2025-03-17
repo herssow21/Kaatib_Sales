@@ -119,10 +119,10 @@ const InventoryScreen = () => {
     }
   };
 
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = (item: InventoryItem) => {
     const confirmDelete = () => {
       try {
-        removeItem(id);
+        removeItem(item.id);
         Alert.alert("Success", "Item deleted successfully");
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -137,66 +137,30 @@ const InventoryScreen = () => {
     } else {
       Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", onPress: confirmDelete, style: "destructive" },
+        {
+          text: "Delete",
+          onPress: confirmDelete,
+          style: "destructive",
+        },
       ]);
     }
   };
 
-  const sortedItems = [...items]
-    .filter((item) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "all" || item.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      switch (selectedSort) {
-        case "recent":
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        case "highPrice":
-          return b.sellingPrice - a.sellingPrice;
-        case "lowPrice":
-          return a.sellingPrice - b.sellingPrice;
-        default:
-          return 0;
-      }
-    });
-
-  const handleBulkRestore = async () => {
-    const result = await DocumentPicker.getDocumentAsync();
-
-    if (result.assets && result.assets[0]) {
-      console.log(result.assets[0].uri);
-    } else {
-      console.error("Document selection failed or was canceled.");
-    }
-    setBulkRestoreModalVisible(false);
-  };
-
-  const processSale = (item: InventoryItem, quantitySold: number) => {
-    if (quantitySold > item.quantity) {
-      Alert.alert("Error", "Cannot sell more than available stock");
-      return;
-    }
-
-    try {
-      handleSale(item.id, quantitySold);
-      Alert.alert("Success", "Sale processed successfully");
-    } catch (error) {
-      Alert.alert("Error", "Failed to process sale");
-      console.error(error);
-    }
-  };
-
   const handleViewItem = (item: InventoryItem) => {
-    Alert.alert(
-      "Item Details",
-      `Name: ${item.name}\nStock: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}`
-    );
+    if (Platform.OS === "web") {
+      const message = `Name: ${item.name}\nCategory: ${item.category}\nType: ${item.type}\nQuantity: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}\nStock Value: KES ${item.stockValue}`;
+      window.alert(message);
+    } else {
+      Alert.alert(
+        "Item Details",
+        `Name: ${item.name}\nCategory: ${item.category}\nType: ${item.type}\nQuantity: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}\nStock Value: KES ${item.stockValue}`
+      );
+    }
+  };
+
+  const handleEditItem = (item: InventoryItem) => {
+    // Implement your edit logic here
+    console.log("Edit item:", item);
   };
 
   const styles = StyleSheet.create({
@@ -421,8 +385,9 @@ const InventoryScreen = () => {
       backgroundColor: "white",
     },
     mobileTableCell: {
-      padding: 12,
-      justifyContent: "center",
+      paddingTop: 4,
+      paddingLeft: 8,
+      justifyContent: "end",
     },
     filterButtons: {
       flexDirection: "row",
@@ -440,31 +405,48 @@ const InventoryScreen = () => {
       flexDirection: "row",
       gap: 8,
     },
+    itemContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: "#e0e0e0",
+    },
+    itemText: {
+      flex: 1,
+    },
+    actionContainer: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    actionButton: {
+      paddingVertical: 2,
+      paddingHorizontal: 4,
+      minWidth: 40,
+    },
+    deleteButton: {
+      color: "#e74c3c",
+    },
   });
 
   const renderItemActions = (item: InventoryItem) => (
     <View style={styles.actionButtons}>
+      <IconButton icon="eye" onPress={() => handleViewItem(item)} size={20} />
       <IconButton
         icon="pencil"
         onPress={() => {
           setSelectedItem(item);
           setItemModalVisible(true);
         }}
+        size={20}
       />
       <IconButton
         icon="delete"
-        onPress={() => {
-          Alert.alert(
-            "Confirm Delete",
-            "Are you sure you want to delete this item?",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Delete", onPress: () => removeItem(item.id) },
-            ]
-          );
-        }}
+        onPress={() => handleDeleteItem(item)}
+        size={20}
+        iconColor="#e74c3c"
       />
-      <IconButton icon="eye" onPress={() => handleViewItem(item)} />
     </View>
   );
 
@@ -641,11 +623,11 @@ const InventoryScreen = () => {
                 <Text style={[styles.mobileTableCell, { width: 100 }]}>
                   Sell Price
                 </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
+                <Text style={[styles.mobileTableCell, { width: 120 }]}>
                   Value
                 </Text>
                 <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
+                  style={[styles.mobileTableCell as TextStyle, { width: 140 }]}
                 >
                   Actions
                 </Text>
@@ -659,7 +641,7 @@ const InventoryScreen = () => {
                     <Text
                       style={[
                         styles.mobileTableCell as TextStyle,
-                        { width: 40 },
+                        { width: 45 },
                       ]}
                     >
                       {index + 1}

@@ -31,7 +31,11 @@ import { useInventoryContext } from "../../contexts/InventoryContext";
 export default function Orders() {
   const theme = useTheme();
   const { categories } = useCategoryContext();
-  const { items: inventoryItems } = useInventoryContext();
+  const {
+    items: inventoryItems,
+    updateItem,
+    removeItem,
+  } = useInventoryContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -790,6 +794,16 @@ export default function Orders() {
   };
 
   const displayOrders = getSortedOrders(filteredOrders);
+
+  const handleEditItem = (item) => {
+    // Implement your edit logic here
+    console.log("Edit item:", item);
+  };
+
+  const handleDeleteItem = (item) => {
+    // Implement your delete logic here
+    removeItem(item.id);
+  };
 
   return (
     <View style={styles.container}>

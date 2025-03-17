@@ -164,6 +164,25 @@ const RestockForm: React.FC<RestockFormProps> = ({
     }
   };
 
+  const handlePriceChange = (
+    itemId: string,
+    priceType: "buying" | "selling",
+    value: string
+  ) => {
+    const numericValue = value.replace(/[^0-9.]/g, "");
+    if (priceType === "buying") {
+      setNewBuyingPrices((prev) => ({
+        ...prev,
+        [itemId]: numericValue,
+      }));
+    } else {
+      setNewSellingPrices((prev) => ({
+        ...prev,
+        [itemId]: numericValue,
+      }));
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -318,13 +337,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
                                 item.buyingPrice.toString()
                               : item.buyingPrice.toString()
                           }
-                          onChangeText={(text) => {
-                            const numericValue = text.replace(/[^0-9.]/g, "");
-                            setNewBuyingPrices((prev) => ({
-                              ...prev,
-                              [item.id]: numericValue,
-                            }));
-                          }}
+                          onChangeText={(text) =>
+                            handlePriceChange(item.id, "buying", text)
+                          }
                         />
                       </View>
                       <View style={[styles.cell, { flex: 0.6, minWidth: 120 }]}>
@@ -339,13 +354,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
                                 item.sellingPrice.toString()
                               : item.sellingPrice.toString()
                           }
-                          onChangeText={(text) => {
-                            const numericValue = text.replace(/[^0-9.]/g, "");
-                            setNewSellingPrices((prev) => ({
-                              ...prev,
-                              [item.id]: numericValue,
-                            }));
-                          }}
+                          onChangeText={(text) =>
+                            handlePriceChange(item.id, "selling", text)
+                          }
                         />
                       </View>
                       <Text style={[styles.cell, { flex: 0.8, minWidth: 150 }]}>
@@ -417,13 +428,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
                                   item.buyingPrice.toString()
                                 : item.buyingPrice.toString()
                             }
-                            onChangeText={(text) => {
-                              const numericValue = text.replace(/[^0-9.]/g, "");
-                              setNewBuyingPrices((prev) => ({
-                                ...prev,
-                                [item.id]: numericValue,
-                              }));
-                            }}
+                            onChangeText={(text) =>
+                              handlePriceChange(item.id, "buying", text)
+                            }
                           />
                         </View>
                         <View style={[styles.cell, { width: 120 }]}>
@@ -438,13 +445,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
                                   item.sellingPrice.toString()
                                 : item.sellingPrice.toString()
                             }
-                            onChangeText={(text) => {
-                              const numericValue = text.replace(/[^0-9.]/g, "");
-                              setNewSellingPrices((prev) => ({
-                                ...prev,
-                                [item.id]: numericValue,
-                              }));
-                            }}
+                            onChangeText={(text) =>
+                              handlePriceChange(item.id, "selling", text)
+                            }
                           />
                         </View>
                         <Text style={[styles.cell, { width: 150 }]}>
