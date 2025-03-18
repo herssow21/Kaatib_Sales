@@ -54,8 +54,7 @@ const InventoryScreen = () => {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { items, addItem, editItem, removeItem, updateItem, handleSale } =
-    useInventoryContext();
+  const { items, addItem, updateItem, handleSale } = useInventoryContext();
   const { categories } = useCategoryContext();
 
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -122,7 +121,11 @@ const InventoryScreen = () => {
   const handleDeleteItem = (item: InventoryItem) => {
     const confirmDelete = () => {
       try {
-        removeItem(item.id);
+        const { deleteItem } = useInventoryContext();
+        if (!deleteItem) {
+          throw new Error("Delete item function not available");
+        }
+        deleteItem(item.id);
         Alert.alert("Success", "Item deleted successfully");
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -387,7 +390,7 @@ const InventoryScreen = () => {
     mobileTableCell: {
       paddingTop: 4,
       paddingLeft: 8,
-      justifyContent: "end",
+      justifyContent: "flex-end",
     },
     filterButtons: {
       flexDirection: "row",
@@ -429,9 +432,8 @@ const InventoryScreen = () => {
       color: "#e74c3c",
     },
   });
-
   const renderItemActions = (item: InventoryItem) => (
-    <View style={styles.actionButtons}>
+    <View style={styles.actionButtons as ViewStyle}>
       <IconButton icon="eye" onPress={() => handleViewItem(item)} size={20} />
       <IconButton
         icon="pencil"
@@ -633,7 +635,7 @@ const InventoryScreen = () => {
                 </Text>
               </View>
               <ScrollView>
-                {sortedItems.map((item, index) => (
+                {items.map((item, index) => (
                   <View
                     key={item.id}
                     style={styles.mobileTableRow as ViewStyle}
@@ -891,7 +893,7 @@ const InventoryScreen = () => {
                   <Text style={styles.tableHeaderCell}>Actions</Text>
                 </View>
                 <ScrollView style={styles.tableScrollView}>
-                  {sortedItems.map((item, index) => (
+                  {items.map((item, index) => (
                     <View key={item.id} style={styles.tableRow as ViewStyle}>
                       <Text
                         style={[styles.tableCell as TextStyle, { flex: 0.5 }]}
@@ -980,7 +982,7 @@ const InventoryScreen = () => {
               charges: data.charges,
             };
             if (selectedItem) {
-              editItem(itemData as Required<InventoryItem>);
+              updateItem(itemData as Required<InventoryItem>);
             } else {
               addItem(itemData as Required<InventoryItem>);
             }
