@@ -1,7 +1,23 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Alert, Platform } from "react-native";
-import { TextInput, Button, SegmentedButtons, Text } from "react-native-paper";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  Alert,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
+import {
+  TextInput,
+  Button,
+  SegmentedButtons,
+  Text,
+  useTheme,
+  Portal,
+  Dialog,
+} from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
+import { useWindowDimensions } from "react-native";
 import { generateId } from "../utils/idGenerator";
 
 const ProductForm: React.FC<{
@@ -10,6 +26,7 @@ const ProductForm: React.FC<{
   categories: { id: string; name: string }[];
   onClose: () => void;
 }> = ({ initialData, onSubmit, categories, onClose }) => {
+  const theme = useTheme();
   const [itemType, setItemType] = useState(initialData?.type || "product");
   const [name, setName] = useState(initialData?.name || "");
   const [buyingPrice, setBuyingPrice] = useState(
@@ -39,6 +56,27 @@ const ProductForm: React.FC<{
 
   const handleSubmit = () => {
     try {
+      // Validate required fields
+      const requiredFields = [];
+      if (!name.trim()) requiredFields.push("Name");
+      if (!category) requiredFields.push("Category");
+
+      if (itemType === "product") {
+        if (!productCount) requiredFields.push("Product Count");
+        if (!buyingPrice) requiredFields.push("Buying Price");
+        if (!sellingPrice) requiredFields.push("Selling Price");
+        if (!measuringUnit.trim()) requiredFields.push("Measuring Unit");
+      } else {
+        if (!serviceCharges) requiredFields.push("Service Charges");
+      }
+
+      if (requiredFields.length > 0) {
+        showError(
+          `Please fill in all required fields: ${requiredFields.join(", ")}`
+        );
+        return;
+      }
+
       const itemData = {
         id: initialData?.id || generateId(),
         name: name.trim(),
@@ -68,10 +106,8 @@ const ProductForm: React.FC<{
       // Check for selling price lower than buying price
       if (itemData.sellingPrice < itemData.buyingPrice) {
         showError("Selling price cannot be lower than buying price.");
-        return; // Keep the modal open
+        return;
       }
-
-      // Additional mobile-specific logic can be added here
 
       onSubmit(itemData);
     } catch (error) {
@@ -85,12 +121,118 @@ const ProductForm: React.FC<{
     setter(numericValue);
   };
 
+  const styles = StyleSheet.create({
+    scrollContainer: {
+      flexGrow: 1,
+      justifyContent: "center",
+    },
+    container: {
+      backgroundColor: "white",
+      padding: 24,
+      borderRadius: 8,
+      maxWidth: 500,
+      width: "100%",
+      alignSelf: "center",
+    },
+    headerContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 24,
+      position: "relative",
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      position: "absolute",
+      right: -12,
+      top: -12,
+      elevation: 6,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.22,
+      shadowRadius: 2.22,
+    },
+    closeButtonText: {
+      color: "white",
+      fontSize: 14,
+      fontWeight: "bold",
+      textAlign: "center",
+    },
+    title: {
+      marginBottom: 24,
+      fontWeight: "bold",
+    },
+    segmentedButtons: {
+      marginBottom: 24,
+    },
+    formGroup: {
+      marginBottom: 16,
+    },
+    label: {
+      marginBottom: 8,
+      fontWeight: "500",
+    },
+    input: {
+      backgroundColor: "white",
+    },
+    picker: {
+      backgroundColor: "white",
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 4,
+      height: 50,
+    },
+    buttonContainer: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 12,
+      marginTop: 24,
+    },
+    button: {
+      minWidth: 100,
+      borderRadius: 4,
+    },
+    createButton: {
+      backgroundColor: "#000",
+    },
+    cancelButton: {
+      borderColor: "#ccc",
+    },
+    cancelText: {
+      color: "#666",
+    },
+    required: {
+      color: theme.colors.error,
+      fontSize: 14,
+      marginLeft: 4,
+    },
+  });
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Create New {itemType === "product" ? "Product" : "Service"}
-        </Text>
+        <View style={styles.headerContainer}>
+          <Text variant="headlineMedium" style={styles.title}>
+            {initialData ? "Edit" : "Create New"}{" "}
+            {itemType === "product" ? "Product" : "Service"}
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.closeButton,
+              { backgroundColor: theme.colors.error },
+            ]}
+            onPress={onClose}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
         <SegmentedButtons
           value={itemType}
@@ -105,7 +247,9 @@ const ProductForm: React.FC<{
         {itemType === "service" ? (
           <>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Service Name</Text>
+              <Text style={styles.label}>
+                Service Name <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="Enter service name"
@@ -116,7 +260,9 @@ const ProductForm: React.FC<{
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Service Charges</Text>
+              <Text style={styles.label}>
+                Service Charges <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="0"
@@ -132,7 +278,9 @@ const ProductForm: React.FC<{
         ) : (
           <>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Product Name</Text>
+              <Text style={styles.label}>
+                Product Name <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="Enter product name"
@@ -143,7 +291,9 @@ const ProductForm: React.FC<{
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Buying Price</Text>
+              <Text style={styles.label}>
+                Buying Price <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="0"
@@ -155,7 +305,9 @@ const ProductForm: React.FC<{
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Selling Price</Text>
+              <Text style={styles.label}>
+                Selling Price <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="0"
@@ -167,7 +319,9 @@ const ProductForm: React.FC<{
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Measuring Unit</Text>
+              <Text style={styles.label}>
+                Measuring Unit <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="e.g., kg, liter, piece"
@@ -178,7 +332,9 @@ const ProductForm: React.FC<{
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Product Count</Text>
+              <Text style={styles.label}>
+                Product Count <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 mode="outlined"
                 placeholder="0"
@@ -192,7 +348,9 @@ const ProductForm: React.FC<{
         )}
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Category</Text>
+          <Text style={styles.label}>
+            Category <Text style={styles.required}>*</Text>
+          </Text>
           <Picker
             selectedValue={category}
             onValueChange={setCategory}
@@ -226,63 +384,5 @@ const ProductForm: React.FC<{
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  container: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 8,
-    maxWidth: 500,
-    width: "100%",
-    alignSelf: "center",
-  },
-  title: {
-    marginBottom: 24,
-    fontWeight: "bold",
-  },
-  segmentedButtons: {
-    marginBottom: 24,
-  },
-  formGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  input: {
-    backgroundColor: "white",
-  },
-  picker: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
-    height: 50,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 24,
-  },
-  button: {
-    minWidth: 100,
-    borderRadius: 4,
-  },
-  createButton: {
-    backgroundColor: "#000",
-  },
-  cancelButton: {
-    borderColor: "#ccc",
-  },
-  cancelText: {
-    color: "#666",
-  },
-});
 
 export default ProductForm;

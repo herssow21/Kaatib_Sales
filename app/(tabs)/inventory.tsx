@@ -22,6 +22,7 @@ import {
 } from "react-native-paper";
 import { useInventoryContext } from "../../contexts/InventoryContext";
 import { useCategoryContext } from "../../contexts/CategoryContext";
+import { useAlertContext } from "../../contexts/AlertContext";
 import CategoryForm from "../../components/CategoryForm";
 import ProductForm from "../../components/ProductForm";
 import * as DocumentPicker from "expo-document-picker";
@@ -54,8 +55,10 @@ const InventoryScreen = () => {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { items, addItem, updateItem, handleSale } = useInventoryContext();
+  const { items, addItem, updateItem, handleSale, deleteItem } =
+    useInventoryContext();
   const { categories } = useCategoryContext();
+  const { showSuccess, showError, showWarning } = useAlertContext();
 
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [isItemModalVisible, setItemModalVisible] = useState(false);
@@ -121,22 +124,20 @@ const InventoryScreen = () => {
   const handleDeleteItem = (item: InventoryItem) => {
     const confirmDelete = () => {
       try {
-        const { deleteItem } = useInventoryContext();
-        if (!deleteItem) {
-          throw new Error("Delete item function not available");
-        }
         deleteItem(item.id);
-        Alert.alert("Success", "Item deleted successfully");
+        showSuccess("Item deleted successfully");
       } catch (error) {
         console.error("Error deleting item:", error);
-        Alert.alert("Error", "Failed to delete item");
+        showError("Failed to delete item");
       }
     };
 
     if (Platform.OS === "web") {
-      if (window.confirm("Are you sure you want to delete this item?")) {
-        confirmDelete();
-      }
+      showWarning(
+        "Are you sure you want to delete this item?",
+        "Delete",
+        confirmDelete
+      );
     } else {
       Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
         { text: "Cancel", style: "cancel" },
@@ -431,6 +432,12 @@ const InventoryScreen = () => {
     },
     deleteButton: {
       color: "#e74c3c",
+    },
+    modalContentContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      marginVertical: Platform.OS === "web" ? 20 : 0,
     },
   });
   const renderItemActions = (item: InventoryItem) => (
@@ -942,6 +949,7 @@ const InventoryScreen = () => {
           setCategoryModalVisible(false);
           setSelectedItem(null);
         }}
+        contentContainerStyle={styles.modalContentContainer}
       >
         <CategoryForm
           onClose={() => {

@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, FlatList, Alert, Platform } from "react-native";
-import { TextInput, Button, Text, Card } from "react-native-paper";
+import React, { useState } from "react";
+import { StyleSheet, View, FlatList, Platform } from "react-native";
+import { TextInput, Button, Text, Card, useTheme } from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { generateId } from "../utils/idGenerator";
+import { TouchableOpacity } from "react-native";
+import CustomAlert from "./common/CustomAlert";
+import { useAlert } from "../hooks/useAlert";
 
 const CategoryForm: React.FC<{
   initialData?: { id?: string; name: string };
   onClose: () => void;
 }> = ({ initialData, onClose }) => {
+  const theme = useTheme();
   const { categories, addCategory, editCategory, removeCategory } =
     useCategoryContext();
   const [categoryName, setCategoryName] = useState(initialData?.name || "");
@@ -15,198 +19,282 @@ const CategoryForm: React.FC<{
     id: string;
     name: string;
   } | null>(null);
+  const { alertProps, showSuccess, showError, showWarning } = useAlert();
 
-  useEffect(() => {
-    if (initialData) {
-      setCategoryName(initialData.name);
-      setEditingItem(
-        initialData.id
-          ? {
-              id: initialData.id,
-              name: initialData.name,
-            }
-          : null
-      );
-    }
-  }, [initialData]);
+  const isDuplicateCategory = (name: string, excludeId?: string) => {
+    return categories.some(
+      (category) =>
+        category.name.toLowerCase() === name.toLowerCase() &&
+        category.id !== excludeId
+    );
+  };
 
   const handleSubmit = () => {
-    if (!categoryName.trim()) {
-      if (Platform.OS === "web") {
-        window.alert("Category name is required");
-      } else {
-        Alert.alert("Error", "Category name is required");
-      }
-      return;
-    }
-
-    const isDuplicate = categories.some(
-      (cat) =>
-        cat.name.toLowerCase() === categoryName.trim().toLowerCase() &&
-        cat.id !== editingItem?.id
-    );
-
-    if (isDuplicate) {
-      if (Platform.OS === "web") {
-        window.alert("Category name already exists");
-      } else {
-        Alert.alert("Error", "Category name already exists");
-      }
+    const trimmedName = categoryName.trim();
+    if (!trimmedName) {
+      showError("Category name is required");
       return;
     }
 
     try {
-      if (editingItem?.id) {
+      if (editingItem) {
+        if (isDuplicateCategory(trimmedName, editingItem.id)) {
+          showError("A category with this name already exists");
+          return;
+        }
         editCategory({
           id: editingItem.id,
-          name: categoryName.trim(),
+          name: trimmedName,
         });
+        showSuccess("Category updated successfully");
       } else {
+        if (isDuplicateCategory(trimmedName)) {
+          showError("A category with this name already exists");
+          return;
+        }
         addCategory({
           id: generateId(),
-          name: categoryName.trim(),
+          name: trimmedName,
         });
+        showSuccess("Category created successfully");
       }
       setCategoryName("");
       setEditingItem(null);
-      onClose();
     } catch (error) {
-      console.error("Error submitting category:", error);
-      if (Platform.OS === "web") {
-        window.alert("Failed to save category");
-      } else {
-        Alert.alert("Error", "Failed to save category");
-      }
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    const confirmDelete = () => {
-      try {
-        removeCategory(id);
-        Alert.alert("Success", "Category deleted successfully");
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        Alert.alert("Error", "Failed to delete category");
-      }
-    };
-
-    if (Platform.OS === "web") {
-      if (window.confirm("Are you sure you want to delete this category?")) {
-        confirmDelete();
-      }
-    } else {
-      Alert.alert(
-        "Delete Category",
-        "Are you sure you want to delete this category?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Delete", onPress: confirmDelete, style: "destructive" },
-        ]
-      );
+      console.error("Category submission error:", error);
+      showError("Failed to save category");
     }
   };
 
   const handleEdit = (item: { id: string; name: string }) => {
-    setCategoryName(item.name);
     setEditingItem(item);
+    setCategoryName(item.name);
+  };
+
+  const handleDelete = (id: string) => {
+    showWarning(
+      "Are you sure you want to delete this category?",
+      "Delete",
+      () => {
+        try {
+          removeCategory(id);
+          showSuccess("Category deleted successfully");
+        } catch (error) {
+          console.error("Category deletion error:", error);
+          showError("Failed to delete category");
+        }
+      }
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.inputContainer}>
-        <TextInput
-          mode="outlined"
-          label="Category Name"
-          value={categoryName}
-          onChangeText={setCategoryName}
-          style={styles.input}
-        />
-        <Button mode="contained" onPress={handleSubmit} style={styles.button}>
-          {editingItem ? "Update Category" : "Add Category"}
-        </Button>
+    <View style={styles.modalContainer}>
+      <CustomAlert {...alertProps} />
+
+      <View style={styles.formContainer}>
+        <View style={styles.headerContainer}>
+          <Text variant="headlineMedium" style={styles.title}>
+            {editingItem ? "Edit Category" : "Create Category"}
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.closeButton,
+              { backgroundColor: theme.colors.error },
+            ]}
+            onPress={onClose}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.contentContainer}>
+          <View style={styles.inputSection}>
+            <TextInput
+              mode="outlined"
+              label="Category Name"
+              value={categoryName}
+              onChangeText={setCategoryName}
+              style={styles.input}
+            />
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              style={styles.button}
+            >
+              {editingItem ? "Update Category" : "Add Category"}
+            </Button>
+          </View>
+
+          <View style={styles.listSection}>
+            <Text variant="titleMedium" style={styles.listTitle}>
+              Categories
+            </Text>
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item.id}
+              style={styles.list}
+              renderItem={({ item }) => (
+                <Card style={styles.categoryItem}>
+                  <View style={styles.categoryContent}>
+                    <Text style={styles.categoryText}>{item.name}</Text>
+                    <View style={styles.actions}>
+                      <Button
+                        onPress={() => handleEdit(item)}
+                        mode="outlined"
+                        style={styles.actionButton}
+                        labelStyle={styles.actionButtonLabel}
+                        compact={Platform.OS !== "web"}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        onPress={() => handleDelete(item.id)}
+                        mode="outlined"
+                        style={[styles.actionButton, styles.deleteButton]}
+                        textColor={theme.colors.error}
+                        compact={Platform.OS !== "web"}
+                        labelStyle={styles.actionButtonLabel}
+                      >
+                        Delete
+                      </Button>
+                    </View>
+                  </View>
+                </Card>
+              )}
+            />
+          </View>
+        </View>
       </View>
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card style={styles.categoryItem}>
-            <View style={styles.categoryContent}>
-              <Text style={styles.categoryText}>{item.name}</Text>
-              <View style={styles.actions}>
-                <Button
-                  onPress={() => handleEdit(item)}
-                  mode="outlined"
-                  style={styles.actionButton}
-                >
-                  Edit
-                </Button>
-                <Button
-                  onPress={() => handleDelete(item.id)}
-                  mode="outlined"
-                  style={styles.actionButton}
-                >
-                  Delete
-                </Button>
-              </View>
-            </View>
-          </Card>
-        )}
-      />
-      <Button mode="text" onPress={onClose} style={styles.cancelButton}>
-        <Text style={styles.cancelText}>Cancel</Text>
-      </Button>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: "#fff",
-  },
-  inputContainer: {
-    flexDirection: "row",
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
+    padding: Platform.OS === "web" ? 20 : 10,
+  },
+  formContainer: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: Platform.OS === "web" ? 24 : 16,
+    width: Platform.OS === "web" ? "100%" : "98%",
+    maxWidth: Platform.OS === "web" ? 500 : "100%",
+    height: Platform.OS === "web" ? "90%" : "95%",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: "column",
+  },
+  inputSection: {
     marginBottom: 16,
   },
-  input: {
+  listSection: {
     flex: 1,
-    marginRight: 8, // Space between input and button
+    marginTop: 8,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+    position: "relative",
+    paddingRight: 40,
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: Platform.OS === "web" ? 24 : 20,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    right: -12,
+    top: -12,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    zIndex: 1000,
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  input: {
+    marginBottom: 16,
+    backgroundColor: "white",
+    height: Platform.OS === "web" ? undefined : 45,
   },
   button: {
-    marginTop: 0, // Reset margin for button
+    height: Platform.OS === "web" ? undefined : 45,
+    justifyContent: "center",
+  },
+  list: {
+    flex: 1,
   },
   categoryItem: {
-    marginVertical: 4,
-    borderRadius: 8,
+    marginBottom: 8,
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    backgroundColor: "#fff",
   },
   categoryContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 8,
+    padding: Platform.OS === "web" ? 16 : 12,
+    flexWrap: "nowrap",
+    minWidth: Platform.OS === "web" ? undefined : 320,
   },
   categoryText: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: Platform.OS === "web" ? 16 : 13,
+    flex: 1,
+    marginRight: Platform.OS === "web" ? 8 : 4,
   },
   actions: {
     flexDirection: "row",
-    gap: 8,
+    gap: Platform.OS === "web" ? 8 : 3,
   },
   actionButton: {
-    paddingHorizontal: 8,
+    marginHorizontal: Platform.OS === "web" ? 2 : 3,
+    paddingHorizontal: Platform.OS === "web" ? 8 : 6,
+    minWidth: Platform.OS === "web" ? undefined : 65,
   },
-  cancelButton: {
-    marginTop: 16,
-    backgroundColor: "#f8d7da", // Change to a more interesting color
-    borderRadius: 8,
+  deleteButton: {
+    borderColor: "transparent",
   },
-  cancelText: {
-    color: "#e03f3e", // Change to a more interesting color
-    fontWeight: "bold", // Make the font bold
+  listTitle: {
+    marginBottom: 12,
+    fontWeight: "600",
+  },
+  actionButtonLabel: {
+    fontSize: Platform.OS === "web" ? 14 : 12,
   },
 });
 

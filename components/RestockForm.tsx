@@ -11,6 +11,7 @@ import {
   Switch,
   Image,
   Dimensions,
+  Linking,
 } from "react-native";
 import {
   Text,
@@ -56,6 +57,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isFilePreviewVisible, setIsFilePreviewVisible] = useState(false);
+  const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
   const windowWidth = Dimensions.get("window").width;
 
   const filteredItems = items
@@ -97,7 +99,25 @@ const RestockForm: React.FC<RestockFormProps> = ({
     };
   };
 
+  const showError = (message: string) => {
+    if (Platform.OS === "web") {
+      window.alert(message);
+    } else {
+      Alert.alert("Error", message);
+    }
+  };
+
   const handleApplyChanges = () => {
+    // Validate that quantities are entered for selected items
+    const missingQuantities = selectedItems.filter(
+      (item) => !quantities[item.id] || quantities[item.id] <= 0
+    );
+
+    if (missingQuantities.length > 0) {
+      showError("Please enter quantity for all selected items.");
+      return;
+    }
+
     const updatedItems = selectedItems.map((formItem) => {
       const existingItem = items.find((i) => i.id === formItem.id);
       if (existingItem) {
@@ -115,12 +135,10 @@ const RestockForm: React.FC<RestockFormProps> = ({
           if (applyImmediately) {
             updatedBuyingPrice = newBuyingPrice;
           } else {
-            // Store new price to apply after current stock is depleted
             updatedBuyingPrice =
               existingItem.quantity === 0
                 ? newBuyingPrice
                 : existingItem.buyingPrice;
-            // Store the future price in a new field
             existingItem.futureBuyingPrice = newBuyingPrice;
           }
         }
@@ -132,12 +150,10 @@ const RestockForm: React.FC<RestockFormProps> = ({
           if (applyImmediately) {
             updatedSellingPrice = newSellingPrice;
           } else {
-            // Store new price to apply after current stock is depleted
             updatedSellingPrice =
               existingItem.quantity === 0
                 ? newSellingPrice
                 : existingItem.sellingPrice;
-            // Store the future price in a new field
             existingItem.futureSellingPrice = newSellingPrice;
           }
         }
@@ -160,13 +176,13 @@ const RestockForm: React.FC<RestockFormProps> = ({
       updatedItems.forEach((updatedItem) => {
         updateItem(updatedItem);
       });
+
       Alert.alert("Success", "Stock updated successfully!");
       onSubmit(updatedItems);
+      setModalVisible(false);
     } catch (error) {
       Alert.alert("Error", "Failed to update stock. Please try again.");
     }
-
-    setModalVisible(false);
   };
 
   const handleFileSelection = async () => {
@@ -177,10 +193,12 @@ const RestockForm: React.FC<RestockFormProps> = ({
       });
 
       if (result.assets && result.assets[0]) {
-        setReceiptImage(result.assets[0].uri);
+        const file = result.assets[0];
+        setReceiptImage(file.uri);
+        setReceiptFileName(file.name);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to upload receipt");
+      showError("Failed to upload receipt");
     }
   };
 
@@ -244,7 +262,13 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
   const handleFilePreview = () => {
     if (receiptImage) {
-      setIsFilePreviewVisible(true);
+      if (Platform.OS === "web") {
+        // For web, open in new tab
+        window.open(receiptImage, "_blank");
+      } else {
+        // For mobile, show in modal
+        setIsFilePreviewVisible(true);
+      }
     }
   };
 
@@ -263,7 +287,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
         <TouchableOpacity
           style={styles.filePreviewContent}
           activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
+          onPress={(e: any) => e.stopPropagation()}
         >
           <TouchableOpacity
             style={[
@@ -275,10 +299,36 @@ const RestockForm: React.FC<RestockFormProps> = ({
             <Text style={styles.closeButtonText}>X</Text>
           </TouchableOpacity>
           {receiptImage?.toLowerCase().endsWith(".pdf") ? (
-            <WebView
-              source={{ uri: receiptImage }}
-              style={styles.filePreview}
-            />
+            Platform.OS === "web" ? (
+              <iframe
+                src={receiptImage}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  marginTop: 20,
+                }}
+                title="PDF Preview"
+              />
+            ) : (
+              <View style={styles.pdfPreviewContainer}>
+                <Text style={styles.pdfPreviewText}>
+                  PDF files can only be viewed in external viewer.
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pdfOpenButton,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                  onPress={() => {
+                    Linking.openURL(receiptImage);
+                    setIsFilePreviewVisible(false);
+                  }}
+                >
+                  <Text style={styles.pdfOpenButtonText}>Open PDF</Text>
+                </TouchableOpacity>
+              </View>
+            )
           ) : (
             <Image
               source={{ uri: receiptImage }}
@@ -289,6 +339,35 @@ const RestockForm: React.FC<RestockFormProps> = ({
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
+  );
+
+  // Update the Switch components to ensure consistent colors across platforms
+  const renderToggle = (
+    value: boolean,
+    onValueChange: (value: boolean) => void,
+    label: string
+  ) => (
+    <View style={styles.toggleContainer}>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{
+          false: theme.colors.surfaceDisabled,
+          true: theme.colors.errorContainer,
+        }}
+        thumbColor={value ? theme.colors.error : theme.colors.outline}
+        ios_backgroundColor={theme.colors.surfaceDisabled}
+        style={
+          Platform.OS === "web"
+            ? {
+                transform: [{ scale: 0.8 }],
+                marginVertical: -8,
+              }
+            : undefined
+        }
+      />
+      <Text style={styles.toggleText}>{label}</Text>
+    </View>
   );
 
   return (
@@ -387,58 +466,21 @@ const RestockForm: React.FC<RestockFormProps> = ({
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.switchesContainer}>
-                <View style={styles.toggleContainer}>
-                  <Switch
-                    value={applyImmediately}
-                    onValueChange={setApplyImmediately}
-                    trackColor={{
-                      false: theme.colors.surfaceDisabled,
-                      true: theme.colors.primaryContainer,
-                    }}
-                    thumbColor={
-                      applyImmediately
-                        ? theme.colors.primary
-                        : theme.colors.outline
-                    }
-                  />
-                  <Text style={styles.toggleText}>
-                    Apply price changes immediately
-                  </Text>
-                </View>
-
-                <View style={styles.toggleContainer}>
-                  <Switch
-                    value={isBuyingPriceEditable}
-                    onValueChange={setIsBuyingPriceEditable}
-                    trackColor={{
-                      false: theme.colors.surfaceDisabled,
-                      true: theme.colors.primaryContainer,
-                    }}
-                    thumbColor={
-                      isBuyingPriceEditable
-                        ? theme.colors.primary
-                        : theme.colors.outline
-                    }
-                  />
-                  <Text style={styles.toggleText}>Update buying price</Text>
-                </View>
-
-                <View style={styles.toggleContainer}>
-                  <Switch
-                    value={isSellingPriceEditable}
-                    onValueChange={setIsSellingPriceEditable}
-                    trackColor={{
-                      false: theme.colors.surfaceDisabled,
-                      true: theme.colors.primaryContainer,
-                    }}
-                    thumbColor={
-                      isSellingPriceEditable
-                        ? theme.colors.primary
-                        : theme.colors.outline
-                    }
-                  />
-                  <Text style={styles.toggleText}>Update selling price</Text>
-                </View>
+                {renderToggle(
+                  applyImmediately,
+                  setApplyImmediately,
+                  "Apply price changes immediately"
+                )}
+                {renderToggle(
+                  isBuyingPriceEditable,
+                  setIsBuyingPriceEditable,
+                  "Update buying price"
+                )}
+                {renderToggle(
+                  isSellingPriceEditable,
+                  setIsSellingPriceEditable,
+                  "Update selling price"
+                )}
               </View>
 
               <View style={styles.tableContainer}>
@@ -677,7 +719,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
                   {receiptImage ? (
                     <View style={styles.receiptPreviewContainer}>
                       <Text style={styles.receiptText} numberOfLines={1}>
-                        {receiptImage.split("/").pop()}
+                        {receiptFileName || receiptImage.split("/").pop()}
                       </Text>
                       <TouchableOpacity
                         onPress={handleFilePreview}
@@ -760,6 +802,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
+    zIndex: 1,
   },
   closeButtonText: {
     color: "white",
@@ -776,10 +819,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
+    marginBottom: 4,
   },
   toggleText: {
-    marginLeft: 10,
+    marginLeft: 12,
     fontSize: 16,
+    color: "#333",
   },
   searchContainer: {
     flexDirection: "row",
@@ -873,7 +918,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
-    paddingBottom: Platform.OS === "ios" ? 34 : 20, // Add safe area padding for iOS
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
     paddingHorizontal: 20,
   },
   attachmentLabel: {
@@ -952,6 +997,38 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     marginTop: 20,
+  },
+  webSwitch: {
+    cursor: "pointer",
+  },
+  webSwitchTrack: {
+    borderRadius: 12,
+    padding: 2,
+    width: 44,
+    height: 24,
+  },
+  pdfPreviewContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  pdfPreviewText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  pdfOpenButton: {
+    padding: 12,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  pdfOpenButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
