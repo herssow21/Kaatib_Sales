@@ -406,6 +406,7 @@ const InventoryScreen = () => {
     },
     actionButtons: {
       flexDirection: "row",
+      justifyContent: "flex-end",
       gap: 8,
     },
     itemContainer: {
@@ -693,7 +694,7 @@ const InventoryScreen = () => {
                     <View
                       style={[
                         styles.mobileTableCell as ViewStyle,
-                        { width: 100, flexDirection: "row" },
+                        { width: 140, justifyContent: "flex-end" },
                       ]}
                     >
                       {renderItemActions(item)}

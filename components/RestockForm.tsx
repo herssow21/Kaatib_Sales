@@ -7,21 +7,29 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  KeyboardAvoidingView,
+  Switch,
+  Image,
+  Dimensions,
 } from "react-native";
-import { Text, TextInput, Button, Checkbox } from "react-native-paper";
+import {
+  Text,
+  TextInput,
+  Button,
+  Checkbox,
+  useTheme,
+} from "react-native-paper";
 import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
 import type { InventoryItem } from "../app/types";
+import { WebView } from "react-native-webview";
+
+interface FormItem extends Omit<InventoryItem, "quantity"> {
+  currentStock: number;
+}
 
 interface RestockFormProps {
   items: InventoryItem[];
-  onSubmit: (
-    selectedItems: {
-      id: string;
-      quantity: number;
-      buyingPrice: number;
-      sellingPrice: number;
-    }[]
-  ) => void;
+  onSubmit: (selectedItems: InventoryItem[]) => void;
   onClose: () => void;
   updateItem: (updatedItem: InventoryItem) => void;
 }
@@ -32,17 +40,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
   onClose,
   updateItem,
 }) => {
+  const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItems, setSelectedItems] = useState<
-    {
-      id: string;
-      name: string;
-      quantity: number;
-      buyingPrice: number;
-      sellingPrice: number;
-      currentStock: number;
-    }[]
-  >([]);
+  const [selectedItems, setSelectedItems] = useState<FormItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [newBuyingPrices, setNewBuyingPrices] = useState<{
@@ -54,7 +54,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
-  const [receiptImage, setReceiptImage] = useState(null);
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [isFilePreviewVisible, setIsFilePreviewVisible] = useState(false);
+  const windowWidth = Dimensions.get("window").width;
 
   const filteredItems = items
     .filter((item) => item.type === "product")
@@ -68,15 +70,12 @@ const RestockForm: React.FC<RestockFormProps> = ({
       if (selectedItems.find((item) => item.id === itemId)) {
         setSelectedItems(selectedItems.filter((item) => item.id !== itemId));
       } else {
+        const { quantity, ...itemWithoutQuantity } = selectedItem;
         setSelectedItems([
           ...selectedItems,
           {
-            id: selectedItem.id,
-            name: selectedItem.name,
-            quantity: 0,
-            buyingPrice: selectedItem.buyingPrice,
-            sellingPrice: selectedItem.sellingPrice,
-            currentStock: selectedItem.quantity,
+            ...itemWithoutQuantity,
+            currentStock: quantity,
           },
         ]);
       }
@@ -87,11 +86,22 @@ const RestockForm: React.FC<RestockFormProps> = ({
     setModalVisible(true);
   };
 
+  const convertFormItemToInventoryItem = (
+    formItem: FormItem,
+    updatedQuantity: number
+  ): InventoryItem => {
+    return {
+      ...formItem,
+      quantity: updatedQuantity,
+      stockValue: updatedQuantity * formItem.buyingPrice,
+    };
+  };
+
   const handleApplyChanges = () => {
-    const updatedItems = selectedItems.map((item) => {
-      const existingItem = items.find((i) => i.id === item.id);
+    const updatedItems = selectedItems.map((formItem) => {
+      const existingItem = items.find((i) => i.id === formItem.id);
       if (existingItem) {
-        const quantityToAdd = quantities[item.id] || 0;
+        const quantityToAdd = quantities[formItem.id] || 0;
         const updatedQuantity = existingItem.quantity + quantityToAdd;
 
         // Handle price updates based on applyImmediately checkbox
@@ -100,7 +110,8 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
         if (isBuyingPriceEditable) {
           const newBuyingPrice =
-            parseFloat(newBuyingPrices[item.id]) || existingItem.buyingPrice;
+            parseFloat(newBuyingPrices[formItem.id]) ||
+            existingItem.buyingPrice;
           if (applyImmediately) {
             updatedBuyingPrice = newBuyingPrice;
           } else {
@@ -116,7 +127,8 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
         if (isSellingPriceEditable) {
           const newSellingPrice =
-            parseFloat(newSellingPrices[item.id]) || existingItem.sellingPrice;
+            parseFloat(newSellingPrices[formItem.id]) ||
+            existingItem.sellingPrice;
           if (applyImmediately) {
             updatedSellingPrice = newSellingPrice;
           } else {
@@ -130,16 +142,18 @@ const RestockForm: React.FC<RestockFormProps> = ({
           }
         }
 
-        return {
-          ...existingItem,
-          quantity: updatedQuantity,
+        // Create a complete InventoryItem with all required properties
+        const updatedFormItem = {
+          ...formItem,
           buyingPrice: updatedBuyingPrice,
           sellingPrice: updatedSellingPrice,
           futureBuyingPrice: existingItem.futureBuyingPrice,
           futureSellingPrice: existingItem.futureSellingPrice,
         };
+
+        return convertFormItemToInventoryItem(updatedFormItem, updatedQuantity);
       }
-      return item;
+      return convertFormItemToInventoryItem(formItem, formItem.currentStock);
     });
 
     try {
@@ -156,21 +170,59 @@ const RestockForm: React.FC<RestockFormProps> = ({
   };
 
   const handleFileSelection = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "*/*",
-    });
-    if (result.type === "success") {
-      setReceiptImage(result.uri);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.assets && result.assets[0]) {
+        setReceiptImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to upload receipt");
     }
+  };
+
+  const handleQuantityChange = (itemId: string, text: string) => {
+    // Remove non-numeric characters
+    let numericValue = text.replace(/[^0-9]/g, "");
+
+    // Handle leading zeros
+    if (numericValue.length > 1 && numericValue.startsWith("0")) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    setQuantities({
+      ...quantities,
+      [itemId]: parseInt(numericValue || "0", 10),
+    });
   };
 
   const handlePriceChange = (
     itemId: string,
-    priceType: "buying" | "selling",
-    value: string
+    text: string,
+    type: "buying" | "selling"
   ) => {
-    const numericValue = value.replace(/[^0-9.]/g, "");
-    if (priceType === "buying") {
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
+
+    // Handle leading zeros
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    if (type === "buying") {
       setNewBuyingPrices((prev) => ({
         ...prev,
         [itemId]: numericValue,
@@ -183,15 +235,77 @@ const RestockForm: React.FC<RestockFormProps> = ({
     }
   };
 
+  // Add a function to measure text width
+  const measureTextWidth = (text: string) => {
+    const baseWidth = 80; // minimum width
+    const charWidth = 8; // approximate width per character
+    return Math.max(baseWidth, text.length * charWidth);
+  };
+
+  const handleFilePreview = () => {
+    if (receiptImage) {
+      setIsFilePreviewVisible(true);
+    }
+  };
+
+  const FilePreviewModal = () => (
+    <Modal
+      visible={isFilePreviewVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setIsFilePreviewVisible(false)}
+    >
+      <TouchableOpacity
+        style={styles.filePreviewContainer}
+        activeOpacity={1}
+        onPress={() => setIsFilePreviewVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.filePreviewContent}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <TouchableOpacity
+            style={[
+              styles.closeButtonCircle,
+              { backgroundColor: theme.colors.error },
+            ]}
+            onPress={() => setIsFilePreviewVisible(false)}
+          >
+            <Text style={styles.closeButtonText}>X</Text>
+          </TouchableOpacity>
+          {receiptImage?.toLowerCase().endsWith(".pdf") ? (
+            <WebView
+              source={{ uri: receiptImage }}
+              style={styles.filePreview}
+            />
+          ) : (
+            <Image
+              source={{ uri: receiptImage }}
+              style={styles.filePreview}
+              resizeMode="contain"
+            />
+          )}
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text variant="headlineMedium" style={styles.modalTitle}>
+        <Text variant="headlineMedium" style={styles.headerTitle}>
           Bulk Restock
         </Text>
-        <Button mode="outlined" onPress={onClose} style={styles.closeButton}>
-          Close
-        </Button>
+        <TouchableOpacity
+          style={[
+            styles.closeButtonCircle,
+            { backgroundColor: theme.colors.error, right: 20 },
+          ]}
+          onPress={onClose}
+        >
+          <Text style={styles.closeButtonText}>X</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -222,6 +336,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
                     : "unchecked"
                 }
                 onPress={() => handleItemSelect(item.id)}
+                color={theme.colors.primary}
               />
             </View>
             <Text style={[styles.cell, { flex: 0.5 }]}>{item.name}</Text>
@@ -241,257 +356,367 @@ const RestockForm: React.FC<RestockFormProps> = ({
         </Button>
       </View>
 
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Update Stock Information</Text>
-          </View>
-
-          <View style={styles.toggleContainer}>
-            <Checkbox
-              status={isBuyingPriceEditable ? "checked" : "unchecked"}
-              onPress={() => setIsBuyingPriceEditable(!isBuyingPriceEditable)}
-            />
-            <Text>Change Buying Price</Text>
-            <Checkbox
-              status={isSellingPriceEditable ? "checked" : "unchecked"}
-              onPress={() => setIsSellingPriceEditable(!isSellingPriceEditable)}
-            />
-            <Text>Change Selling Price</Text>
-          </View>
-
-          <View style={styles.tableWrapper}>
-            {Platform.OS === "web" ? (
-              // Web Layout
-              <View style={styles.tableContent}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.headerCell, { flex: 1, minWidth: 200 }]}>
-                    Item
-                  </Text>
-                  <Text
-                    style={[styles.headerCell, { flex: 0.5, minWidth: 100 }]}
-                  >
-                    In Stock
-                  </Text>
-                  <Text
-                    style={[styles.headerCell, { flex: 0.5, minWidth: 100 }]}
-                  >
-                    Qty
-                  </Text>
-                  <Text
-                    style={[styles.headerCell, { flex: 0.6, minWidth: 120 }]}
-                  >
-                    Buy Price
-                  </Text>
-                  <Text
-                    style={[styles.headerCell, { flex: 0.6, minWidth: 120 }]}
-                  >
-                    Sell Price
-                  </Text>
-                  <Text
-                    style={[styles.headerCell, { flex: 0.8, minWidth: 150 }]}
-                  >
-                    Total Value
-                  </Text>
-                </View>
-
-                <ScrollView style={styles.tableBody}>
-                  {selectedItems.map((item) => (
-                    <View key={item.id} style={styles.tableRow}>
-                      <Text style={[styles.cell, { flex: 1, minWidth: 200 }]}>
-                        {item.name}
-                      </Text>
-                      <Text style={[styles.cell, { flex: 0.5, minWidth: 100 }]}>
-                        {item.currentStock}
-                      </Text>
-                      <View style={[styles.cell, { flex: 0.5, minWidth: 100 }]}>
-                        <TextInput
-                          style={styles.input}
-                          keyboardType="number-pad"
-                          returnKeyType="done"
-                          value={quantities[item.id]?.toString() || "0"}
-                          onChangeText={(text) => {
-                            const numericValue = text.replace(/[^0-9]/g, "");
-                            setQuantities({
-                              ...quantities,
-                              [item.id]: parseInt(numericValue) || 0,
-                            });
-                          }}
-                        />
-                      </View>
-                      <View style={[styles.cell, { flex: 0.6, minWidth: 120 }]}>
-                        <TextInput
-                          style={styles.input}
-                          keyboardType="number-pad"
-                          returnKeyType="done"
-                          editable={isBuyingPriceEditable}
-                          value={
-                            isBuyingPriceEditable
-                              ? newBuyingPrices[item.id] ||
-                                item.buyingPrice.toString()
-                              : item.buyingPrice.toString()
-                          }
-                          onChangeText={(text) =>
-                            handlePriceChange(item.id, "buying", text)
-                          }
-                        />
-                      </View>
-                      <View style={[styles.cell, { flex: 0.6, minWidth: 120 }]}>
-                        <TextInput
-                          style={styles.input}
-                          keyboardType="number-pad"
-                          returnKeyType="done"
-                          editable={isSellingPriceEditable}
-                          value={
-                            isSellingPriceEditable
-                              ? newSellingPrices[item.id] ||
-                                item.sellingPrice.toString()
-                              : item.sellingPrice.toString()
-                          }
-                          onChangeText={(text) =>
-                            handlePriceChange(item.id, "selling", text)
-                          }
-                        />
-                      </View>
-                      <Text style={[styles.cell, { flex: 0.8, minWidth: 150 }]}>
-                        {quantities[item.id] *
-                          (isBuyingPriceEditable && newBuyingPrices[item.id]
-                            ? parseFloat(newBuyingPrices[item.id])
-                            : parseFloat(item.buyingPrice.toString())) || 0}
-                      </Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            ) : (
-              // Mobile Layout
-              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-                <View style={styles.mobileTableContent}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.headerCell, { width: 200 }]}>
-                      Item
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 100 }]}>
-                      In Stock
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 100 }]}>Qty</Text>
-                    <Text style={[styles.headerCell, { width: 120 }]}>
-                      Buy Price
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 120 }]}>
-                      Sell Price
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 150 }]}>
-                      Total Value
-                    </Text>
-                  </View>
-
-                  <ScrollView style={styles.tableBody}>
-                    {selectedItems.map((item) => (
-                      <View key={item.id} style={styles.tableRow}>
-                        <Text style={[styles.cell, { width: 200 }]}>
-                          {item.name}
-                        </Text>
-                        <Text style={[styles.cell, { width: 100 }]}>
-                          {item.currentStock}
-                        </Text>
-                        <View style={[styles.cell, { width: 100 }]}>
-                          <TextInput
-                            style={styles.mobileInput}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                            value={quantities[item.id]?.toString() || "0"}
-                            onChangeText={(text) => {
-                              const numericValue = text.replace(/[^0-9]/g, "");
-                              setQuantities({
-                                ...quantities,
-                                [item.id]: parseInt(numericValue) || 0,
-                              });
-                            }}
-                          />
-                        </View>
-                        <View style={[styles.cell, { width: 120 }]}>
-                          <TextInput
-                            style={styles.mobileInput}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                            editable={isBuyingPriceEditable}
-                            value={
-                              isBuyingPriceEditable
-                                ? newBuyingPrices[item.id] ||
-                                  item.buyingPrice.toString()
-                                : item.buyingPrice.toString()
-                            }
-                            onChangeText={(text) =>
-                              handlePriceChange(item.id, "buying", text)
-                            }
-                          />
-                        </View>
-                        <View style={[styles.cell, { width: 120 }]}>
-                          <TextInput
-                            style={styles.mobileInput}
-                            keyboardType="numeric"
-                            returnKeyType="done"
-                            editable={isSellingPriceEditable}
-                            value={
-                              isSellingPriceEditable
-                                ? newSellingPrices[item.id] ||
-                                  item.sellingPrice.toString()
-                                : item.sellingPrice.toString()
-                            }
-                            onChangeText={(text) =>
-                              handlePriceChange(item.id, "selling", text)
-                            }
-                          />
-                        </View>
-                        <Text style={[styles.cell, { width: 150 }]}>
-                          {quantities[item.id] *
-                            (isBuyingPriceEditable && newBuyingPrices[item.id]
-                              ? parseFloat(newBuyingPrices[item.id])
-                              : parseFloat(item.buyingPrice.toString())) || 0}
-                        </Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              </ScrollView>
-            )}
-          </View>
-
-          <View style={styles.footer}>
-            <View style={styles.immediateUpdateContainer}>
-              <Checkbox
-                status={applyImmediately ? "checked" : "unchecked"}
-                onPress={() => setApplyImmediately(!applyImmediately)}
-              />
-              <Text>Apply new buying/selling prices immediately</Text>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Stock Information</Text>
+              <TouchableOpacity
+                style={[
+                  styles.closeButtonCircle,
+                  { backgroundColor: theme.colors.error },
+                ]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>X</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.attachmentLabel}>
-              Add files/image of Receipt or Goods Received Note
-            </Text>
-            <TouchableOpacity
-              style={styles.receiptInput}
-              onPress={handleFileSelection}
+            <ScrollView
+              style={styles.scrollContainer}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="none"
+              showsVerticalScrollIndicator={false}
             >
-              <Text>Click to find file or drop here</Text>
-            </TouchableOpacity>
-            <Button
-              mode="contained"
-              onPress={handleApplyChanges}
-              style={styles.applyButton}
-            >
-              Save New Stock
-            </Button>
+              <View style={styles.switchesContainer}>
+                <View style={styles.toggleContainer}>
+                  <Switch
+                    value={applyImmediately}
+                    onValueChange={setApplyImmediately}
+                    trackColor={{
+                      false: theme.colors.surfaceDisabled,
+                      true: theme.colors.primaryContainer,
+                    }}
+                    thumbColor={
+                      applyImmediately
+                        ? theme.colors.primary
+                        : theme.colors.outline
+                    }
+                  />
+                  <Text style={styles.toggleText}>
+                    Apply price changes immediately
+                  </Text>
+                </View>
+
+                <View style={styles.toggleContainer}>
+                  <Switch
+                    value={isBuyingPriceEditable}
+                    onValueChange={setIsBuyingPriceEditable}
+                    trackColor={{
+                      false: theme.colors.surfaceDisabled,
+                      true: theme.colors.primaryContainer,
+                    }}
+                    thumbColor={
+                      isBuyingPriceEditable
+                        ? theme.colors.primary
+                        : theme.colors.outline
+                    }
+                  />
+                  <Text style={styles.toggleText}>Update buying price</Text>
+                </View>
+
+                <View style={styles.toggleContainer}>
+                  <Switch
+                    value={isSellingPriceEditable}
+                    onValueChange={setIsSellingPriceEditable}
+                    trackColor={{
+                      false: theme.colors.surfaceDisabled,
+                      true: theme.colors.primaryContainer,
+                    }}
+                    thumbColor={
+                      isSellingPriceEditable
+                        ? theme.colors.primary
+                        : theme.colors.outline
+                    }
+                  />
+                  <Text style={styles.toggleText}>Update selling price</Text>
+                </View>
+              </View>
+
+              <View style={styles.tableContainer}>
+                {Platform.OS === "web" ? (
+                  // Web Layout - Full width
+                  <View style={styles.tableContent}>
+                    <View style={styles.tableHeader}>
+                      <View style={[styles.headerCellContainer, { flex: 0.2 }]}>
+                        <Text style={styles.headerCell}>Item</Text>
+                      </View>
+                      <View
+                        style={[styles.headerCellContainer, { flex: 0.15 }]}
+                      >
+                        <Text style={styles.headerCell}>Current</Text>
+                      </View>
+                      <View
+                        style={[styles.headerCellContainer, { flex: 0.15 }]}
+                      >
+                        <Text style={styles.headerCell}>Add</Text>
+                      </View>
+                      {isBuyingPriceEditable && (
+                        <View
+                          style={[styles.headerCellContainer, { flex: 0.25 }]}
+                        >
+                          <Text style={styles.headerCell}>Buy Price</Text>
+                        </View>
+                      )}
+                      {isSellingPriceEditable && (
+                        <View
+                          style={[styles.headerCellContainer, { flex: 0.25 }]}
+                        >
+                          <Text style={styles.headerCell}>Sell Price</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <ScrollView style={styles.tableBody}>
+                      {selectedItems.map((item) => (
+                        <View key={item.id} style={styles.tableRow}>
+                          <View style={[styles.cell, { flex: 0.2 }]}>
+                            <Text numberOfLines={2} style={styles.itemName}>
+                              {item.name}
+                            </Text>
+                          </View>
+                          <View style={[styles.cell, { flex: 0.15 }]}>
+                            <Text style={styles.currentStock}>
+                              {item.currentStock}
+                            </Text>
+                          </View>
+                          <View style={[styles.cell, { flex: 0.15 }]}>
+                            <TextInput
+                              style={styles.input}
+                              value={quantities[item.id]?.toString() || ""}
+                              onChangeText={(text) =>
+                                handleQuantityChange(item.id, text)
+                              }
+                              keyboardType="numeric"
+                              autoCapitalize="none"
+                              autoCorrect={false}
+                              blurOnSubmit={false}
+                              returnKeyType="next"
+                              placeholder="0"
+                            />
+                          </View>
+                          {isBuyingPriceEditable && (
+                            <View style={[styles.cell, { flex: 0.25 }]}>
+                              <TextInput
+                                style={styles.input}
+                                value={newBuyingPrices[item.id] || ""}
+                                onChangeText={(text) =>
+                                  handlePriceChange(item.id, text, "buying")
+                                }
+                                keyboardType="numeric"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                blurOnSubmit={false}
+                                returnKeyType="next"
+                                placeholder="0.00"
+                              />
+                            </View>
+                          )}
+                          {isSellingPriceEditable && (
+                            <View style={[styles.cell, { flex: 0.25 }]}>
+                              <TextInput
+                                style={styles.input}
+                                value={newSellingPrices[item.id] || ""}
+                                onChangeText={(text) =>
+                                  handlePriceChange(item.id, text, "selling")
+                                }
+                                keyboardType="numeric"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                blurOnSubmit={false}
+                                returnKeyType="done"
+                                placeholder="0.00"
+                              />
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : (
+                  // Mobile Layout - Scrollable with fixed widths
+                  <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                    <View style={styles.mobileTableContent}>
+                      <View style={styles.tableHeader}>
+                        <View
+                          style={[styles.headerCellContainer, { width: 150 }]}
+                        >
+                          <Text style={styles.headerCell}>Item</Text>
+                        </View>
+                        <View
+                          style={[styles.headerCellContainer, { width: 100 }]}
+                        >
+                          <Text style={styles.headerCell}>Current</Text>
+                        </View>
+                        <View
+                          style={[styles.headerCellContainer, { width: 100 }]}
+                        >
+                          <Text style={styles.headerCell}>Add</Text>
+                        </View>
+                        {isBuyingPriceEditable && (
+                          <View
+                            style={[styles.headerCellContainer, { width: 120 }]}
+                          >
+                            <Text style={styles.headerCell}>Buy Price</Text>
+                          </View>
+                        )}
+                        {isSellingPriceEditable && (
+                          <View
+                            style={[styles.headerCellContainer, { width: 120 }]}
+                          >
+                            <Text style={styles.headerCell}>Sell Price</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <ScrollView style={styles.tableBody}>
+                        {selectedItems.map((item) => (
+                          <View key={item.id} style={styles.tableRow}>
+                            <View style={[styles.cell, { width: 150 }]}>
+                              <Text numberOfLines={2} style={styles.itemName}>
+                                {item.name}
+                              </Text>
+                            </View>
+                            <View style={[styles.cell, { width: 100 }]}>
+                              <Text style={styles.currentStock}>
+                                {item.currentStock}
+                              </Text>
+                            </View>
+                            <View style={[styles.cell, { width: 100 }]}>
+                              <TextInput
+                                style={[
+                                  styles.input,
+                                  {
+                                    width: measureTextWidth(
+                                      quantities[item.id]?.toString() || "0"
+                                    ),
+                                  },
+                                ]}
+                                value={quantities[item.id]?.toString() || ""}
+                                onChangeText={(text) =>
+                                  handleQuantityChange(item.id, text)
+                                }
+                                keyboardType="numeric"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                blurOnSubmit={false}
+                                returnKeyType="next"
+                                placeholder="0"
+                              />
+                            </View>
+                            {isBuyingPriceEditable && (
+                              <View style={[styles.cell, { width: 120 }]}>
+                                <TextInput
+                                  style={[
+                                    styles.input,
+                                    {
+                                      width: measureTextWidth(
+                                        newBuyingPrices[item.id] || "0.00"
+                                      ),
+                                    },
+                                  ]}
+                                  value={newBuyingPrices[item.id] || ""}
+                                  onChangeText={(text) =>
+                                    handlePriceChange(item.id, text, "buying")
+                                  }
+                                  keyboardType="numeric"
+                                  autoCapitalize="none"
+                                  autoCorrect={false}
+                                  blurOnSubmit={false}
+                                  returnKeyType="next"
+                                  placeholder="0.00"
+                                />
+                              </View>
+                            )}
+                            {isSellingPriceEditable && (
+                              <View style={[styles.cell, { width: 120 }]}>
+                                <TextInput
+                                  style={[
+                                    styles.input,
+                                    {
+                                      width: measureTextWidth(
+                                        newSellingPrices[item.id] || "0.00"
+                                      ),
+                                    },
+                                  ]}
+                                  value={newSellingPrices[item.id] || ""}
+                                  onChangeText={(text) =>
+                                    handlePriceChange(item.id, text, "selling")
+                                  }
+                                  keyboardType="numeric"
+                                  autoCapitalize="none"
+                                  autoCorrect={false}
+                                  blurOnSubmit={false}
+                                  returnKeyType="done"
+                                  placeholder="0.00"
+                                />
+                              </View>
+                            )}
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </ScrollView>
+                )}
+              </View>
+
+              <View style={styles.footer}>
+                <Text style={styles.attachmentLabel}>Attachment</Text>
+                <TouchableOpacity
+                  style={styles.receiptInput}
+                  onPress={handleFileSelection}
+                >
+                  {receiptImage ? (
+                    <View style={styles.receiptPreviewContainer}>
+                      <Text style={styles.receiptText} numberOfLines={1}>
+                        {receiptImage.split("/").pop()}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={handleFilePreview}
+                        style={styles.viewButton}
+                      >
+                        <Text
+                          style={[
+                            styles.viewButtonText,
+                            { color: theme.colors.primary },
+                          ]}
+                        >
+                          View
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <Text style={styles.receiptText}>
+                      Add Receipt or Invoice
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.applyButton,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                  onPress={handleApplyChanges}
+                >
+                  <Text style={[styles.buttonText, styles.centerText]}>
+                    Save & Update Stock
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
+      <FilePreviewModal />
     </View>
   );
 };
@@ -499,13 +724,62 @@ const RestockForm: React.FC<RestockFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "white",
   },
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    marginTop: Platform.OS === "ios" ? 40 : 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
   modalTitle: {
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  closeButtonCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 16,
     fontWeight: "bold",
-    fontSize: 24,
+  },
+  switchesContainer: {
+    backgroundColor: "#f8f9fa",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  toggleText: {
+    marginLeft: 10,
+    fontSize: 16,
   },
   searchContainer: {
     flexDirection: "row",
@@ -517,136 +791,167 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   viewButton: {
-    minWidth: 150,
+    padding: 8,
+    borderRadius: 4,
+  },
+  viewButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   scrollContainer: {
     flexGrow: 1,
   },
+  tableContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  tableContent: {
+    flex: 1,
+    width: "100%",
+  },
+  mobileTableContent: {
+    minWidth: Platform.OS === "web" ? "100%" : "auto",
+  },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
+  headerCellContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
   headerCell: {
-    padding: 16,
-    fontWeight: "bold",
     fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  tableBody: {
+    flexGrow: 0,
+    maxHeight: 300,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
-    alignItems: "center",
-    minHeight: 50,
+    paddingVertical: 8,
+    backgroundColor: "white",
   },
   cell: {
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     justifyContent: "center",
   },
-  modalContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "white",
-    width: "100%",
+  itemName: {
+    fontSize: 14,
+    fontWeight: "500",
   },
-  modalHeader: {
-    width: "100%",
-    marginBottom: 20,
+  currentStock: {
+    fontSize: 14,
+    color: "#666",
   },
-  closeButton: {
-    alignSelf: "flex-end",
-    padding: 8,
-  },
-  closeButtonText: {
-    color: "#FF6B6B",
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-
-  applyButton: {
-    backgroundColor: "#d9534f", // Red color for the button
-    marginTop: 20,
-  },
-  immediateUpdateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  receiptInput: {
-    marginTop: 10,
-    padding: 10,
+  input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: "#e0e0e0",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    height: 32,
+    backgroundColor: "white",
+    textAlign: "right",
+    fontSize: 14,
+    minWidth: 80,
+  },
+  footer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    paddingBottom: Platform.OS === "ios" ? 34 : 20, // Add safe area padding for iOS
+    paddingHorizontal: 20,
   },
   attachmentLabel: {
-    marginTop: 20,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 10,
   },
-  toggleContainer: {
-    flexDirection: "row",
+  receiptInput: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    backgroundColor: "#f8f9fa",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
+    marginBottom: 20,
+    width: "100%",
+  },
+  receiptText: {
+    color: "#666",
+    fontSize: 14,
+    flex: 1,
+  },
+  receiptPreviewContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  centerText: {
+    textAlign: "center",
+  },
+  applyButton: {
+    padding: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: Platform.OS === "ios" ? 20 : 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 40 : 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    paddingBottom: 16,
   },
-  footer: {
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  filePreviewContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  filePreviewContent: {
+    width: "90%",
+    height: "80%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    position: "relative",
+    overflow: "hidden",
+    padding: 20,
+  },
+  filePreview: {
+    width: "100%",
+    height: "100%",
     marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    paddingTop: 20,
-  },
-  cellContainer: {
-    flex: 1,
-    padding: 8,
-  },
-  tableContainer: {
-    minWidth: "100%",
-  },
-  horizontalScroll: {
-    flex: 1,
-  },
-  tableWrapper: {
-    flex: 1,
-    width: "100%",
-  },
-  tableContent: {
-    flex: 1,
-    width: "100%",
-  },
-  tableBody: {
-    flex: 1,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 4,
-    padding: 8,
-    height: 36,
-    width: "100%",
-    backgroundColor: "white",
-    textAlign: "right",
-  },
-  mobileTableContent: {
-    minWidth: Platform.OS === "web" ? "100%" : "auto",
-  },
-  mobileInput: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 4,
-    padding: 8,
-    height: 36,
-    minWidth: 80,
-    backgroundColor: "white",
-    textAlign: "right",
   },
 });
 
