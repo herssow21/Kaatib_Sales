@@ -27,6 +27,7 @@ import { type Order } from "../types";
 import { MaterialIcons } from "@expo/vector-icons";
 
 import { useInventoryContext } from "../../contexts/InventoryContext";
+import { useAlertContext } from "../../contexts/AlertContext";
 
 export default function Orders() {
   const theme = useTheme();
@@ -36,6 +37,7 @@ export default function Orders() {
     updateItem,
     removeItem,
   } = useInventoryContext();
+  const { showError, showWarning } = useAlertContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -524,28 +526,15 @@ export default function Orders() {
         setOrders(orders.filter((order) => order.id !== orderId));
       } catch (error) {
         console.error("Error deleting order:", error);
-        Alert.alert("Error", "Failed to delete order");
+        showError("Failed to delete order");
       }
     };
 
-    if (Platform.OS === "web") {
-      if (window.confirm("Are you sure you want to delete this order?")) {
-        confirmDelete();
-      }
-    } else {
-      Alert.alert(
-        "Delete Order",
-        "Are you sure you want to delete this order?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            onPress: confirmDelete,
-            style: "destructive",
-          },
-        ]
-      );
-    }
+    showWarning(
+      "Are you sure you want to delete this order?",
+      "Delete",
+      confirmDelete
+    );
   };
 
   const handlePrint = (order: Order) => {
@@ -618,7 +607,7 @@ export default function Orders() {
       setSelectedOrder(null);
     } catch (error) {
       console.error("Error submitting order:", error);
-      Alert.alert("Error", "Failed to save order");
+      showError("Failed to save order");
     }
   };
 

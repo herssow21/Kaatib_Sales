@@ -3,7 +3,6 @@ import {
   StyleSheet,
   View,
   ScrollView,
-  Alert,
   Platform,
   TouchableOpacity,
 } from "react-native";
@@ -13,12 +12,11 @@ import {
   SegmentedButtons,
   Text,
   useTheme,
-  Portal,
-  Dialog,
 } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import { useWindowDimensions } from "react-native";
 import { generateId } from "../utils/idGenerator";
+import { useAlertContext } from "../contexts/AlertContext";
 
 const ProductForm: React.FC<{
   initialData?: any;
@@ -27,6 +25,7 @@ const ProductForm: React.FC<{
   onClose: () => void;
 }> = ({ initialData, onSubmit, categories, onClose }) => {
   const theme = useTheme();
+  const { showError, showSuccess, showWarning } = useAlertContext();
   const [itemType, setItemType] = useState(initialData?.type || "product");
   const [name, setName] = useState(initialData?.name || "");
   const [buyingPrice, setBuyingPrice] = useState(
@@ -45,14 +44,6 @@ const ProductForm: React.FC<{
     initialData?.charges?.toString() || ""
   );
   const [category, setCategory] = useState(initialData?.category || "");
-
-  const showError = (message: string) => {
-    if (Platform.OS === "web") {
-      window.alert(message);
-    } else {
-      Alert.alert("Error", message);
-    }
-  };
 
   const handleSubmit = () => {
     try {
@@ -109,7 +100,32 @@ const ProductForm: React.FC<{
         return;
       }
 
-      onSubmit(itemData);
+      const confirmMessage = initialData
+        ? `Are you sure you want to update ${itemType} "${name}"?\n\nCurrent Details:\n- Category: ${
+            initialData.category
+          }\n- ${
+            itemType === "product"
+              ? `Quantity: ${initialData.quantity}\n- Buying Price: ${initialData.buyingPrice}\n- Selling Price: ${initialData.sellingPrice}`
+              : `Charges: ${initialData.charges}`
+          }\n\nNew Details:\n- Category: ${category}\n- ${
+            itemType === "product"
+              ? `Quantity: ${productCount}\n- Buying Price: ${buyingPrice}\n- Selling Price: ${sellingPrice}`
+              : `Charges: ${serviceCharges}`
+          }`
+        : `Are you sure you want to create new ${itemType} "${name}"?\n\nDetails:\n- Category: ${category}\n- ${
+            itemType === "product"
+              ? `Quantity: ${productCount}\n- Buying Price: ${buyingPrice}\n- Selling Price: ${sellingPrice}\n- Measuring Unit: ${measuringUnit}`
+              : `Charges: ${serviceCharges}`
+          }`;
+
+      showWarning(confirmMessage, initialData ? "Update" : "Create", () => {
+        onSubmit(itemData);
+        showSuccess(
+          `${itemType} "${name}" ${
+            initialData ? "updated" : "created"
+          } successfully!`
+        );
+      });
     } catch (error) {
       console.error("Item submission error:", error);
       showError("Failed to submit item. Please try again.");

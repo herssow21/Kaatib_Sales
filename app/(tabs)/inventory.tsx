@@ -58,7 +58,7 @@ const InventoryScreen = () => {
   const { items, addItem, updateItem, handleSale, deleteItem } =
     useInventoryContext();
   const { categories } = useCategoryContext();
-  const { showSuccess, showError, showWarning } = useAlertContext();
+  const { showSuccess, showError, showWarning, showInfo } = useAlertContext();
 
   const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [isItemModalVisible, setItemModalVisible] = useState(false);
@@ -151,15 +151,15 @@ const InventoryScreen = () => {
   };
 
   const handleViewItem = (item: InventoryItem) => {
-    if (Platform.OS === "web") {
-      const message = `Name: ${item.name}\nCategory: ${item.category}\nType: ${item.type}\nQuantity: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}\nStock Value: KES ${item.stockValue}`;
-      window.alert(message);
-    } else {
-      Alert.alert(
-        "Item Details",
-        `Name: ${item.name}\nCategory: ${item.category}\nType: ${item.type}\nQuantity: ${item.quantity}\nBuying Price: KES ${item.buyingPrice}\nSelling Price: KES ${item.sellingPrice}\nStock Value: KES ${item.stockValue}`
-      );
-    }
+    const message = `Name: ${item.name}
+Category: ${item.category}
+Type: ${item.type}
+Quantity: ${item.quantity}
+Buying Price: KES ${item.buyingPrice}
+Selling Price: KES ${item.sellingPrice}
+Stock Value: KES ${item.stockValue}`;
+
+    showInfo(message, "Item Details");
   };
 
   const handleEditItem = (item: InventoryItem) => {

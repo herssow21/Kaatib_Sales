@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from "react";
-import { Alert, Platform } from "react-native";
 import { generateId } from "../utils/idGenerator";
 
 interface Category {
@@ -29,7 +28,7 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
       setCategories((prevCategories) => [...prevCategories, newCategory]);
     } catch (error) {
       console.error("Error adding category:", error);
-      Alert.alert("Error", "Failed to add category");
+      throw error;
     }
   };
 
@@ -42,26 +41,21 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({
             : cat
         )
       );
-
-      if (Platform.OS === "web") {
-        window.alert("Category updated successfully");
-      } else {
-        Alert.alert("Success", "Category updated successfully");
-      }
     } catch (error) {
       console.error("Error updating category:", error);
-      if (Platform.OS === "web") {
-        window.alert("Failed to update category");
-      } else {
-        Alert.alert("Error", "Failed to update category");
-      }
+      throw error;
     }
   };
 
   const removeCategory = (id: string) => {
-    setCategories((prevCategories) =>
-      prevCategories.filter((cat) => cat.id !== id)
-    );
+    try {
+      setCategories((prevCategories) =>
+        prevCategories.filter((cat) => cat.id !== id)
+      );
+    } catch (error) {
+      console.error("Error removing category:", error);
+      throw error;
+    }
   };
 
   return (

@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { TextInput, Button, Text, Title } from "react-native-paper";
+import { TextInput, Button, Text, Title, useTheme } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useInventoryContext } from "../contexts/InventoryContext";
 import { useCategoryContext } from "../contexts/CategoryContext";
+import { useAlertContext } from "../contexts/AlertContext";
 
 interface OrderItem {
   product: string;
@@ -76,6 +77,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
 }) => {
   const { items: inventoryItems, updateItem } = useInventoryContext();
   const { categories } = useCategoryContext();
+  const theme = useTheme();
+  const { showError, showSuccess, showWarning } = useAlertContext();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(
@@ -189,14 +192,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     return phone.length === 9 && /^[17]\d{8}$/.test(phone);
   };
 
-  const showError = (message: string) => {
-    if (Platform.OS === "web") {
-      window.alert(message);
-    } else {
-      Alert.alert("Error", message);
-    }
-  };
-
   const handleSubmit = () => {
     try {
       // Validation checks
@@ -240,6 +235,19 @@ const OrderForm: React.FC<OrderFormProps> = ({
         status: "Pending",
       };
 
+      // Check stock availability
+      const insufficientStock = formData.items.some((item) => {
+        const inventoryItem = inventoryItems.find(
+          (i) => i.name === item.product
+        );
+        return inventoryItem && inventoryItem.quantity < item.quantity;
+      });
+
+      if (insufficientStock) {
+        showError("Not enough stock for one or more items");
+        return;
+      }
+
       // Update inventory stock based on the order items
       formData.items.forEach((item) => {
         const inventoryItem = inventoryItems.find(
@@ -247,20 +255,17 @@ const OrderForm: React.FC<OrderFormProps> = ({
         );
         if (inventoryItem) {
           const updatedQuantity = inventoryItem.quantity - item.quantity;
-          if (updatedQuantity < 0) {
-            Alert.alert("Error", "Not enough stock for " + item.product);
-            return;
-          }
-          // Update the inventory item
           updateItem({ ...inventoryItem, quantity: updatedQuantity });
-        } else {
-          console.error("Inventory item not found:", item.product);
-          showError("Item not found in inventory: " + item.product);
         }
       });
 
       onSubmit(newOrder);
       setFormData(initialFormState); // Reset form
+      showSuccess(
+        `Order for ${formData.clientName} ${
+          initialData ? "updated" : "added"
+        } successfully!`
+      );
     } catch (error) {
       console.error("Order submission error:", error);
       showError("Failed to submit order");

@@ -23,6 +23,7 @@ import {
 import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
 import type { InventoryItem } from "../app/types";
 import { WebView } from "react-native-webview";
+import { useAlertContext } from "../contexts/AlertContext";
 
 interface FormItem extends Omit<InventoryItem, "quantity"> {
   currentStock: number;
@@ -42,6 +43,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
   updateItem,
 }) => {
   const theme = useTheme();
+  const { showSuccess, showError } = useAlertContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<FormItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -99,76 +101,18 @@ const RestockForm: React.FC<RestockFormProps> = ({
     };
   };
 
-  const showError = (message: string) => {
-    if (Platform.OS === "web") {
-      window.alert(message);
-    } else {
-      Alert.alert("Error", message);
-    }
-  };
-
   const handleApplyChanges = () => {
-    // Validate that quantities are entered for selected items
-    const missingQuantities = selectedItems.filter(
-      (item) => !quantities[item.id] || quantities[item.id] <= 0
+    const hasEmptyQuantities = selectedItems.some(
+      (item) => !quantities[item.id] && quantities[item.id] !== 0
     );
 
-    if (missingQuantities.length > 0) {
+    if (hasEmptyQuantities) {
       showError("Please enter quantity for all selected items.");
       return;
     }
 
     const updatedItems = selectedItems.map((formItem) => {
       const existingItem = items.find((i) => i.id === formItem.id);
-      if (existingItem) {
-        const quantityToAdd = quantities[formItem.id] || 0;
-        const updatedQuantity = existingItem.quantity + quantityToAdd;
-
-        // Handle price updates based on applyImmediately checkbox
-        let updatedBuyingPrice = existingItem.buyingPrice;
-        let updatedSellingPrice = existingItem.sellingPrice;
-
-        if (isBuyingPriceEditable) {
-          const newBuyingPrice =
-            parseFloat(newBuyingPrices[formItem.id]) ||
-            existingItem.buyingPrice;
-          if (applyImmediately) {
-            updatedBuyingPrice = newBuyingPrice;
-          } else {
-            updatedBuyingPrice =
-              existingItem.quantity === 0
-                ? newBuyingPrice
-                : existingItem.buyingPrice;
-            existingItem.futureBuyingPrice = newBuyingPrice;
-          }
-        }
-
-        if (isSellingPriceEditable) {
-          const newSellingPrice =
-            parseFloat(newSellingPrices[formItem.id]) ||
-            existingItem.sellingPrice;
-          if (applyImmediately) {
-            updatedSellingPrice = newSellingPrice;
-          } else {
-            updatedSellingPrice =
-              existingItem.quantity === 0
-                ? newSellingPrice
-                : existingItem.sellingPrice;
-            existingItem.futureSellingPrice = newSellingPrice;
-          }
-        }
-
-        // Create a complete InventoryItem with all required properties
-        const updatedFormItem = {
-          ...formItem,
-          buyingPrice: updatedBuyingPrice,
-          sellingPrice: updatedSellingPrice,
-          futureBuyingPrice: existingItem.futureBuyingPrice,
-          futureSellingPrice: existingItem.futureSellingPrice,
-        };
-
-        return convertFormItemToInventoryItem(updatedFormItem, updatedQuantity);
-      }
       return convertFormItemToInventoryItem(formItem, formItem.currentStock);
     });
 
@@ -177,11 +121,11 @@ const RestockForm: React.FC<RestockFormProps> = ({
         updateItem(updatedItem);
       });
 
-      Alert.alert("Success", "Stock updated successfully!");
+      showSuccess("Stock updated successfully!");
       onSubmit(updatedItems);
       setModalVisible(false);
     } catch (error) {
-      Alert.alert("Error", "Failed to update stock. Please try again.");
+      showError("Failed to update stock. Please try again.");
     }
   };
 
