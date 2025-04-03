@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -9,8 +9,9 @@ import {
   ViewStyle,
   Alert,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import {
+  Portal,
+  Dialog,
   Text,
   Searchbar,
   FAB,
@@ -20,7 +21,9 @@ import {
   IconButton,
   Menu,
   SegmentedButtons,
+  TextInput,
 } from "react-native-paper";
+import { Picker } from "@react-native-picker/picker";
 import OrderForm from "../../components/OrderForm";
 import { useCategoryContext } from "../../contexts/CategoryContext";
 import { type Order } from "../types";
@@ -28,6 +31,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 import { useInventoryContext } from "../../contexts/InventoryContext";
 import { useAlertContext } from "../../contexts/AlertContext";
+import { printReceipt } from "../../utils/printReceipt";
+import ThermalPrinter from "../../utils/ThermalPrinter";
 
 export default function Orders() {
   const theme = useTheme();
@@ -37,7 +42,7 @@ export default function Orders() {
     updateItem,
     removeItem,
   } = useInventoryContext();
-  const { showError, showWarning } = useAlertContext();
+  const { showError, showWarning, showSuccess } = useAlertContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -55,6 +60,12 @@ export default function Orders() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isTimeMenuVisible, setTimeMenuVisible] = useState(false);
   const [isSortMenuVisible, setSortMenuVisible] = useState(false);
+  const [printerConfig, setPrinterConfig] = useState({
+    ip: "192.168.1.100",
+    port: 9100,
+    width: 48, // Default width for 58mm printer (32 or 48 chars per line)
+  });
+  const [isPrinterDialogVisible, setIsPrinterDialogVisible] = useState(false);
 
   const isMobile = Platform.OS === "android" || Platform.OS === "ios";
 
@@ -537,11 +548,90 @@ export default function Orders() {
     );
   };
 
-  const handlePrint = (order: Order) => {
-    console.log("Printing order:", order);
-    window.print();
-    setActiveDropdown(null);
-  };
+  const handlePrint = useCallback(
+    async (order: Order) => {
+      if (Platform.OS === "android") {
+        try {
+          // For Android, try Bluetooth printing first
+          await ThermalPrinter.print({
+            payload: await printReceipt(order, "Admin"),
+          });
+          showSuccess("Receipt printed successfully!");
+        } catch (error) {
+          console.error("Print error:", error);
+          if (error.message?.includes("No Bluetooth printers found")) {
+            showError(
+              "No Bluetooth printer found. Please pair a printer first."
+            );
+          } else {
+            showError(
+              "Failed to print receipt. Please check printer connection."
+            );
+          }
+        }
+      } else {
+        // For iOS/Web, show printer configuration dialog for TCP printing
+        setSelectedOrder(order);
+        setIsPrinterDialogVisible(true);
+      }
+    },
+    [showSuccess, showError]
+  );
+
+  const handlePrinterConfigSave = useCallback(async () => {
+    if (!selectedOrder) return;
+
+    // Validate IP address format
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(printerConfig.ip)) {
+      showError("Please enter a valid IP address");
+      return;
+    }
+
+    // Validate port number
+    if (printerConfig.port < 0 || printerConfig.port > 65535) {
+      showError("Please enter a valid port number (0-65535)");
+      return;
+    }
+
+    try {
+      // First try to test the printer connection with a test print
+      const testString = "Printer Test\n\n\n";
+      await ThermalPrinter.print({
+        payload: testString,
+        host: printerConfig.ip,
+        port: printerConfig.port,
+        timeout: 5000,
+        width: printerConfig.width,
+      });
+
+      // If test successful, print the actual receipt
+      await ThermalPrinter.print({
+        payload: await printReceipt(selectedOrder, "Admin", printerConfig),
+        host: printerConfig.ip,
+        port: printerConfig.port,
+        timeout: 5000,
+        width: printerConfig.width,
+      });
+
+      showSuccess("Receipt printed successfully!");
+      setIsPrinterDialogVisible(false);
+      setSelectedOrder(null);
+    } catch (error) {
+      console.error("Print error:", error);
+      if (error.message?.includes("ETIMEDOUT")) {
+        showError(
+          "Printer connection timed out. Please check if the printer is turned on and connected to the network."
+        );
+      } else if (error.message?.includes("ECONNREFUSED")) {
+        showError("Connection refused. Please verify the IP address and port.");
+      } else {
+        showError(
+          "Failed to connect to printer. Please check printer settings and ensure it's powered on."
+        );
+      }
+    }
+  }, [selectedOrder, printerConfig, showSuccess, showError]);
 
   const handleViewDetails = (order: Order) => {
     setSelectedOrderDetails(order);
@@ -793,6 +883,64 @@ export default function Orders() {
     // Implement your delete logic here
     removeItem(item.id);
   };
+
+  const PrinterConfigDialog = ({ visible, onDismiss, onSave }) => (
+    <Portal>
+      <Dialog visible={visible} onDismiss={onDismiss}>
+        <Dialog.Title>Printer Configuration</Dialog.Title>
+        <Dialog.Content>
+          <TextInput
+            label="Printer IP Address"
+            placeholder="e.g., 192.168.1.100"
+            value={printerConfig.ip}
+            onChangeText={(text) =>
+              setPrinterConfig((prev) => ({ ...prev, ip: text }))
+            }
+            style={{ marginBottom: 16 }}
+          />
+          <TextInput
+            mode="outlined"
+            label="Printer Port"
+            placeholder="Default: 9100"
+            value={printerConfig.port.toString()}
+            onChangeText={(text) =>
+              setPrinterConfig((prev) => ({
+                ...prev,
+                port: parseInt(text) || 9100,
+              }))
+            }
+            keyboardType="numeric"
+            style={{ marginBottom: 16 }}
+          />
+          <SegmentedButtons
+            value={printerConfig.width.toString()}
+            onValueChange={(value) =>
+              setPrinterConfig((prev) => ({
+                ...prev,
+                width: parseInt(value),
+              }))
+            }
+            buttons={[
+              {
+                value: "32",
+                label: "58mm",
+              },
+              {
+                value: "48",
+                label: "80mm",
+              },
+            ]}
+          />
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={onDismiss}>Cancel</Button>
+          <Button onPress={onSave} mode="contained">
+            Save & Print
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
 
   return (
     <View style={styles.container}>
@@ -1097,14 +1245,14 @@ export default function Orders() {
                           onPress={() => handleViewDetails(item)}
                         />
                         <IconButton
-                          icon="pencil"
-                          size={20}
-                          onPress={() => handleEdit(item)}
-                        />
-                        <IconButton
                           icon="printer"
                           size={20}
                           onPress={() => handlePrint(item)}
+                        />
+                        <IconButton
+                          icon="pencil"
+                          size={20}
+                          onPress={() => handleEdit(item)}
                         />
                         <IconButton
                           icon="delete"
@@ -1201,14 +1349,14 @@ export default function Orders() {
                       onPress={() => handleViewDetails(item)}
                     />
                     <IconButton
-                      icon="pencil"
-                      size={18}
-                      onPress={() => handleEdit(item)}
-                    />
-                    <IconButton
                       icon="printer"
                       size={18}
                       onPress={() => handlePrint(item)}
+                    />
+                    <IconButton
+                      icon="pencil"
+                      size={18}
+                      onPress={() => handleEdit(item)}
                     />
                     <IconButton
                       icon="delete"
@@ -1327,6 +1475,14 @@ export default function Orders() {
           </View>
         </Modal>
       )}
+      <PrinterConfigDialog
+        visible={isPrinterDialogVisible}
+        onDismiss={() => {
+          setIsPrinterDialogVisible(false);
+          setSelectedOrder(null);
+        }}
+        onSave={handlePrinterConfigSave}
+      />
     </View>
   );
 }

@@ -235,25 +235,30 @@ const OrderForm: React.FC<OrderFormProps> = ({
         status: "Pending",
       };
 
-      // Check stock availability
+      // Check stock availability only for products (not services)
       const insufficientStock = formData.items.some((item) => {
         const inventoryItem = inventoryItems.find(
           (i) => i.name === item.product
         );
-        return inventoryItem && inventoryItem.quantity < item.quantity;
+        // Only check stock for products, not services
+        return (
+          inventoryItem &&
+          inventoryItem.type === "product" &&
+          inventoryItem.quantity < item.quantity
+        );
       });
 
       if (insufficientStock) {
-        showError("Not enough stock for one or more items");
+        showError("Not enough stock for one or more products");
         return;
       }
 
-      // Update inventory stock based on the order items
+      // Update inventory stock only for products
       formData.items.forEach((item) => {
         const inventoryItem = inventoryItems.find(
           (i) => i.name === item.product
         );
-        if (inventoryItem) {
+        if (inventoryItem && inventoryItem.type === "product") {
           const updatedQuantity = inventoryItem.quantity - item.quantity;
           updateItem({ ...inventoryItem, quantity: updatedQuantity });
         }

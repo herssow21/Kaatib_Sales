@@ -96,19 +96,79 @@ const InventoryScreen = () => {
     { label: "Lowest Price", value: "lowPrice" },
   ];
 
-  const handleSort = (key: string) => {
-    let direction = "ascending";
-    if (sortConfig.key === key && sortConfig.direction === "ascending") {
-      direction = "descending";
+  // Sorting and filtering logic
+  const filteredAndSortedItems = React.useMemo(() => {
+    // First, filter by search query and category
+    let filtered = [...items];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query) ||
+          (item.type === "product" &&
+            item.quantity?.toString().includes(query)) ||
+          item.sellingPrice?.toString().includes(query)
+      );
     }
-    setSortConfig({ key, direction });
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((item) => item.category === selectedCategory);
+    }
+
+    // Then, sort the filtered items
+    return filtered.sort((a, b) => {
+      const direction = sortConfig.direction === "ascending" ? 1 : -1;
+
+      switch (sortConfig.key) {
+        case "name":
+          return direction * a.name.localeCompare(b.name);
+        case "category":
+          return direction * a.category.localeCompare(b.category);
+        case "quantity":
+          const aQty = a.type === "service" ? -1 : a.quantity || 0;
+          const bQty = b.type === "service" ? -1 : b.quantity || 0;
+          return direction * (aQty - bQty);
+        case "buyingPrice":
+          const aBuy = a.type === "service" ? -1 : a.buyingPrice || 0;
+          const bBuy = b.type === "service" ? -1 : b.buyingPrice || 0;
+          return direction * (aBuy - bBuy);
+        case "sellingPrice":
+          return direction * ((a.sellingPrice || 0) - (b.sellingPrice || 0));
+        case "stockValue":
+          const aValue = a.type === "service" ? -1 : a.stockValue || 0;
+          const bValue = b.type === "service" ? -1 : b.stockValue || 0;
+          return direction * (aValue - bValue);
+        case "createdAt":
+          return (
+            direction *
+            (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          );
+        default:
+          return 0;
+      }
+    });
+  }, [items, searchQuery, selectedCategory, sortConfig]);
+
+  const handleSort = (key: string) => {
+    setSortConfig((prevConfig) => ({
+      key,
+      direction:
+        prevConfig.key === key && prevConfig.direction === "ascending"
+          ? "descending"
+          : "ascending",
+    }));
   };
 
   const handleSortChange = (value: string) => {
     setSelectedSort(value);
     switch (value) {
       case "recent":
-        handleSort("createdAt");
+        setSortConfig({ key: "createdAt", direction: "descending" });
+        break;
+      case "relevant":
+        setSortConfig({ key: "name", direction: "ascending" });
         break;
       case "highPrice":
         setSortConfig({ key: "sellingPrice", direction: "descending" });
@@ -249,36 +309,57 @@ Stock Value: KES ${item.stockValue}`;
     bulkRestoreContainer: {
       padding: 16,
     },
+    sortableHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      cursor: "pointer",
+      opacity: 0.9,
+    },
     tableHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-      backgroundColor: "#f0f0f0",
-      padding: 8,
+      backgroundColor: "#f8f9fa",
+      paddingVertical: 6,
+      paddingHorizontal: 8,
+      borderBottomWidth: 2,
+      borderBottomColor: "#e0e0e0",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
     },
     tableHeaderCell: {
       flex: 1,
-      fontWeight: "bold",
+      fontWeight: "600",
       textAlign: "left",
+      fontSize: 13,
+      color: "#444",
     },
     tableRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      padding: 8,
+      paddingVertical: 2,
+      paddingHorizontal: 8,
       borderBottomWidth: 1,
-      borderBottomColor: "#ccc",
+      borderBottomColor: "#e0e0e0",
+      backgroundColor: "white",
+      minHeight: 28,
+      alignItems: "center",
     },
     tableCell: {
       flex: 1,
       textAlign: "left",
+      paddingVertical: 0,
+      fontSize: 13,
+      color: "#333",
+      paddingRight: 4,
     },
     actionsContainer: {
       flexDirection: "row",
       justifyContent: "flex-end",
-      flex: 1,
-    },
-    sortableHeader: {
-      flexDirection: "row",
-      alignItems: "center",
+      flex: 0.8,
+      paddingLeft: 0,
     },
     sortIcon: {
       marginLeft: 4,
@@ -387,11 +468,13 @@ Stock Value: KES ${item.stockValue}`;
       borderBottomWidth: 1,
       borderBottomColor: "#eee",
       backgroundColor: "white",
+      minHeight: 36,
+      alignItems: "center",
     },
     mobileTableCell: {
-      paddingTop: 4,
-      paddingLeft: 8,
-      justifyContent: "flex-end",
+      paddingVertical: 2,
+      paddingHorizontal: 6,
+      justifyContent: "center",
     },
     filterButtons: {
       flexDirection: "row",
@@ -409,6 +492,9 @@ Stock Value: KES ${item.stockValue}`;
       flexDirection: "row",
       justifyContent: "flex-end",
       gap: 8,
+      alignItems: "center",
+      height: 32,
+      width: 110,
     },
     itemContainer: {
       flexDirection: "row",
@@ -426,9 +512,16 @@ Stock Value: KES ${item.stockValue}`;
       gap: 8,
     },
     actionButton: {
-      paddingVertical: 2,
-      paddingHorizontal: 4,
-      minWidth: 40,
+      margin: 0,
+      padding: 0,
+      minWidth: 22,
+      height: 32,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    actionIcon: {
+      margin: 0,
+      padding: 0,
     },
     deleteButton: {
       color: "#e74c3c",
@@ -441,20 +534,29 @@ Stock Value: KES ${item.stockValue}`;
     },
   });
   const renderItemActions = (item: InventoryItem) => (
-    <View style={styles.actionButtons as ViewStyle}>
-      <IconButton icon="eye" onPress={() => handleViewItem(item)} size={20} />
+    <View style={styles.actionButtons}>
+      <IconButton
+        icon="eye"
+        onPress={() => handleViewItem(item)}
+        size={16}
+        style={styles.actionButton}
+        iconColor={theme.colors.primary}
+      />
       <IconButton
         icon="pencil"
         onPress={() => {
           setSelectedItem(item);
           setItemModalVisible(true);
         }}
-        size={20}
+        size={16}
+        style={styles.actionButton}
+        iconColor={theme.colors.primary}
       />
       <IconButton
         icon="delete"
         onPress={() => handleDeleteItem(item)}
-        size={20}
+        size={16}
+        style={styles.actionButton}
         iconColor="#e74c3c"
       />
     </View>
@@ -538,9 +640,13 @@ Stock Value: KES ${item.stockValue}`;
               value={searchQuery}
               onChangeText={setSearchQuery}
               style={styles.mobileSearchInput}
+              left={<TextInput.Icon icon="magnify" />}
+              clearButtonMode="while-editing"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             <View style={styles.mobileFilterRow as ViewStyle}>
-              <Text style={styles.filterLabel as TextStyle}>Sort By:</Text>
+              <Text style={styles.filterLabel as TextStyle}>Filter:</Text>
               <View style={styles.filterButtons as ViewStyle}>
                 <Menu
                   visible={isCategoryMenuVisible}
@@ -549,6 +655,7 @@ Stock Value: KES ${item.stockValue}`;
                     <Button
                       mode="outlined"
                       onPress={() => setIsCategoryMenuVisible(true)}
+                      icon="filter-variant"
                     >
                       {selectedCategory === "all"
                         ? "All Categories"
@@ -562,6 +669,7 @@ Stock Value: KES ${item.stockValue}`;
                       setIsCategoryMenuVisible(false);
                     }}
                     title="All Categories"
+                    leadingIcon="folder"
                   />
                   {categories.map((cat) => (
                     <Menu.Item
@@ -571,6 +679,7 @@ Stock Value: KES ${item.stockValue}`;
                         setIsCategoryMenuVisible(false);
                       }}
                       title={cat.name}
+                      leadingIcon="folder-outline"
                     />
                   ))}
                 </Menu>
@@ -581,6 +690,7 @@ Stock Value: KES ${item.stockValue}`;
                     <Button
                       mode="outlined"
                       onPress={() => setMenuVisible(true)}
+                      icon="sort-variant"
                     >
                       {sortOptions.find((opt) => opt.value === selectedSort)
                         ?.label || "Sort By"}
@@ -595,6 +705,15 @@ Stock Value: KES ${item.stockValue}`;
                         setMenuVisible(false);
                       }}
                       title={option.label}
+                      leadingIcon={
+                        option.value === "recent"
+                          ? "clock-outline"
+                          : option.value === "relevant"
+                          ? "sort-alphabetical-ascending"
+                          : option.value === "highPrice"
+                          ? "sort-numeric-descending"
+                          : "sort-numeric-ascending"
+                      }
                     />
                   ))}
                 </Menu>
@@ -637,13 +756,13 @@ Stock Value: KES ${item.stockValue}`;
                   Value
                 </Text>
                 <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 140 }]}
+                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
                 >
                   Actions
                 </Text>
               </View>
               <ScrollView>
-                {items.map((item, index) => (
+                {filteredAndSortedItems.map((item, index) => (
                   <View
                     key={item.id}
                     style={styles.mobileTableRow as ViewStyle}
@@ -832,7 +951,7 @@ Stock Value: KES ${item.stockValue}`;
             </View>
           </View>
           <ScrollView>
-            {items.length === 0 ? (
+            {filteredAndSortedItems.length === 0 ? (
               <Text style={styles.emptyText}>
                 No items available in inventory.
               </Text>
@@ -901,7 +1020,7 @@ Stock Value: KES ${item.stockValue}`;
                   <Text style={styles.tableHeaderCell}>Actions</Text>
                 </View>
                 <ScrollView style={styles.tableScrollView}>
-                  {items.map((item, index) => (
+                  {filteredAndSortedItems.map((item, index) => (
                     <View key={item.id} style={styles.tableRow as ViewStyle}>
                       <Text
                         style={[styles.tableCell as TextStyle, { flex: 0.5 }]}

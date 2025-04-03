@@ -176,29 +176,36 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           (orderItem) => orderItem.itemId === item.id
         );
         if (soldItem) {
-          const newQuantity = Math.max(0, item.quantity - soldItem.quantity);
-          const currentTotalSold = item.totalSold || 0;
-          const currentTotalOrdered = item.totalOrdered || 0;
+          // For products, update quantity and stock value
+          if (item.type === "product") {
+            const newQuantity = Math.max(0, item.quantity - soldItem.quantity);
+            const currentTotalSold = item.totalSold || 0;
 
-          const shouldUpdatePrices =
-            newQuantity === 0 &&
-            (item.futureBuyingPrice !== undefined ||
-              item.futureSellingPrice !== undefined);
+            const shouldUpdatePrices =
+              newQuantity === 0 &&
+              (item.futureBuyingPrice !== undefined ||
+                item.futureSellingPrice !== undefined);
 
-          return {
-            ...item,
-            quantity: newQuantity,
-            // Update the appropriate total counter
-            ...(item.type === "product"
-              ? { totalSold: currentTotalSold + soldItem.quantity }
-              : { totalOrdered: currentTotalOrdered + soldItem.quantity }),
-            ...(shouldUpdatePrices && {
-              buyingPrice: item.futureBuyingPrice || item.buyingPrice,
-              sellingPrice: item.futureSellingPrice || item.sellingPrice,
-              futureBuyingPrice: undefined,
-              futureSellingPrice: undefined,
-            }),
-          };
+            return {
+              ...item,
+              quantity: newQuantity,
+              totalSold: currentTotalSold + soldItem.quantity,
+              ...(shouldUpdatePrices && {
+                buyingPrice: item.futureBuyingPrice || item.buyingPrice,
+                sellingPrice: item.futureSellingPrice || item.sellingPrice,
+                futureBuyingPrice: undefined,
+                futureSellingPrice: undefined,
+              }),
+            };
+          }
+          // For services, only update total orders
+          else {
+            const currentTotalOrdered = item.totalOrdered || 0;
+            return {
+              ...item,
+              totalOrdered: currentTotalOrdered + soldItem.quantity,
+            };
+          }
         }
         return item;
       });
