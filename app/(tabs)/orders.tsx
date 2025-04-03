@@ -1281,7 +1281,7 @@ export default function Orders() {
                       <Title>Customer Information</Title>
                       <Text>Name: {item.clientName}</Text>
                       <Text>Contact: {item.clientContact}</Text>
-                      <Text>Address: {item.address}</Text>
+                      <Text>Address/Descriptions: {item.address}</Text>
                     </View>
 
                     <View style={styles.detailsSection}>

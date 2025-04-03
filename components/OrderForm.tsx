@@ -390,7 +390,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
           />
         </View>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Address (Optional)</Text>
+          <Text style={styles.label}>Address/Descriptions (Optional)</Text>
           <TextInput
             value={formData.address}
             onChangeText={(value) =>

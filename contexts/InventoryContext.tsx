@@ -17,13 +17,33 @@ interface InventoryItem {
   stockValue: number;
   futureBuyingPrice?: number;
   futureSellingPrice?: number;
+  totalSold?: number; // for products
+  totalOrdered?: number; // for services
+}
+
+interface Order {
+  id: string;
+  items: Array<{ product: string; quantity: number; rate: number }>;
+  clientName: string;
+  clientContact: string;
+  address: string;
+  orderDate: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  discount: number;
+  totalOrderItems: number;
+  grandTotal: number;
+  status: string;
+  category: string;
 }
 
 type InventoryContextType = {
   items: InventoryItem[];
+  orders?: Order[];
   addItem: (item: InventoryItem) => void;
   updateItem: (item: InventoryItem) => void;
   deleteItem: (id: string) => void;
+  removeItem: (id: string) => void;
   handleSale: (itemId: string, quantitySold: number) => void;
   handleOrderSale: (orderItems: { itemId: string; quantity: number }[]) => void;
 };
@@ -36,6 +56,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const showError = (message: string) => {
     if (Platform.OS === "web") {
@@ -65,7 +86,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newItem = {
         ...item,
-        id: generateId(),
+        id: item.id || generateId(),
+        totalSold: item.totalSold || 0,
+        totalOrdered: item.totalOrdered || 0,
         ...(item.type === "service" && {
           sellingPrice: item.charges || 0,
           quantity: 0,
@@ -101,6 +124,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
+  const deleteItem = removeItem; // alias for consistency
+
   const updateItem = (updatedItem: InventoryItem) => {
     setItems((prevItems) =>
       prevItems.map((item) => (item.id === updatedItem.id ? updatedItem : item))
@@ -112,6 +137,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
       prevItems.map((item) => {
         if (item.id === itemId) {
           const newQuantity = Math.max(0, item.quantity - quantitySold);
+          const currentTotalSold = item.totalSold || 0;
+          const currentTotalOrdered = item.totalOrdered || 0;
 
           // Check if stock is depleted and there are future prices to apply
           const shouldUpdatePrices =
@@ -122,6 +149,10 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           return {
             ...item,
             quantity: newQuantity,
+            // Update the appropriate total counter
+            ...(item.type === "product"
+              ? { totalSold: currentTotalSold + quantitySold }
+              : { totalOrdered: currentTotalOrdered + quantitySold }),
             // Apply future prices if stock depleted
             ...(shouldUpdatePrices && {
               buyingPrice: item.futureBuyingPrice || item.buyingPrice,
@@ -146,9 +177,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         if (soldItem) {
           const newQuantity = Math.max(0, item.quantity - soldItem.quantity);
-          console.log(
-            `Updating ${item.name} from ${item.quantity} to ${newQuantity}`
-          ); // Debug log
+          const currentTotalSold = item.totalSold || 0;
+          const currentTotalOrdered = item.totalOrdered || 0;
 
           const shouldUpdatePrices =
             newQuantity === 0 &&
@@ -158,6 +188,10 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           return {
             ...item,
             quantity: newQuantity,
+            // Update the appropriate total counter
+            ...(item.type === "product"
+              ? { totalSold: currentTotalSold + soldItem.quantity }
+              : { totalOrdered: currentTotalOrdered + soldItem.quantity }),
             ...(shouldUpdatePrices && {
               buyingPrice: item.futureBuyingPrice || item.buyingPrice,
               sellingPrice: item.futureSellingPrice || item.sellingPrice,
@@ -177,10 +211,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     <InventoryContext.Provider
       value={{
         items,
+        orders,
         addItem,
-        editItem,
-        removeItem,
         updateItem,
+        deleteItem,
+        removeItem,
         handleSale,
         handleOrderSale,
       }}
