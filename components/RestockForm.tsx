@@ -178,50 +178,94 @@ const RestockForm: React.FC<RestockFormProps> = ({
   };
 
   const handleApplyChanges = () => {
-    if (!validateInputs()) {
-      return;
-    }
-
     try {
-      const updatedItems = selectedItems.map((formItem) => {
-        const existingItem = items.find((i) => i.id === formItem.id);
-        if (!existingItem) return null;
+      // Validate quantities
+      const hasEmptyQuantities = Object.values(quantities).some(
+        (q) => q === "" || q === "0"
+      );
+      if (hasEmptyQuantities) {
+        showError("Please enter quantities for all selected items");
+        return;
+      }
 
-        const quantity = quantities[formItem.id] || 0;
-        const newBuyingPrice = newBuyingPrices[formItem.id]
-          ? parseFloat(newBuyingPrices[formItem.id])
-          : undefined;
-        const newSellingPrice = newSellingPrices[formItem.id]
-          ? parseFloat(newSellingPrices[formItem.id])
-          : undefined;
+      const updates = selectedItems.map((item) => {
+        const quantity = parseInt(quantities[item.id] || "0");
+        const newBuyingPrice = parseFloat(newBuyingPrices[item.id] || "0");
+        const newSellingPrice = parseFloat(newSellingPrices[item.id] || "0");
+        const applyPriceImmediately = applyImmediately;
 
-        handleRestock(
-          formItem.id,
-          quantity,
-          isBuyingPriceEditable ? newBuyingPrice : undefined,
-          isSellingPriceEditable ? newSellingPrice : undefined,
-          applyImmediately
-        );
+        if (isNaN(quantity) || quantity <= 0) {
+          showError(`Invalid quantity for ${item.name}`);
+          return null;
+        }
 
-        return {
-          ...existingItem,
-          quantity: existingItem.quantity + quantity,
+        // Only update buying price if explicitly changed
+        const updatedBuyingPrice =
+          newBuyingPrice > 0 ? newBuyingPrice : item.buyingPrice;
+
+        // Calculate new quantity
+        const newQuantity = item.currentStock + quantity;
+
+        // Calculate new stock value
+        const newStockValue = newQuantity * updatedBuyingPrice;
+
+        // Create updated item
+        const updatedItem: InventoryItem = {
+          ...item,
+          quantity: newQuantity,
+          stockValue: newStockValue,
+          buyingPrice: updatedBuyingPrice,
+          sellingPrice:
+            newSellingPrice > 0 ? newSellingPrice : item.sellingPrice,
+          pendingSellingPrice: applyPriceImmediately
+            ? undefined
+            : newSellingPrice > 0
+            ? newSellingPrice
+            : undefined,
+          pendingPriceActivationQuantity: applyPriceImmediately
+            ? undefined
+            : newSellingPrice > 0
+            ? item.currentStock
+            : undefined,
         };
+
+        return updatedItem;
       });
 
-      const validItems = updatedItems.filter(
-        (item): item is InventoryItem => item !== null
+      // Filter out any null updates
+      const validUpdates = updates.filter(
+        (update): update is InventoryItem => update !== null
       );
 
-      showSuccess("Stock updated successfully!");
-      onSubmit(validItems);
-      setModalVisible(false);
-      resetForm();
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      setErrors({
-        general: { quantity: "Failed to update stock. Please try again." },
+      if (validUpdates.length === 0) {
+        showError("No valid updates to apply");
+        return;
+      }
+
+      // Update inventory
+      validUpdates.forEach((item) => {
+        handleRestock(
+          item.id,
+          item.quantity - item.currentStock, // Calculate the quantity to add
+          item.buyingPrice,
+          item.sellingPrice,
+          applyImmediately
+        );
       });
+
+      // Close modal first
+      setModalVisible(false);
+
+      // Reset form
+      resetForm();
+
+      // Show success message after a short delay to ensure modal is closed
+      setTimeout(() => {
+        showSuccess("Inventory updated successfully!");
+      }, 100);
+    } catch (error) {
+      console.error("Error applying changes:", error);
+      showError("Failed to update inventory");
     }
   };
 
@@ -243,18 +287,33 @@ const RestockForm: React.FC<RestockFormProps> = ({
   };
 
   const handleQuantityChange = (itemId: string, text: string) => {
-    // Remove non-numeric characters
-    let numericValue = text.replace(/[^0-9]/g, "");
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
 
     // Handle leading zeros
-    if (numericValue.length > 1 && numericValue.startsWith("0")) {
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
       numericValue = numericValue.replace(/^0+/, "");
     }
 
-    setQuantities({
-      ...quantities,
-      [itemId]: parseInt(numericValue || "0", 10),
-    });
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    setQuantities((prev) => ({
+      ...prev,
+      [itemId]: numericValue,
+    }));
   };
 
   const handlePriceChange = (
@@ -278,6 +337,11 @@ const RestockForm: React.FC<RestockFormProps> = ({
     const parts = numericValue.split(".");
     if (parts.length > 2) {
       numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
     }
 
     if (type === "buying") {

@@ -173,13 +173,40 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }));
   };
 
-  const handleItemChange = (index: number, field: string, value: any) => {
+  const handleItemChange = (index: number, field: string, value: string) => {
     const newItems = [...formData.items];
     if (field === "rate" || field === "quantity") {
-      const numValue = value === "" ? 0 : Number(value);
+      // Remove non-numeric characters except decimal point
+      let numericValue = value.replace(/[^0-9.]/g, "");
+
+      // Handle leading zeros
+      if (
+        numericValue.length > 1 &&
+        numericValue.startsWith("0") &&
+        !numericValue.startsWith("0.")
+      ) {
+        numericValue = numericValue.replace(/^0+/, "");
+      }
+
+      // Ensure only one decimal point
+      const parts = numericValue.split(".");
+      if (parts.length > 2) {
+        numericValue = parts[0] + "." + parts.slice(1).join("");
+      }
+
+      // Limit to 2 decimal places
+      if (parts.length === 2) {
+        numericValue = parts[0] + "." + parts[1].slice(0, 2);
+      }
+
+      // If the value is empty or just a decimal point, set it to "0"
+      if (numericValue === "" || numericValue === ".") {
+        numericValue = "0";
+      }
+
       newItems[index] = {
         ...newItems[index],
-        [field]: isNaN(numValue) ? 0 : numValue,
+        [field]: parseFloat(numericValue),
       };
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
@@ -340,6 +367,148 @@ const OrderForm: React.FC<OrderFormProps> = ({
     );
   };
 
+  const handleQuantityChange = (itemId: string, text: string) => {
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
+
+    // Handle leading zeros
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.product === itemId
+          ? { ...item, quantity: parseFloat(numericValue) }
+          : item
+      ),
+    }));
+  };
+
+  const handlePriceChange = (
+    itemId: string,
+    text: string,
+    type: "buying" | "selling"
+  ) => {
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
+
+    // Handle leading zeros
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    if (type === "buying") {
+      setFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.product === itemId
+            ? { ...item, rate: parseFloat(numericValue) }
+            : item
+        ),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.product === itemId
+            ? { ...item, rate: parseFloat(numericValue) }
+            : item
+        ),
+      }));
+    }
+  };
+
+  const handleDiscountChange = (text: string) => {
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
+
+    // Handle leading zeros
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    const numValue = numericValue === "" ? 0 : parseFloat(numericValue);
+    setFormData((prev) => ({
+      ...prev,
+      discount: isNaN(numValue) ? 0 : numValue,
+    }));
+  };
+
+  const handlePaidAmountChange = (text: string) => {
+    // Remove non-numeric characters except decimal point
+    let numericValue = text.replace(/[^0-9.]/g, "");
+
+    // Handle leading zeros
+    if (
+      numericValue.length > 1 &&
+      numericValue.startsWith("0") &&
+      !numericValue.startsWith("0.")
+    ) {
+      numericValue = numericValue.replace(/^0+/, "");
+    }
+
+    // Ensure only one decimal point
+    const parts = numericValue.split(".");
+    if (parts.length > 2) {
+      numericValue = parts[0] + "." + parts.slice(1).join("");
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2) {
+      numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    const numValue = numericValue === "" ? 0 : parseFloat(numericValue);
+    setAmountPaid(isNaN(numValue) ? 0 : numValue);
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
@@ -438,7 +607,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <TextInput
               mode="outlined"
               value={item.rate?.toString() || "0"}
-              editable={false}
+              onChangeText={(value) => handleItemChange(index, "rate", value)}
+              keyboardType="numeric"
               style={styles.input}
             />
           </View>
@@ -448,7 +618,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
               mode="outlined"
               value={item.quantity?.toString() || "1"}
               onChangeText={(value) =>
-                handleItemChange(index, "quantity", parseInt(value))
+                handleItemChange(index, "quantity", value)
               }
               keyboardType="numeric"
               style={styles.input}
@@ -473,15 +643,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
               <Text style={styles.label}>Discount</Text>
               <TextInput
                 value={formData.discount?.toString() || "0"}
-                onChangeText={(value) => {
-                  const numericValue = value.replace(/[^0-9.]/g, "");
-                  const parsedValue =
-                    numericValue === "" ? 0 : parseFloat(numericValue);
-                  setFormData((prev) => ({
-                    ...prev,
-                    discount: isNaN(parsedValue) ? 0 : parsedValue,
-                  }));
-                }}
+                onChangeText={handleDiscountChange}
                 keyboardType="numeric"
                 style={styles.discountInput}
                 mode="outlined"
@@ -533,7 +695,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <TextInput
               mode="outlined"
               value={amountPaid.toString()}
-              onChangeText={(value) => setAmountPaid(parseFloat(value) || 0)}
+              onChangeText={handlePaidAmountChange}
               keyboardType="numeric"
               style={styles.amountPaidInput}
             />
