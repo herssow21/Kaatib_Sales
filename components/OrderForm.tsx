@@ -15,6 +15,8 @@ import { useInventoryContext } from "../contexts/InventoryContext";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { useAlertContext } from "../contexts/AlertContext";
 import { generateId } from "../utils/idGenerator";
+import { globalStyles } from "../theme/globalStyles";
+import { spacing, colors, borderRadius } from "../theme/theme";
 
 interface OrderItem {
   product: string;
@@ -87,9 +89,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
   initialData = null,
   orders,
 }) => {
+  const theme = useTheme();
   const { items: inventoryItems, handleOrderSale } = useInventoryContext();
   const { categories } = useCategoryContext();
-  const theme = useTheme();
   const { showError, showSuccess, showWarning } = useAlertContext();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -509,6 +511,136 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setAmountPaid(isNaN(numValue) ? 0 : numValue);
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      ...globalStyles.container,
+      padding: spacing.md,
+    },
+    title: {
+      ...globalStyles.title,
+    },
+    topSection: {
+      marginBottom: spacing.lg,
+    },
+    inputGroup: {
+      ...globalStyles.formGroup,
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    label: {
+      ...globalStyles.label,
+    },
+    input: {
+      ...globalStyles.input,
+      height: 40,
+    },
+    discountInput: {
+      ...globalStyles.input,
+      width: Platform.OS === "android" ? "50%" : "40%",
+      height: 40,
+    },
+    productLabel: {
+      ...globalStyles.subtitle,
+      marginTop: spacing.lg,
+    },
+    productName: {
+      ...globalStyles.caption,
+    },
+    itemContainer: {
+      ...globalStyles.row,
+      justifyContent: "space-between",
+      width: "100%",
+    },
+    formGroup: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    picker: {
+      minHeight: 40,
+      backgroundColor: colors.input,
+      borderRadius: borderRadius.sm,
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    button: {
+      ...globalStyles.button,
+      flex: 1,
+      marginHorizontal: spacing.xs,
+    },
+    actionButton: {
+      marginBottom: spacing.sm,
+    },
+    addButton: {
+      marginTop: spacing.sm,
+    },
+    buttonContainer: {
+      ...globalStyles.buttonContainer,
+    },
+    discountRow: {
+      ...globalStyles.row,
+      justifyContent: "space-between",
+      width: "100%",
+      marginBottom: spacing.sm,
+    },
+    alignRow: {
+      ...globalStyles.row,
+      justifyContent: "space-between",
+      marginVertical: spacing.xs,
+      padding: spacing.sm,
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.sm,
+      marginTop: spacing.sm,
+    },
+    grandTotalLabel: {
+      ...globalStyles.subtitle,
+      flex: 1,
+      textAlign: "left",
+    },
+    grandTotalValue: {
+      ...globalStyles.subtitle,
+    },
+    dateInputContainer: {
+      ...globalStyles.row,
+    },
+    dateInput: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    amountPaidInput: {
+      ...globalStyles.input,
+      width: Platform.OS === "android" ? "50%" : "40%",
+      height: 40,
+    },
+    deleteButton: {
+      padding: spacing.sm,
+    },
+    bottomSection: {
+      ...globalStyles.card,
+      flexDirection: Platform.OS === "android" ? "column" : "row",
+      justifyContent: "space-between",
+      marginTop: spacing.sm,
+    },
+    leftColumn: {
+      width: Platform.OS === "android" ? "98%" : "48%",
+    },
+    rightColumn: {
+      width: Platform.OS === "android" ? "98%" : "48%",
+    },
+    searchSection: {
+      marginBottom: spacing.lg,
+      paddingHorizontal: spacing.lg,
+    },
+    searchInput: {
+      backgroundColor: colors.background,
+    },
+    productSelectionContainer: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+  });
+
   return (
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Create New Order</Title>
@@ -749,195 +881,5 @@ const OrderForm: React.FC<OrderFormProps> = ({
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 0,
-    backgroundColor: "#fff",
-    borderRadius: 0,
-    elevation: 0,
-    width: "100%",
-    height: "100%",
-  },
-  title: {
-    marginBottom: 5,
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  topSection: {
-    marginBottom: 12,
-  },
-  inputGroup: {
-    flex: 1,
-    marginRight: 8,
-  },
-  label: {
-    flex: 1,
-    fontWeight: "bold",
-    textAlign: "left",
-  },
-  input: {
-    height: 40,
-    marginBottom: 8,
-    cursor: "pointer",
-  },
-  discountInput: {
-    width: Platform.OS === "android" ? "50%" : "40%",
-    height: 40,
-    marginBottom: 8,
-  },
-  productLabel: {
-    marginTop: 16,
-    fontWeight: "bold",
-  },
-  productName: {
-    fontSize: 12,
-    color: "#666",
-  },
-  itemContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-  },
-  formGroup: {
-    flex: 1,
-    marginRight: 8,
-  },
-  picker: {
-    minHeight: 40,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  actionButton: {
-    marginBottom: 12,
-  },
-  addButton: {
-    marginTop: 12,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: Platform.OS === "android" ? 13 : 2,
-    marginTop: Platform.OS === "android" ? 13 : 0,
-  },
-  discountRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: 8,
-  },
-  alignRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 4,
-    padding: 8,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  grandTotalLabel: {
-    flex: 1,
-    fontWeight: "bold",
-    textAlign: "left",
-    fontSize: 18,
-    color: "#2c3e50",
-  },
-  grandTotalValue: {
-    fontWeight: "bold",
-    fontSize: 20,
-    color: "#2c3e50",
-  },
-  dateInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  dateInput: {
-    flex: 1,
-    marginRight: 8,
-  },
-  calendarIcon: {
-    cursor: "pointer",
-  },
-  amountPaidInput: {
-    width: Platform.OS === "android" ? "50%" : "40%",
-    height: 40,
-    marginBottom: 8,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  bottomSection: {
-    flexDirection: Platform.OS === "android" ? "column" : "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 8,
-  },
-  leftColumn: {
-    width: Platform.OS === "android" ? "98%" : "48%",
-  },
-  rightColumn: {
-    width: Platform.OS === "android" ? "98%" : "48%",
-  },
-  searchSection: {
-    marginBottom: 20,
-    paddingHorizontal: 16,
-  },
-  searchInput: {
-    backgroundColor: "white",
-  },
-  productSelectionContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  datePickerInput: {
-    height: 40,
-    marginBottom: 8,
-    cursor: "pointer",
-  },
-  webPickerContainer: {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    backgroundColor: "white",
-    zIndex: 9999,
-    borderRadius: 8,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-  },
-  webDatePickerContainer: {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    backgroundColor: "white",
-    zIndex: 1001,
-    padding: 20,
-    borderRadius: 8,
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-    marginTop: 4,
-  },
-  webDatePicker: {
-    width: 320,
-    height: 320,
-  },
-  datePickerButton: {
-    width: "100%",
-    cursor: "pointer",
-  },
-  viewButton: {
-    marginLeft: 8,
-  },
-});
 
 export default OrderForm;
