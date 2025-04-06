@@ -14,6 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useInventoryContext } from "../contexts/InventoryContext";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { useAlertContext } from "../contexts/AlertContext";
+import { generateId } from "../utils/idGenerator";
 
 interface OrderItem {
   product: string;
@@ -69,13 +70,24 @@ const initialFormState = {
   discount: 0,
 };
 
+const calculateGrandTotal = (
+  items: Array<{ quantity: number; rate: number }>,
+  discount: number
+) => {
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.quantity * item.rate,
+    0
+  );
+  return subtotal - (discount || 0);
+};
+
 const OrderForm: React.FC<OrderFormProps> = ({
   onSubmit,
   onClose,
   initialData = null,
   orders,
 }) => {
-  const { items: inventoryItems, updateItem } = useInventoryContext();
+  const { items: inventoryItems, handleOrderSale } = useInventoryContext();
   const { categories } = useCategoryContext();
   const theme = useTheme();
   const { showError, showSuccess, showWarning } = useAlertContext();
@@ -194,19 +206,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   const handleSubmit = () => {
     try {
-      // Validation checks
       if (!formData.clientName.trim()) {
-        showError("Client name is required");
-        return;
-      }
-
-      if (!formData.clientContact.trim()) {
-        showError("Client contact is required");
-        return;
-      }
-
-      if (!validatePhoneNumber(formData.clientContact)) {
-        showError("Please enter a valid phone number");
+        showError("Please enter client name");
         return;
       }
 
@@ -215,25 +216,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
 
-      const total = formData.items.reduce(
-        (acc, item) => acc + item.rate * item.quantity,
-        0
-      );
-
-      const newOrder: Order = {
-        id: `ORD-${(orders?.length || 0 + 1).toString().padStart(3, "0")}`,
-        orderDate: formData.orderDate,
-        clientName: formData.clientName.trim(),
-        clientContact: formData.clientContact,
-        address: formData.address.trim(),
-        items: formData.items,
-        discount: formData.discount,
-        grandTotal: total - formData.discount,
-        paymentMethod: formData.paymentMethod,
-        paymentStatus: formData.paymentStatus,
-        category: selectedCategory || "default",
-        status: "Pending",
-      };
+      if (formData.items.some((item) => !item.product)) {
+        showError("Please select products for all items");
+        return;
+      }
 
       // Check stock availability only for products (not services)
       const insufficientStock = formData.items.some((item) => {
@@ -253,16 +239,37 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
 
-      // Update inventory stock only for products
-      formData.items.forEach((item) => {
-        const inventoryItem = inventoryItems.find(
-          (i) => i.name === item.product
-        );
-        if (inventoryItem && inventoryItem.type === "product") {
-          const updatedQuantity = inventoryItem.quantity - item.quantity;
-          updateItem({ ...inventoryItem, quantity: updatedQuantity });
-        }
-      });
+      // Create order items array for handleOrderSale
+      const orderItems = formData.items
+        .map((item) => {
+          const inventoryItem = inventoryItems.find(
+            (i) => i.name === item.product
+          );
+          return {
+            itemId: inventoryItem?.id || "",
+            quantity: item.quantity,
+            previousQuantity: initialData
+              ? initialData.items.find((i) => i.product === item.product)
+                  ?.quantity
+              : undefined,
+          };
+        })
+        .filter((item) => item.itemId); // Filter out any items not found in inventory
+
+      // Update inventory stock using handleOrderSale
+      handleOrderSale(orderItems);
+
+      const newOrder = {
+        id: initialData?.id || generateId(),
+        ...formData,
+        category: selectedCategory || "default",
+        status: initialData?.status || "Pending",
+        totalOrderItems: formData.items.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        ),
+        grandTotal: calculateGrandTotal(formData.items, formData.discount),
+      };
 
       onSubmit(newOrder);
       setFormData(initialFormState); // Reset form
@@ -318,7 +325,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
         {filteredItems.map((item) => (
           <Picker.Item
             key={item.id}
-            label={`${item.name} (${item.type})`}
+            label={`${item.name} (${item.category})`}
             value={item.name}
           />
         ))}
@@ -465,12 +472,14 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <View style={styles.discountRow}>
               <Text style={styles.label}>Discount</Text>
               <TextInput
-                value={formData.discount.toString()}
+                value={formData.discount?.toString() || "0"}
                 onChangeText={(value) => {
-                  const numValue = value.replace(/[^0-9.]/g, "");
+                  const numericValue = value.replace(/[^0-9.]/g, "");
+                  const parsedValue =
+                    numericValue === "" ? 0 : parseFloat(numericValue);
                   setFormData((prev) => ({
                     ...prev,
-                    discount: parseFloat(numValue),
+                    discount: isNaN(parsedValue) ? 0 : parsedValue,
                   }));
                 }}
                 keyboardType="numeric"

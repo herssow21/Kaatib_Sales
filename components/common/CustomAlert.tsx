@@ -70,110 +70,107 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 
   return (
     <Portal>
-      <View style={styles.container} pointerEvents="box-none">
-        <Dialog
-          visible={visible}
-          onDismiss={onDismiss}
-          style={[
-            styles.dialog,
-            {
-              backgroundColor: "white",
-              borderLeftWidth: 4,
-              borderLeftColor: getDialogColor(type),
-            },
-          ]}
-        >
-          <View style={styles.dialogHeader}>
-            <MaterialCommunityIcons
-              name={getDialogIcon(type)}
-              size={28}
-              color={getDialogColor(type)}
-              style={styles.dialogIcon}
-            />
-            <Text
-              variant="titleMedium"
-              style={[styles.dialogTitle, { color: getDialogColor(type) }]}
+      {visible && (
+        <View style={[StyleSheet.absoluteFill, styles.container]}>
+          <View
+            style={[styles.overlay, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]}
+            pointerEvents="auto"
+          >
+            <Dialog
+              visible={visible}
+              onDismiss={onDismiss}
+              style={[
+                styles.dialog,
+                {
+                  backgroundColor: "white",
+                  borderLeftWidth: 4,
+                  borderLeftColor: getDialogColor(type),
+                },
+              ]}
             >
-              {title}
-            </Text>
+              <View style={styles.dialogHeader}>
+                <MaterialCommunityIcons
+                  name={getDialogIcon(type)}
+                  size={24}
+                  color={getDialogColor(type)}
+                  style={styles.dialogIcon}
+                />
+                <Text
+                  variant="titleMedium"
+                  style={[styles.dialogTitle, { color: getDialogColor(type) }]}
+                >
+                  {title}
+                </Text>
+              </View>
+              <Dialog.Content style={styles.dialogContent}>
+                <Text variant="bodyMedium" style={styles.dialogMessage}>
+                  {message}
+                </Text>
+              </Dialog.Content>
+              <Dialog.Actions style={styles.dialogActions}>
+                {onConfirm ? (
+                  <>
+                    <Button
+                      onPress={onDismiss}
+                      mode="text"
+                      style={styles.actionButton}
+                      textColor={theme.colors.backdrop}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onPress={() => {
+                        onConfirm();
+                        onDismiss();
+                      }}
+                      mode="contained"
+                      buttonColor={getDialogColor(type)}
+                      style={[styles.actionButton, styles.confirmButton]}
+                    >
+                      {confirmText || "Confirm"}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onPress={onDismiss}
+                    mode="contained"
+                    buttonColor={getDialogColor(type)}
+                    style={[styles.actionButton, styles.okButton]}
+                  >
+                    OK
+                  </Button>
+                )}
+              </Dialog.Actions>
+            </Dialog>
           </View>
-          <Dialog.Content style={styles.dialogContent}>
-            <Text variant="bodyMedium" style={styles.dialogMessage}>
-              {message}
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions style={styles.dialogActions}>
-            {onConfirm ? (
-              <>
-                <Button
-                  onPress={onDismiss}
-                  mode="text"
-                  compact
-                  textColor={theme.colors.backdrop}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onPress={() => {
-                    onConfirm();
-                    onDismiss();
-                  }}
-                  mode="contained"
-                  compact
-                  buttonColor={getDialogColor(type)}
-                  style={styles.confirmButton}
-                >
-                  {confirmText || "Confirm"}
-                </Button>
-              </>
-            ) : (
-              <Button
-                onPress={onDismiss}
-                mode="text"
-                compact
-                textColor={getDialogColor(type)}
-              >
-                OK
-              </Button>
-            )}
-          </Dialog.Actions>
-        </Dialog>
-      </View>
+        </View>
+      )}
     </Portal>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    ...StyleSheet.absoluteFillObject,
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    zIndex: 999999,
+    elevation: 999999,
+  },
+  overlay: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999999,
     elevation: 999999,
   },
-  alertBox: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 16,
-    minWidth: 300,
-    maxWidth: "90%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    zIndex: 9999,
-  },
   dialog: {
-    maxWidth: Platform.OS === "web" ? 400 : "85%",
+    position: "relative",
+    maxWidth: Platform.OS === "web" ? 400 : "90%",
     width: Platform.OS === "web" ? 400 : undefined,
+    minWidth: Platform.OS === "web" ? undefined : 280,
     alignSelf: "center",
-    borderRadius: 8,
-    elevation: 24,
+    borderRadius: 12,
+    elevation: 999999,
     zIndex: 999999,
     shadowColor: "#000",
     shadowOffset: {
@@ -182,42 +179,53 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 16,
+    margin: 20,
   },
   dialogHeader: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
-  },
-  dialogContent: {
-    backgroundColor: "white",
+    paddingTop: 20,
+    paddingBottom: 12,
   },
   dialogIcon: {
     marginRight: 12,
   },
   dialogTitle: {
-    fontWeight: "600",
     flex: 1,
+    fontWeight: "600",
+    fontSize: 18,
+  },
+  dialogContent: {
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 20,
   },
   dialogMessage: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginVertical: 4,
-    color: "rgba(0, 0, 0, 0.87)",
+    color: "#333",
+    fontSize: 16,
+    lineHeight: 22,
   },
   dialogActions: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: "flex-end",
-    gap: 8,
+    padding: 12,
+    marginTop: 0,
     borderTopWidth: 1,
     borderTopColor: "rgba(0, 0, 0, 0.1)",
+    justifyContent: "flex-end",
+    flexDirection: "row",
+  },
+  actionButton: {
+    minWidth: 90,
+    borderRadius: 8,
+    marginLeft: 8,
   },
   confirmButton: {
-    minWidth: 100,
+    paddingHorizontal: 16,
+  },
+  okButton: {
+    minWidth: 120,
+    paddingVertical: 6,
+    marginLeft: 0,
   },
 });
 

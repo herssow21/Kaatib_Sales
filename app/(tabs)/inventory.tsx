@@ -1141,7 +1141,6 @@ Stock Value: KES ${item.stockValue}`;
             console.log("Selected items for restock:", selectedItems);
             setBulkRestoreModalVisible(false);
           }}
-          updateItem={updateItem}
         />
       </Modal>
     </View>

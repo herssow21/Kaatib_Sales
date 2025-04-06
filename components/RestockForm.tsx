@@ -24,6 +24,7 @@ import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
 import type { InventoryItem as BaseInventoryItem } from "../app/types";
 import { WebView } from "react-native-webview";
 import { useAlertContext } from "../contexts/AlertContext";
+import { useInventoryContext } from "../contexts/InventoryContext";
 
 interface InventoryItem extends BaseInventoryItem {
   pendingSellingPrice?: number;
@@ -39,17 +40,16 @@ interface RestockFormProps {
   items: InventoryItem[];
   onSubmit: (selectedItems: InventoryItem[]) => void;
   onClose: () => void;
-  updateItem: (updatedItem: InventoryItem) => void;
 }
 
 const RestockForm: React.FC<RestockFormProps> = ({
   items,
   onSubmit,
   onClose,
-  updateItem,
 }) => {
   const theme = useTheme();
   const { showSuccess, showError } = useAlertContext();
+  const { handleRestock } = useInventoryContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<FormItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,6 +59,13 @@ const RestockForm: React.FC<RestockFormProps> = ({
   }>({});
   const [newSellingPrices, setNewSellingPrices] = useState<{
     [key: string]: string;
+  }>({});
+  const [errors, setErrors] = useState<{
+    [key: string]: {
+      quantity?: string;
+      buyingPrice?: string;
+      sellingPrice?: string;
+    };
   }>({});
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
@@ -96,17 +103,6 @@ const RestockForm: React.FC<RestockFormProps> = ({
     setModalVisible(true);
   };
 
-  const convertFormItemToInventoryItem = (
-    formItem: FormItem,
-    updatedQuantity: number
-  ): InventoryItem => {
-    return {
-      ...formItem,
-      quantity: updatedQuantity,
-      stockValue: updatedQuantity * formItem.buyingPrice,
-    };
-  };
-
   const resetForm = () => {
     setSelectedItems([]);
     setQuantities({});
@@ -120,13 +116,69 @@ const RestockForm: React.FC<RestockFormProps> = ({
     setSearchQuery("");
   };
 
-  const handleApplyChanges = () => {
-    const hasEmptyQuantities = selectedItems.some(
-      (item) => !quantities[item.id] && quantities[item.id] !== 0
-    );
+  const validateInputs = () => {
+    const newErrors: {
+      [key: string]: {
+        quantity?: string;
+        buyingPrice?: string;
+        sellingPrice?: string;
+      };
+    } = {};
+    let hasErrors = false;
 
-    if (hasEmptyQuantities) {
-      showError("Please enter quantity for all selected items.");
+    selectedItems.forEach((item) => {
+      const itemErrors: {
+        quantity?: string;
+        buyingPrice?: string;
+        sellingPrice?: string;
+      } = {};
+
+      // Validate quantity
+      if (!quantities[item.id] && quantities[item.id] !== 0) {
+        itemErrors.quantity = "Please enter a quantity";
+        hasErrors = true;
+      } else if (quantities[item.id] <= 0) {
+        itemErrors.quantity = "Quantity must be greater than 0";
+        hasErrors = true;
+      }
+
+      // Validate buying price if editable
+      if (isBuyingPriceEditable && newBuyingPrices[item.id]) {
+        const buyingPrice = parseFloat(newBuyingPrices[item.id]);
+        if (isNaN(buyingPrice) || buyingPrice <= 0) {
+          itemErrors.buyingPrice = "Please enter a valid buying price";
+          hasErrors = true;
+        }
+      }
+
+      // Validate selling price if editable
+      if (isSellingPriceEditable && newSellingPrices[item.id]) {
+        const sellingPrice = parseFloat(newSellingPrices[item.id]);
+        const buyingPrice = newBuyingPrices[item.id]
+          ? parseFloat(newBuyingPrices[item.id])
+          : item.buyingPrice;
+
+        if (isNaN(sellingPrice) || sellingPrice <= 0) {
+          itemErrors.sellingPrice = "Please enter a valid selling price";
+          hasErrors = true;
+        } else if (sellingPrice < buyingPrice) {
+          itemErrors.sellingPrice =
+            "Selling price cannot be less than buying price";
+          hasErrors = true;
+        }
+      }
+
+      if (Object.keys(itemErrors).length > 0) {
+        newErrors[item.id] = itemErrors;
+      }
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
+  const handleApplyChanges = () => {
+    if (!validateInputs()) {
       return;
     }
 
@@ -135,60 +187,31 @@ const RestockForm: React.FC<RestockFormProps> = ({
         const existingItem = items.find((i) => i.id === formItem.id);
         if (!existingItem) return null;
 
-        const newQuantity =
-          formItem.currentStock + (quantities[formItem.id] || 0);
+        const quantity = quantities[formItem.id] || 0;
         const newBuyingPrice = newBuyingPrices[formItem.id]
           ? parseFloat(newBuyingPrices[formItem.id])
-          : existingItem.buyingPrice;
+          : undefined;
         const newSellingPrice = newSellingPrices[formItem.id]
           ? parseFloat(newSellingPrices[formItem.id])
-          : existingItem.sellingPrice;
+          : undefined;
 
-        // Calculate weighted average buying price for existing and new stock
-        const totalOldValue = existingItem.buyingPrice * existingItem.quantity;
-        const totalNewValue = newBuyingPrice * (quantities[formItem.id] || 0);
-        const weightedBuyingPrice =
-          (totalOldValue + totalNewValue) / newQuantity;
+        handleRestock(
+          formItem.id,
+          quantity,
+          isBuyingPriceEditable ? newBuyingPrice : undefined,
+          isSellingPriceEditable ? newSellingPrice : undefined,
+          applyImmediately
+        );
 
-        // Create the base updated item
-        const updatedItem: InventoryItem = {
+        return {
           ...existingItem,
-          quantity: newQuantity,
-          buyingPrice: isBuyingPriceEditable
-            ? weightedBuyingPrice
-            : existingItem.buyingPrice,
-          sellingPrice:
-            isSellingPriceEditable && applyImmediately
-              ? newSellingPrice
-              : existingItem.sellingPrice,
-          stockValue:
-            newQuantity *
-            (isBuyingPriceEditable
-              ? weightedBuyingPrice
-              : existingItem.buyingPrice),
+          quantity: existingItem.quantity + quantity,
         };
-
-        // If price change is not immediate, store the current quantity and new price
-        if (
-          isSellingPriceEditable &&
-          !applyImmediately &&
-          newSellingPrice !== existingItem.sellingPrice
-        ) {
-          (updatedItem as any).pendingSellingPrice = newSellingPrice;
-          (updatedItem as any).pendingPriceActivationQuantity =
-            existingItem.quantity;
-        }
-
-        return updatedItem;
       });
 
       const validItems = updatedItems.filter(
         (item): item is InventoryItem => item !== null
       );
-
-      validItems.forEach((updatedItem) => {
-        updateItem(updatedItem);
-      });
 
       showSuccess("Stock updated successfully!");
       onSubmit(validItems);
@@ -196,7 +219,9 @@ const RestockForm: React.FC<RestockFormProps> = ({
       resetForm();
     } catch (error) {
       console.error("Error updating stock:", error);
-      showError("Failed to update stock. Please try again.");
+      setErrors({
+        general: { quantity: "Failed to update stock. Please try again." },
+      });
     }
   };
 
@@ -293,6 +318,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={() => setIsFilePreviewVisible(false)}
+      pointerEvents="box-none"
     >
       <TouchableOpacity
         style={styles.filePreviewContainer}
@@ -385,6 +411,74 @@ const RestockForm: React.FC<RestockFormProps> = ({
     </View>
   );
 
+  // Update the input rendering to show error messages
+  const renderInput = (
+    item: FormItem,
+    value: string,
+    onChange: (text: string) => void,
+    placeholder: string,
+    type: "quantity" | "buyingPrice" | "sellingPrice"
+  ) => (
+    <View style={styles.inputContainer}>
+      <TextInput
+        style={[
+          styles.input,
+          errors[item.id]?.[type] && { borderColor: theme.colors.error },
+          Platform.OS === "web" && {
+            width: measureTextWidth(value || placeholder),
+          },
+        ]}
+        value={value}
+        onChangeText={onChange}
+        keyboardType="numeric"
+        placeholder={placeholder}
+        error={!!errors[item.id]?.[type]}
+      />
+      {errors[item.id]?.[type] && (
+        <Text style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}>
+          {errors[item.id]?.[type]}
+        </Text>
+      )}
+    </View>
+  );
+
+  // Update the table cell rendering to use the new input component
+  const renderTableCell = (item: FormItem) => (
+    <>
+      <View style={[styles.cell, { flex: 0.15 }]}>
+        {renderInput(
+          item,
+          quantities[item.id]?.toString() || "",
+          (text) => handleQuantityChange(item.id, text),
+          "0",
+          "quantity"
+        )}
+      </View>
+      {isBuyingPriceEditable && (
+        <View style={[styles.cell, { flex: 0.25 }]}>
+          {renderInput(
+            item,
+            newBuyingPrices[item.id] || "",
+            (text) => handlePriceChange(item.id, text, "buying"),
+            "0.00",
+            "buyingPrice"
+          )}
+        </View>
+      )}
+      {isSellingPriceEditable && (
+        <View style={[styles.cell, { flex: 0.25 }]}>
+          {renderInput(
+            item,
+            newSellingPrices[item.id] || "",
+            (text) => handlePriceChange(item.id, text, "selling"),
+            "0.00",
+            "sellingPrice"
+          )}
+        </View>
+      )}
+    </>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -455,6 +549,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
         animationType="slide"
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
+        pointerEvents="box-none"
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -545,55 +640,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
                               {item.currentStock}
                             </Text>
                           </View>
-                          <View style={[styles.cell, { flex: 0.15 }]}>
-                            <TextInput
-                              style={styles.input}
-                              value={quantities[item.id]?.toString() || ""}
-                              onChangeText={(text) =>
-                                handleQuantityChange(item.id, text)
-                              }
-                              keyboardType="numeric"
-                              autoCapitalize="none"
-                              autoCorrect={false}
-                              blurOnSubmit={false}
-                              returnKeyType="next"
-                              placeholder="0"
-                            />
-                          </View>
-                          {isBuyingPriceEditable && (
-                            <View style={[styles.cell, { flex: 0.25 }]}>
-                              <TextInput
-                                style={styles.input}
-                                value={newBuyingPrices[item.id] || ""}
-                                onChangeText={(text) =>
-                                  handlePriceChange(item.id, text, "buying")
-                                }
-                                keyboardType="numeric"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                blurOnSubmit={false}
-                                returnKeyType="next"
-                                placeholder="0.00"
-                              />
-                            </View>
-                          )}
-                          {isSellingPriceEditable && (
-                            <View style={[styles.cell, { flex: 0.25 }]}>
-                              <TextInput
-                                style={styles.input}
-                                value={newSellingPrices[item.id] || ""}
-                                onChangeText={(text) =>
-                                  handlePriceChange(item.id, text, "selling")
-                                }
-                                keyboardType="numeric"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                blurOnSubmit={false}
-                                returnKeyType="done"
-                                placeholder="0.00"
-                              />
-                            </View>
-                          )}
+                          {renderTableCell(item)}
                         </View>
                       ))}
                     </ScrollView>
@@ -647,76 +694,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
                                 {item.currentStock}
                               </Text>
                             </View>
-                            <View style={[styles.cell, { width: 100 }]}>
-                              <TextInput
-                                style={[
-                                  styles.input,
-                                  {
-                                    width: measureTextWidth(
-                                      quantities[item.id]?.toString() || "0"
-                                    ),
-                                  },
-                                ]}
-                                value={quantities[item.id]?.toString() || ""}
-                                onChangeText={(text) =>
-                                  handleQuantityChange(item.id, text)
-                                }
-                                keyboardType="numeric"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                blurOnSubmit={false}
-                                returnKeyType="next"
-                                placeholder="0"
-                              />
-                            </View>
-                            {isBuyingPriceEditable && (
-                              <View style={[styles.cell, { width: 120 }]}>
-                                <TextInput
-                                  style={[
-                                    styles.input,
-                                    {
-                                      width: measureTextWidth(
-                                        newBuyingPrices[item.id] || "0.00"
-                                      ),
-                                    },
-                                  ]}
-                                  value={newBuyingPrices[item.id] || ""}
-                                  onChangeText={(text) =>
-                                    handlePriceChange(item.id, text, "buying")
-                                  }
-                                  keyboardType="numeric"
-                                  autoCapitalize="none"
-                                  autoCorrect={false}
-                                  blurOnSubmit={false}
-                                  returnKeyType="next"
-                                  placeholder="0.00"
-                                />
-                              </View>
-                            )}
-                            {isSellingPriceEditable && (
-                              <View style={[styles.cell, { width: 120 }]}>
-                                <TextInput
-                                  style={[
-                                    styles.input,
-                                    {
-                                      width: measureTextWidth(
-                                        newSellingPrices[item.id] || "0.00"
-                                      ),
-                                    },
-                                  ]}
-                                  value={newSellingPrices[item.id] || ""}
-                                  onChangeText={(text) =>
-                                    handlePriceChange(item.id, text, "selling")
-                                  }
-                                  keyboardType="numeric"
-                                  autoCapitalize="none"
-                                  autoCorrect={false}
-                                  blurOnSubmit={false}
-                                  returnKeyType="done"
-                                  placeholder="0.00"
-                                />
-                              </View>
-                            )}
+                            {renderTableCell(item)}
                           </View>
                         ))}
                       </ScrollView>
@@ -792,43 +770,47 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    marginTop: Platform.OS === "ios" ? 40 : 20,
+    padding: 16,
+    marginTop: Platform.OS === "ios" ? 44 : 20,
+    maxHeight: "92%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 10,
+    marginBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "600",
+    color: "#333",
   },
   closeButtonCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     position: "absolute",
     right: 0,
     top: 0,
-    zIndex: 1,
+    zIndex: 999999,
+    elevation: 999999,
   },
   closeButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
   },
   switchesContainer: {
     backgroundColor: "#f8f9fa",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    marginHorizontal: -8,
   },
   toggleContainer: {
     flexDirection: "row",
@@ -838,7 +820,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     marginLeft: 12,
-    fontSize: 16,
+    fontSize: 15,
     color: "#333",
   },
   searchContainer: {
@@ -865,8 +847,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: "#e0e0e0",
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: "hidden",
+    marginBottom: 16,
   },
   tableContent: {
     flex: 1,
@@ -880,6 +863,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    paddingVertical: 12,
   },
   headerCellContainer: {
     paddingVertical: 12,
@@ -888,7 +872,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   headerCell: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#666",
   },
@@ -905,47 +889,48 @@ const styles = StyleSheet.create({
   },
   cell: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     justifyContent: "center",
   },
   itemName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
+    color: "#333",
   },
   currentStock: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#666",
   },
   input: {
     borderWidth: 1,
     borderColor: "#e0e0e0",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    height: 32,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    height: 36,
     backgroundColor: "white",
     textAlign: "right",
-    fontSize: 14,
+    fontSize: 15,
     minWidth: 80,
   },
   footer: {
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
     paddingBottom: Platform.OS === "ios" ? 34 : 20,
-    paddingHorizontal: 20,
   },
   attachmentLabel: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 10,
+    marginBottom: 12,
+    color: "#333",
   },
   receiptInput: {
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: "#e0e0e0",
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: "#f8f9fa",
     alignItems: "center",
     marginBottom: 20,
@@ -968,14 +953,23 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: Platform.OS === "ios" ? 20 : 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   buttonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+    letterSpacing: 0.5,
   },
   headerContainer: {
     flexDirection: "row",
@@ -1044,6 +1038,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  inputContainer: {
+    width: "100%",
   },
 });
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { generateId } from "../utils/idGenerator";
 import { Alert, Platform } from "react-native";
+import { PaperProvider, Portal } from "react-native-paper";
 
 interface InventoryItem {
   measuringUnit: string;
@@ -37,11 +38,11 @@ interface Order {
   category: string;
 }
 
-type InventoryContextType = {
+export interface InventoryContextType {
   items: InventoryItem[];
   orders?: Order[];
-  addItem: (item: InventoryItem) => void;
-  updateItem: (item: InventoryItem) => void;
+  addItem: (item: Omit<InventoryItem, "id">) => void;
+  updateItem: (id: string, updates: Partial<InventoryItem>) => void;
   deleteItem: (id: string) => void;
   removeItem: (id: string) => void;
   handleSale: (itemId: string, quantitySold: number) => void;
@@ -52,7 +53,14 @@ type InventoryContextType = {
       previousQuantity?: number;
     }[]
   ) => void;
-};
+  handleRestock: (
+    itemId: string,
+    quantity: number,
+    newBuyingPrice: number | undefined,
+    newSellingPrice: number | undefined,
+    applyPriceImmediately: boolean
+  ) => void;
+}
 
 const InventoryContext = createContext<InventoryContextType | undefined>(
   undefined
@@ -132,10 +140,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const deleteItem = removeItem; // alias for consistency
 
-  const updateItem = (updatedItem: InventoryItem) => {
+  const updateItem = (id: string, updates: Partial<InventoryItem>) => {
     setItems((prevItems) =>
       prevItems.map((item) => {
-        if (item.id === updatedItem.id) {
+        if (item.id === id) {
+          const updatedItem = { ...item, ...updates };
           // If quantity is 0 and there's a pending selling price, apply it
           if (
             updatedItem.quantity === 0 &&
@@ -145,6 +154,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
               ...updatedItem,
               sellingPrice: item.pendingSellingPrice,
               pendingSellingPrice: undefined,
+              pendingPriceActivationQuantity: undefined,
             };
           }
           return updatedItem;
@@ -171,6 +181,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           return {
             ...item,
             quantity: newQuantity,
+            stockValue: newQuantity * item.buyingPrice,
             // Update the appropriate total counter
             ...(item.type === "product"
               ? { totalSold: currentTotalSold + quantitySold }
@@ -201,24 +212,19 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           (orderItem) => orderItem.itemId === item.id
         );
         if (soldItem) {
-          // For products, update quantity and stock value
           if (item.type === "product") {
             if (soldItem.previousQuantity !== undefined) {
-              // This is an edit - first restore the previous quantity to get original stock
+              // This is an edit - first restore the previous quantity
               const originalStock = item.quantity + soldItem.previousQuantity;
-              // Then deduct the new quantity from original stock
+              // Then deduct the new quantity
               const newQuantity = originalStock - soldItem.quantity;
 
-              // Don't allow negative stock
               if (newQuantity < 0) {
                 throw new Error(`Not enough stock for ${item.name}`);
               }
 
-              const currentTotalSold =
-                (item.totalSold || 0) - soldItem.previousQuantity;
-              const newTotalSold = currentTotalSold + soldItem.quantity;
-
               // Check if we should apply pending price
+              // This happens when the new quantity is less than or equal to the pending activation quantity
               const shouldUpdatePrice =
                 item.pendingSellingPrice !== undefined &&
                 item.pendingPriceActivationQuantity !== undefined &&
@@ -227,7 +233,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
               return {
                 ...item,
                 quantity: newQuantity,
-                totalSold: Math.max(0, newTotalSold),
+                totalSold:
+                  (item.totalSold || 0) +
+                  soldItem.quantity -
+                  (soldItem.previousQuantity || 0),
+                stockValue: newQuantity * item.buyingPrice,
                 ...(shouldUpdatePrice && {
                   sellingPrice: item.pendingSellingPrice,
                   pendingSellingPrice: undefined,
@@ -238,13 +248,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
               // This is a new order
               const newQuantity = item.quantity - soldItem.quantity;
 
-              // Don't allow negative stock
               if (newQuantity < 0) {
                 throw new Error(`Not enough stock for ${item.name}`);
               }
-
-              const currentTotalSold = item.totalSold || 0;
-              const newTotalSold = currentTotalSold + soldItem.quantity;
 
               // Check if we should apply pending price
               const shouldUpdatePrice =
@@ -255,7 +261,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
               return {
                 ...item,
                 quantity: newQuantity,
-                totalSold: newTotalSold,
+                stockValue: newQuantity * item.buyingPrice,
+                totalSold: (item.totalSold || 0) + soldItem.quantity,
                 ...(shouldUpdatePrice && {
                   sellingPrice: item.pendingSellingPrice,
                   pendingSellingPrice: undefined,
@@ -263,22 +270,20 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
                 }),
               };
             }
-          }
-          // For services, only update total orders
-          else {
+          } else {
+            // For services
             const currentTotalOrdered = item.totalOrdered || 0;
             if (soldItem.previousQuantity !== undefined) {
-              // This is an edit - recalculate total from scratch
-              const newTotalOrdered =
-                currentTotalOrdered -
-                soldItem.previousQuantity +
-                soldItem.quantity;
               return {
                 ...item,
-                totalOrdered: Math.max(0, newTotalOrdered),
+                totalOrdered: Math.max(
+                  0,
+                  currentTotalOrdered +
+                    soldItem.quantity -
+                    soldItem.previousQuantity
+                ),
               };
             } else {
-              // This is a new order
               return {
                 ...item,
                 totalOrdered: currentTotalOrdered + soldItem.quantity,
@@ -293,6 +298,57 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const handleRestock = (
+    itemId: string,
+    quantity: number,
+    newBuyingPrice: number | undefined,
+    newSellingPrice: number | undefined,
+    applyPriceImmediately: boolean
+  ) => {
+    setItems((prevItems) => {
+      return prevItems.map((item) => {
+        if (item.id === itemId) {
+          const currentQuantity = item.quantity;
+          const updatedQuantity = currentQuantity + quantity;
+
+          // Calculate weighted average buying price if new buying price is provided
+          const weightedBuyingPrice = newBuyingPrice
+            ? (currentQuantity * item.buyingPrice + quantity * newBuyingPrice) /
+              updatedQuantity
+            : item.buyingPrice;
+
+          if (applyPriceImmediately) {
+            // Apply new prices immediately to all stock
+            return {
+              ...item,
+              quantity: updatedQuantity,
+              buyingPrice: weightedBuyingPrice,
+              sellingPrice: newSellingPrice || item.sellingPrice,
+              stockValue: updatedQuantity * weightedBuyingPrice,
+              pendingSellingPrice: undefined,
+              pendingPriceActivationQuantity: undefined,
+            };
+          } else {
+            // Apply new selling price only to new stock and forward
+            return {
+              ...item,
+              quantity: updatedQuantity,
+              buyingPrice: weightedBuyingPrice,
+              stockValue: updatedQuantity * weightedBuyingPrice,
+              // Keep current selling price for existing stock
+              sellingPrice: item.sellingPrice,
+              // Set new selling price as pending for new stock
+              pendingSellingPrice: newSellingPrice,
+              // Set activation quantity to current quantity (before restock)
+              pendingPriceActivationQuantity: currentQuantity,
+            };
+          }
+        }
+        return item;
+      });
+    });
+  };
+
   return (
     <InventoryContext.Provider
       value={{
@@ -304,6 +360,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
         removeItem,
         handleSale,
         handleOrderSale,
+        handleRestock,
       }}
     >
       {children}
