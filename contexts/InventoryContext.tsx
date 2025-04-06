@@ -15,8 +15,8 @@ interface InventoryItem {
   buyingPrice: number;
   sellingPrice: number;
   stockValue: number;
-  futureBuyingPrice?: number;
-  futureSellingPrice?: number;
+  pendingSellingPrice?: number;
+  pendingPriceActivationQuantity?: number;
   totalSold?: number; // for products
   totalOrdered?: number; // for services
 }
@@ -45,7 +45,13 @@ type InventoryContextType = {
   deleteItem: (id: string) => void;
   removeItem: (id: string) => void;
   handleSale: (itemId: string, quantitySold: number) => void;
-  handleOrderSale: (orderItems: { itemId: string; quantity: number }[]) => void;
+  handleOrderSale: (
+    orderItems: {
+      itemId: string;
+      quantity: number;
+      previousQuantity?: number;
+    }[]
+  ) => void;
 };
 
 const InventoryContext = createContext<InventoryContextType | undefined>(
@@ -128,7 +134,23 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateItem = (updatedItem: InventoryItem) => {
     setItems((prevItems) =>
-      prevItems.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+      prevItems.map((item) => {
+        if (item.id === updatedItem.id) {
+          // If quantity is 0 and there's a pending selling price, apply it
+          if (
+            updatedItem.quantity === 0 &&
+            item.pendingSellingPrice !== undefined
+          ) {
+            return {
+              ...updatedItem,
+              sellingPrice: item.pendingSellingPrice,
+              pendingSellingPrice: undefined,
+            };
+          }
+          return updatedItem;
+        }
+        return item;
+      })
     );
   };
 
@@ -140,11 +162,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
           const currentTotalSold = item.totalSold || 0;
           const currentTotalOrdered = item.totalOrdered || 0;
 
-          // Check if stock is depleted and there are future prices to apply
-          const shouldUpdatePrices =
-            newQuantity === 0 &&
-            (item.futureBuyingPrice !== undefined ||
-              item.futureSellingPrice !== undefined);
+          // Check if we've depleted the initial stock and should apply pending price
+          const shouldUpdatePrice =
+            item.pendingSellingPrice !== undefined &&
+            item.pendingPriceActivationQuantity !== undefined &&
+            newQuantity <= item.pendingPriceActivationQuantity;
 
           return {
             ...item,
@@ -153,12 +175,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
             ...(item.type === "product"
               ? { totalSold: currentTotalSold + quantitySold }
               : { totalOrdered: currentTotalOrdered + quantitySold }),
-            // Apply future prices if stock depleted
-            ...(shouldUpdatePrices && {
-              buyingPrice: item.futureBuyingPrice || item.buyingPrice,
-              sellingPrice: item.futureSellingPrice || item.sellingPrice,
-              futureBuyingPrice: undefined,
-              futureSellingPrice: undefined,
+            // Apply pending price if initial stock is depleted
+            ...(shouldUpdatePrice && {
+              sellingPrice: item.pendingSellingPrice,
+              pendingSellingPrice: undefined,
+              pendingPriceActivationQuantity: undefined,
             }),
           };
         }
@@ -168,7 +189,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleOrderSale = (
-    orderItems: { itemId: string; quantity: number }[]
+    orderItems: {
+      itemId: string;
+      quantity: number;
+      previousQuantity?: number;
+    }[]
   ) => {
     setItems((prevItems) => {
       const updatedItems = prevItems.map((item) => {
@@ -178,33 +203,87 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({
         if (soldItem) {
           // For products, update quantity and stock value
           if (item.type === "product") {
-            const newQuantity = Math.max(0, item.quantity - soldItem.quantity);
-            const currentTotalSold = item.totalSold || 0;
+            if (soldItem.previousQuantity !== undefined) {
+              // This is an edit - first restore the previous quantity to get original stock
+              const originalStock = item.quantity + soldItem.previousQuantity;
+              // Then deduct the new quantity from original stock
+              const newQuantity = originalStock - soldItem.quantity;
 
-            const shouldUpdatePrices =
-              newQuantity === 0 &&
-              (item.futureBuyingPrice !== undefined ||
-                item.futureSellingPrice !== undefined);
+              // Don't allow negative stock
+              if (newQuantity < 0) {
+                throw new Error(`Not enough stock for ${item.name}`);
+              }
 
-            return {
-              ...item,
-              quantity: newQuantity,
-              totalSold: currentTotalSold + soldItem.quantity,
-              ...(shouldUpdatePrices && {
-                buyingPrice: item.futureBuyingPrice || item.buyingPrice,
-                sellingPrice: item.futureSellingPrice || item.sellingPrice,
-                futureBuyingPrice: undefined,
-                futureSellingPrice: undefined,
-              }),
-            };
+              const currentTotalSold =
+                (item.totalSold || 0) - soldItem.previousQuantity;
+              const newTotalSold = currentTotalSold + soldItem.quantity;
+
+              // Check if we should apply pending price
+              const shouldUpdatePrice =
+                item.pendingSellingPrice !== undefined &&
+                item.pendingPriceActivationQuantity !== undefined &&
+                newQuantity <= item.pendingPriceActivationQuantity;
+
+              return {
+                ...item,
+                quantity: newQuantity,
+                totalSold: Math.max(0, newTotalSold),
+                ...(shouldUpdatePrice && {
+                  sellingPrice: item.pendingSellingPrice,
+                  pendingSellingPrice: undefined,
+                  pendingPriceActivationQuantity: undefined,
+                }),
+              };
+            } else {
+              // This is a new order
+              const newQuantity = item.quantity - soldItem.quantity;
+
+              // Don't allow negative stock
+              if (newQuantity < 0) {
+                throw new Error(`Not enough stock for ${item.name}`);
+              }
+
+              const currentTotalSold = item.totalSold || 0;
+              const newTotalSold = currentTotalSold + soldItem.quantity;
+
+              // Check if we should apply pending price
+              const shouldUpdatePrice =
+                item.pendingSellingPrice !== undefined &&
+                item.pendingPriceActivationQuantity !== undefined &&
+                newQuantity <= item.pendingPriceActivationQuantity;
+
+              return {
+                ...item,
+                quantity: newQuantity,
+                totalSold: newTotalSold,
+                ...(shouldUpdatePrice && {
+                  sellingPrice: item.pendingSellingPrice,
+                  pendingSellingPrice: undefined,
+                  pendingPriceActivationQuantity: undefined,
+                }),
+              };
+            }
           }
           // For services, only update total orders
           else {
             const currentTotalOrdered = item.totalOrdered || 0;
-            return {
-              ...item,
-              totalOrdered: currentTotalOrdered + soldItem.quantity,
-            };
+            if (soldItem.previousQuantity !== undefined) {
+              // This is an edit - recalculate total from scratch
+              const newTotalOrdered =
+                currentTotalOrdered -
+                soldItem.previousQuantity +
+                soldItem.quantity;
+              return {
+                ...item,
+                totalOrdered: Math.max(0, newTotalOrdered),
+              };
+            } else {
+              // This is a new order
+              return {
+                ...item,
+                totalOrdered: currentTotalOrdered + soldItem.quantity,
+              };
+            }
           }
         }
         return item;

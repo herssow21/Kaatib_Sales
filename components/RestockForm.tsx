@@ -21,11 +21,17 @@ import {
   useTheme,
 } from "react-native-paper";
 import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
-import type { InventoryItem } from "../app/types";
+import type { InventoryItem as BaseInventoryItem } from "../app/types";
 import { WebView } from "react-native-webview";
 import { useAlertContext } from "../contexts/AlertContext";
 
-interface FormItem extends Omit<InventoryItem, "quantity"> {
+interface InventoryItem extends BaseInventoryItem {
+  pendingSellingPrice?: number;
+}
+
+type FormItemBase = Omit<InventoryItem, "quantity" | "stockValue">;
+
+interface FormItem extends FormItemBase {
   currentStock: number;
 }
 
@@ -101,6 +107,19 @@ const RestockForm: React.FC<RestockFormProps> = ({
     };
   };
 
+  const resetForm = () => {
+    setSelectedItems([]);
+    setQuantities({});
+    setNewBuyingPrices({});
+    setNewSellingPrices({});
+    setApplyImmediately(false);
+    setIsBuyingPriceEditable(false);
+    setIsSellingPriceEditable(false);
+    setReceiptImage(null);
+    setReceiptFileName(null);
+    setSearchQuery("");
+  };
+
   const handleApplyChanges = () => {
     const hasEmptyQuantities = selectedItems.some(
       (item) => !quantities[item.id] && quantities[item.id] !== 0
@@ -111,20 +130,72 @@ const RestockForm: React.FC<RestockFormProps> = ({
       return;
     }
 
-    const updatedItems = selectedItems.map((formItem) => {
-      const existingItem = items.find((i) => i.id === formItem.id);
-      return convertFormItemToInventoryItem(formItem, formItem.currentStock);
-    });
-
     try {
-      updatedItems.forEach((updatedItem) => {
+      const updatedItems = selectedItems.map((formItem) => {
+        const existingItem = items.find((i) => i.id === formItem.id);
+        if (!existingItem) return null;
+
+        const newQuantity =
+          formItem.currentStock + (quantities[formItem.id] || 0);
+        const newBuyingPrice = newBuyingPrices[formItem.id]
+          ? parseFloat(newBuyingPrices[formItem.id])
+          : existingItem.buyingPrice;
+        const newSellingPrice = newSellingPrices[formItem.id]
+          ? parseFloat(newSellingPrices[formItem.id])
+          : existingItem.sellingPrice;
+
+        // Calculate weighted average buying price for existing and new stock
+        const totalOldValue = existingItem.buyingPrice * existingItem.quantity;
+        const totalNewValue = newBuyingPrice * (quantities[formItem.id] || 0);
+        const weightedBuyingPrice =
+          (totalOldValue + totalNewValue) / newQuantity;
+
+        // Create the base updated item
+        const updatedItem: InventoryItem = {
+          ...existingItem,
+          quantity: newQuantity,
+          buyingPrice: isBuyingPriceEditable
+            ? weightedBuyingPrice
+            : existingItem.buyingPrice,
+          sellingPrice:
+            isSellingPriceEditable && applyImmediately
+              ? newSellingPrice
+              : existingItem.sellingPrice,
+          stockValue:
+            newQuantity *
+            (isBuyingPriceEditable
+              ? weightedBuyingPrice
+              : existingItem.buyingPrice),
+        };
+
+        // If price change is not immediate, store the current quantity and new price
+        if (
+          isSellingPriceEditable &&
+          !applyImmediately &&
+          newSellingPrice !== existingItem.sellingPrice
+        ) {
+          (updatedItem as any).pendingSellingPrice = newSellingPrice;
+          (updatedItem as any).pendingPriceActivationQuantity =
+            existingItem.quantity;
+        }
+
+        return updatedItem;
+      });
+
+      const validItems = updatedItems.filter(
+        (item): item is InventoryItem => item !== null
+      );
+
+      validItems.forEach((updatedItem) => {
         updateItem(updatedItem);
       });
 
       showSuccess("Stock updated successfully!");
-      onSubmit(updatedItems);
+      onSubmit(validItems);
       setModalVisible(false);
+      resetForm();
     } catch (error) {
+      console.error("Error updating stock:", error);
       showError("Failed to update stock. Please try again.");
     }
   };
