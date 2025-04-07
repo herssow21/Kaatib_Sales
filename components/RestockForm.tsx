@@ -20,7 +20,7 @@ import {
   Checkbox,
   useTheme,
 } from "react-native-paper";
-import * as DocumentPicker from "expo-document-picker"; // Import DocumentPicker
+import * as DocumentPicker from "expo-document-picker";
 import type { InventoryItem as BaseInventoryItem } from "../app/types";
 import { WebView } from "react-native-webview";
 import { useAlertContext } from "../contexts/AlertContext";
@@ -28,6 +28,8 @@ import { useInventoryContext } from "../contexts/InventoryContext";
 
 interface InventoryItem extends BaseInventoryItem {
   pendingSellingPrice?: number;
+  pendingPriceActivationQuantity?: number;
+  currentStock: number;
 }
 
 type FormItemBase = Omit<InventoryItem, "quantity" | "stockValue">;
@@ -42,12 +44,15 @@ interface RestockFormProps {
   onClose: () => void;
 }
 
+interface FieldErrors {
+  quantity?: string;
+  buyingPrice?: string;
+  sellingPrice?: string;
+}
+
 interface FormErrors {
-  [key: string]: {
-    quantity?: string;
-    buyingPrice?: string;
-    sellingPrice?: string;
-  };
+  [key: string]: FieldErrors;
+  general?: FieldErrors;
 }
 
 const RestockForm: React.FC<RestockFormProps> = ({
@@ -68,7 +73,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [newSellingPrices, setNewSellingPrices] = useState<{
     [key: string]: string;
   }>({});
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors>({ general: {} });
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
@@ -116,18 +121,15 @@ const RestockForm: React.FC<RestockFormProps> = ({
     setReceiptImage(null);
     setReceiptFileName(null);
     setSearchQuery("");
+    setErrors({ general: {} });
   };
 
   const validateInputs = () => {
-    const newErrors: FormErrors = {};
+    const newErrors: FormErrors = { general: {} };
     let hasErrors = false;
 
     selectedItems.forEach((item) => {
-      const itemErrors: {
-        quantity?: string;
-        buyingPrice?: string;
-        sellingPrice?: string;
-      } = {};
+      const itemErrors: FieldErrors = {};
 
       // Validate quantity
       if (!quantities[item.id] && quantities[item.id] !== 0) {
@@ -180,7 +182,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
       }
 
       const updates = selectedItems.map((item) => {
-        const quantity = parseInt(quantities[item.id] || "0");
+        const quantity = parseInt(String(quantities[item.id] || "0"));
         const newBuyingPrice = parseFloat(newBuyingPrices[item.id] || "0");
         const newSellingPrice = parseFloat(newSellingPrices[item.id] || "0");
         const applyPriceImmediately = applyImmediately;
@@ -226,7 +228,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
       if (validUpdates.length === 0) {
         setErrors((prev) => ({
           ...prev,
-          general: "No valid updates to apply",
+          general: { quantity: "No valid updates to apply" },
         }));
         return;
       }
@@ -256,7 +258,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
       console.error("Error applying changes:", error);
       setErrors((prev) => ({
         ...prev,
-        general: "Failed to update inventory",
+        general: { quantity: "Failed to update inventory" },
       }));
     }
   };
@@ -501,9 +503,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
         error={!!errors[item.id]?.[type]}
       />
       {errors[item.id]?.[type] && (
-        <Text style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}>
-          {errors[item.id]?.[type]}
-        </Text>
+        <Text style={styles.errorText}>{errors[item.id]?.[type]}</Text>
       )}
     </View>
   );
@@ -826,14 +826,14 @@ const RestockForm: React.FC<RestockFormProps> = ({
                 )}
               </View>
 
-              {errors.general && (
+              {errors.general?.quantity && (
                 <Text
                   style={[
                     styles.errorText,
                     { textAlign: "center", marginBottom: 16 },
                   ]}
                 >
-                  {errors.general}
+                  {errors.general.quantity}
                 </Text>
               )}
 

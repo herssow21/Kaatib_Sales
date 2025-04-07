@@ -84,11 +84,17 @@ const calculateGrandTotal = (
   return subtotal - (discount || 0);
 };
 
-interface FormErrors {
+interface FieldErrors {
+  quantity?: string;
   clientName?: string;
   clientContact?: string;
   items?: string;
-  [key: string]: string | undefined;
+  message?: string;
+}
+
+interface FormErrors {
+  [key: string]: FieldErrors;
+  general?: FieldErrors;
 }
 
 const OrderForm: React.FC<OrderFormProps> = ({
@@ -246,15 +252,15 @@ const OrderForm: React.FC<OrderFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (!formData.clientName.trim()) {
-      newErrors.clientName = "Please enter client name";
+      newErrors.clientName = { message: "Please enter client name" };
     }
 
     if (!formData.clientContact.trim()) {
-      newErrors.clientContact = "Please enter client contact";
+      newErrors.clientContact = { message: "Please enter client contact" };
     }
 
     if (formData.items.length === 0) {
-      newErrors.items = "Please add at least one item";
+      newErrors.items = { message: "Please add at least one item" };
     }
 
     setErrors(newErrors);
@@ -262,17 +268,16 @@ const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!validateForm()) {
-      return;
-    }
-
     try {
-      // Check stock availability only for products (not services)
-      const insufficientStock = formData.items.some((item) => {
+      if (!validateForm()) {
+        return;
+      }
+
+      // Check stock availability
+      const insufficientStockItems = formData.items.filter((item) => {
         const inventoryItem = inventoryItems.find(
           (i) => i.name === item.product
         );
-        // Only check stock for products, not services
         return (
           inventoryItem &&
           inventoryItem.type === "product" &&
@@ -280,8 +285,14 @@ const OrderForm: React.FC<OrderFormProps> = ({
         );
       });
 
-      if (insufficientStock) {
-        showError("Not enough stock for one or more products");
+      if (insufficientStockItems.length > 0) {
+        const newErrors: FormErrors = {};
+        insufficientStockItems.forEach((item) => {
+          newErrors[item.product] = {
+            quantity: "Not enough stock available",
+          };
+        });
+        setErrors(newErrors);
         return;
       }
 
@@ -325,8 +336,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
         } successfully!`
       );
     } catch (error) {
-      console.error("Order submission error:", error);
-      showError("Failed to submit order");
+      console.error("Error creating order:", error);
+      setErrors((prev) => ({
+        ...prev,
+        general: { message: "Failed to create order" },
+      }));
     }
   };
 
@@ -528,6 +542,19 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setAmountPaid(isNaN(numValue) ? 0 : numValue);
   };
 
+  // Create a custom theme that keeps labels black in all states
+  const customInputTheme = {
+    ...theme,
+    colors: {
+      ...theme.colors,
+      onSurfaceVariant: "#000000", // Label color in normal state
+      onSurface: "#000000", // Label color when focused
+      error: theme.colors.error, // Keep the error color for borders
+      outline: "#CCCCCC", // Normal border color
+      primary: "#000000", // Label and border color when focused
+    },
+  };
+
   return (
     <ScrollView style={orderFormStyles.container}>
       <Text style={orderFormStyles.title}>
@@ -535,40 +562,42 @@ const OrderForm: React.FC<OrderFormProps> = ({
       </Text>
       <View style={orderFormStyles.topSection}>
         <View style={orderFormStyles.inputGroup}>
-          <Text style={orderFormStyles.label}>Order Date</Text>
-          <View style={orderFormStyles.dateInputContainer}>
-            <TextInput
-              value={orderDate}
-              onFocus={toggleDatePicker}
-              style={orderFormStyles.dateInput}
-              mode="outlined"
-              editable={false}
-              right={
-                <TextInput.Icon
-                  icon={() => (
-                    <MaterialIcons
-                      name="calendar-today"
-                      size={24}
-                      color="black"
-                      onPress={toggleDatePicker}
-                    />
-                  )}
-                />
-              }
-            />
-            {showDatePicker && (
-              <DateTimePicker
-                value={new Date(orderDate)}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
-          </View>
-        </View>
-        <View style={orderFormStyles.inputGroup}>
-          <Text style={orderFormStyles.label}>Client Contact</Text>
           <TextInput
+            label="Order Date"
+            value={orderDate}
+            onFocus={toggleDatePicker}
+            style={[orderFormStyles.dateInput, { backgroundColor: "#fff" }]}
+            mode="outlined"
+            editable={false}
+            theme={customInputTheme}
+            outlineColor={theme.colors.outline}
+            activeOutlineColor={theme.colors.primary}
+            right={
+              <TextInput.Icon
+                icon={() => (
+                  <MaterialIcons
+                    name="calendar-today"
+                    size={24}
+                    color="black"
+                    onPress={toggleDatePicker}
+                  />
+                )}
+              />
+            }
+          />
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date(orderDate)}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+            />
+          )}
+        </View>
+
+        <View style={orderFormStyles.inputGroup}>
+          <TextInput
+            label="Client Contact"
             value={formData.clientContact}
             onChangeText={(value) => {
               const numericValue = value.replace(/[^0-9]/g, "");
@@ -584,16 +613,19 @@ const OrderForm: React.FC<OrderFormProps> = ({
             keyboardType="numeric"
             mode="outlined"
             maxLength={10}
+            error={!!errors.clientContact}
+            theme={customInputTheme}
           />
           {errors.clientContact && (
             <Text style={orderFormStyles.errorText}>
-              {errors.clientContact}
+              {errors.clientContact.message}
             </Text>
           )}
         </View>
+
         <View style={orderFormStyles.inputGroup}>
-          <Text style={orderFormStyles.label}>Client Name</Text>
           <TextInput
+            label="Client Name"
             value={formData.clientName}
             onChangeText={(value) => {
               setFormData((prev) => ({ ...prev, clientName: value }));
@@ -601,34 +633,39 @@ const OrderForm: React.FC<OrderFormProps> = ({
             }}
             style={orderFormStyles.input}
             mode="outlined"
+            error={!!errors.clientName}
+            theme={customInputTheme}
           />
           {errors.clientName && (
-            <Text style={orderFormStyles.errorText}>{errors.clientName}</Text>
+            <Text style={orderFormStyles.errorText}>
+              {errors.clientName.message}
+            </Text>
           )}
         </View>
+
         <View style={orderFormStyles.inputGroup}>
-          <Text style={orderFormStyles.label}>
-            Address/Descriptions (Optional)
-          </Text>
           <TextInput
+            label="Address/Descriptions (Optional)"
             value={formData.address}
             onChangeText={(value) =>
               setFormData((prev) => ({ ...prev, address: value }))
             }
             style={orderFormStyles.input}
             mode="outlined"
+            theme={customInputTheme}
           />
         </View>
       </View>
 
       <View style={orderFormStyles.searchSection}>
-        <Text style={orderFormStyles.label}>Search Products/Services</Text>
         <TextInput
+          label="Search Products/Services"
           mode="outlined"
           placeholder="Type to search..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           style={orderFormStyles.searchInput}
+          theme={customInputTheme}
         />
       </View>
 
@@ -636,26 +673,46 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <View key={index} style={orderFormStyles.itemContainer}>
           {renderProductSelection(index, item.product)}
           <View style={orderFormStyles.formGroup}>
-            <Text style={orderFormStyles.label}>Rate</Text>
             <TextInput
+              label="Rate"
               mode="outlined"
               value={item.rate?.toString() || "0"}
               onChangeText={(value) => handleItemChange(index, "rate", value)}
               keyboardType="numeric"
               style={orderFormStyles.input}
+              theme={customInputTheme}
             />
           </View>
           <View style={orderFormStyles.formGroup}>
-            <Text style={orderFormStyles.label}>Quantity</Text>
             <TextInput
+              label="Quantity"
               mode="outlined"
               value={item.quantity?.toString() || "1"}
-              onChangeText={(value) =>
-                handleItemChange(index, "quantity", value)
-              }
+              onChangeText={(value) => {
+                handleItemChange(index, "quantity", value);
+                setErrors((prev) => ({
+                  ...prev,
+                  [item.product]: {
+                    ...prev[item.product],
+                    quantity: undefined,
+                  },
+                }));
+              }}
               keyboardType="numeric"
-              style={orderFormStyles.input}
+              style={[
+                orderFormStyles.input,
+                errors[item.product]?.quantity && {
+                  borderColor: theme.colors.error,
+                },
+              ]}
+              error={!!errors[item.product]?.quantity}
+              theme={customInputTheme}
             />
+            {errors[item.product]?.quantity && (
+              <Text style={orderFormStyles.errorText}>
+                {errors[item.product]?.quantity}
+              </Text>
+            )}
           </View>
           <TouchableOpacity
             style={orderFormStyles.deleteButton}
@@ -677,13 +734,14 @@ const OrderForm: React.FC<OrderFormProps> = ({
         <View style={orderFormStyles.leftColumn}>
           <View style={orderFormStyles.inputGroup}>
             <View style={orderFormStyles.discountRow}>
-              <Text style={orderFormStyles.label}>Discount</Text>
               <TextInput
+                label="Discount"
                 value={formData.discount?.toString() || "0"}
                 onChangeText={handleDiscountChange}
                 keyboardType="numeric"
                 style={orderFormStyles.discountInput}
                 mode="outlined"
+                theme={customInputTheme}
               />
             </View>
           </View>
@@ -728,13 +786,14 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
         <View style={orderFormStyles.rightColumn}>
           <View style={orderFormStyles.alignRow}>
-            <Text style={orderFormStyles.label}>Amount Paid:</Text>
             <TextInput
+              label="Amount Paid"
               mode="outlined"
               value={amountPaid.toString()}
               onChangeText={handlePaidAmountChange}
               keyboardType="numeric"
               style={orderFormStyles.amountPaidInput}
+              theme={customInputTheme}
             />
           </View>
 
@@ -786,7 +845,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
       {errors.items && (
         <Text style={[orderFormStyles.errorText, { textAlign: "center" }]}>
-          {errors.items}
+          {errors.items.message}
         </Text>
       )}
     </ScrollView>
