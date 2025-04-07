@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Text, TextInput, useTheme, Surface } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
 
 interface Expense {
   id: string;
@@ -12,7 +11,7 @@ interface Expense {
   date: string;
 }
 
-export default function ExpensesTab() {
+const Expenses: React.FC = () => {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,90 +50,74 @@ export default function ExpensesTab() {
   );
 
   return (
-    <>
-      <Stack.Screen
-        name="expenses"
-        options={{
-          title: "Expenses",
-          headerStyle: {
-            backgroundColor: theme.colors.background,
-          },
-          headerTintColor: theme.colors.primary,
-          headerShadowVisible: false,
-        }}
-      />
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Expenses</Text>
 
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>Expenses</Text>
+      <View style={styles.summaryContainer}>
+        <Surface style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Total Expenses</Text>
+          <Text style={styles.summaryAmount}>${totalExpenses.toFixed(2)}</Text>
+          <Text style={styles.summaryPeriod}>This Month</Text>
+        </Surface>
 
-        <View style={styles.summaryContainer}>
-          <Surface style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Expenses</Text>
-            <Text style={styles.summaryAmount}>
-              ${totalExpenses.toFixed(2)}
-            </Text>
-            <Text style={styles.summaryPeriod}>This Month</Text>
-          </Surface>
+        <Surface
+          style={[
+            styles.summaryCard,
+            { backgroundColor: theme.colors.primary },
+          ]}
+        >
+          <Text style={[styles.summaryLabel, { color: "#fff" }]}>
+            Highest Expense
+          </Text>
+          <Text style={[styles.summaryAmount, { color: "#fff" }]}>
+            ${highestExpense.amount.toFixed(2)}
+          </Text>
+          <Text style={[styles.summaryPeriod, { color: "#fff" }]}>
+            {highestExpense.title}
+          </Text>
+        </Surface>
+      </View>
 
-          <Surface
-            style={[
-              styles.summaryCard,
-              { backgroundColor: theme.colors.primary },
-            ]}
-          >
-            <Text style={[styles.summaryLabel, { color: "#fff" }]}>
-              Highest Expense
-            </Text>
-            <Text style={[styles.summaryAmount, { color: "#fff" }]}>
-              ${highestExpense.amount.toFixed(2)}
-            </Text>
-            <Text style={[styles.summaryPeriod, { color: "#fff" }]}>
-              {highestExpense.title}
-            </Text>
-          </Surface>
+      <View style={styles.expensesSection}>
+        <Text style={styles.sectionTitle}>All Expenses</Text>
+
+        <View style={styles.searchContainer}>
+          <TextInput
+            mode="outlined"
+            placeholder="Search expenses..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            left={<TextInput.Icon icon="magnify" />}
+            style={styles.searchInput}
+          />
+          <MaterialIcons
+            name="add-circle"
+            size={48}
+            color={theme.colors.primary}
+            style={styles.addButton}
+          />
         </View>
 
-        <View style={styles.expensesSection}>
-          <Text style={styles.sectionTitle}>All Expenses</Text>
-
-          <View style={styles.searchContainer}>
-            <TextInput
-              mode="outlined"
-              placeholder="Search expenses..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              left={<TextInput.Icon icon="magnify" />}
-              style={styles.searchInput}
-            />
-            <MaterialIcons
-              name="add-circle"
-              size={48}
-              color={theme.colors.primary}
-              style={styles.addButton}
-            />
-          </View>
-
-          {expenses.map((expense) => (
-            <Surface key={expense.id} style={styles.expenseCard}>
-              <View style={styles.expenseHeader}>
-                <View>
-                  <Text style={styles.expenseTitle}>{expense.title}</Text>
-                  <Text style={styles.expenseDescription}>
-                    {expense.description}
-                  </Text>
-                  <Text style={styles.expenseDate}>{expense.date}</Text>
-                </View>
-                <Text style={styles.expenseAmount}>
-                  ${expense.amount.toFixed(2)}
+        {expenses.map((expense) => (
+          <Surface key={expense.id} style={styles.expenseCard}>
+            <View style={styles.expenseHeader}>
+              <View>
+                <Text style={styles.expenseTitle}>{expense.title}</Text>
+                <Text style={styles.expenseDescription}>
+                  {expense.description}
                 </Text>
+                <Text style={styles.expenseDate}>{expense.date}</Text>
               </View>
-            </Surface>
-          ))}
-        </View>
-      </ScrollView>
-    </>
+              <Text style={styles.expenseAmount}>
+                ${expense.amount.toFixed(2)}
+              </Text>
+            </View>
+          </Surface>
+        ))}
+      </View>
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -231,3 +214,5 @@ const styles = StyleSheet.create({
     color: "#1B1B1B",
   },
 });
+
+export default Expenses;
