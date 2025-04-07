@@ -175,12 +175,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
 
   const handleApplyChanges = () => {
     try {
-      // Validate quantities
-      const hasEmptyQuantities = Object.values(quantities).some(
-        (q) => q === "" || q === "0"
-      );
-      if (hasEmptyQuantities) {
-        showError("Please enter quantities for all selected items");
+      if (!validateInputs()) {
         return;
       }
 
@@ -189,11 +184,6 @@ const RestockForm: React.FC<RestockFormProps> = ({
         const newBuyingPrice = parseFloat(newBuyingPrices[item.id] || "0");
         const newSellingPrice = parseFloat(newSellingPrices[item.id] || "0");
         const applyPriceImmediately = applyImmediately;
-
-        if (isNaN(quantity) || quantity <= 0) {
-          showError(`Invalid quantity for ${item.name}`);
-          return null;
-        }
 
         // Only update buying price if explicitly changed
         const updatedBuyingPrice =
@@ -234,7 +224,10 @@ const RestockForm: React.FC<RestockFormProps> = ({
       );
 
       if (validUpdates.length === 0) {
-        showError("No valid updates to apply");
+        setErrors((prev) => ({
+          ...prev,
+          general: "No valid updates to apply",
+        }));
         return;
       }
 
@@ -261,7 +254,10 @@ const RestockForm: React.FC<RestockFormProps> = ({
       }, 100);
     } catch (error) {
       console.error("Error applying changes:", error);
-      showError("Failed to update inventory");
+      setErrors((prev) => ({
+        ...prev,
+        general: "Failed to update inventory",
+      }));
     }
   };
 
@@ -525,17 +521,20 @@ const RestockForm: React.FC<RestockFormProps> = ({
             },
           ]}
           value={quantities[item.id]?.toString() || ""}
-          onChangeText={(text) => handleQuantityChange(item.id, text)}
+          onChangeText={(text) => {
+            handleQuantityChange(item.id, text);
+            // Clear error when user starts typing
+            setErrors((prev) => ({
+              ...prev,
+              [item.id]: { ...prev[item.id], quantity: undefined },
+            }));
+          }}
           keyboardType="numeric"
           placeholder="0"
           error={!!errors[item.id]?.quantity}
         />
         {errors[item.id]?.quantity && (
-          <Text
-            style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
-          >
-            {errors[item.id]?.quantity}
-          </Text>
+          <Text style={styles.errorText}>{errors[item.id]?.quantity}</Text>
         )}
       </View>
       {isBuyingPriceEditable && (
@@ -551,17 +550,20 @@ const RestockForm: React.FC<RestockFormProps> = ({
               },
             ]}
             value={newBuyingPrices[item.id] || ""}
-            onChangeText={(text) => handlePriceChange(item.id, text, "buying")}
+            onChangeText={(text) => {
+              handlePriceChange(item.id, text, "buying");
+              // Clear error when user starts typing
+              setErrors((prev) => ({
+                ...prev,
+                [item.id]: { ...prev[item.id], buyingPrice: undefined },
+              }));
+            }}
             keyboardType="numeric"
             placeholder="0.00"
             error={!!errors[item.id]?.buyingPrice}
           />
           {errors[item.id]?.buyingPrice && (
-            <Text
-              style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
-            >
-              {errors[item.id]?.buyingPrice}
-            </Text>
+            <Text style={styles.errorText}>{errors[item.id]?.buyingPrice}</Text>
           )}
         </View>
       )}
@@ -578,15 +580,20 @@ const RestockForm: React.FC<RestockFormProps> = ({
               },
             ]}
             value={newSellingPrices[item.id] || ""}
-            onChangeText={(text) => handlePriceChange(item.id, text, "selling")}
+            onChangeText={(text) => {
+              handlePriceChange(item.id, text, "selling");
+              // Clear error when user starts typing
+              setErrors((prev) => ({
+                ...prev,
+                [item.id]: { ...prev[item.id], sellingPrice: undefined },
+              }));
+            }}
             keyboardType="numeric"
             placeholder="0.00"
             error={!!errors[item.id]?.sellingPrice}
           />
           {errors[item.id]?.sellingPrice && (
-            <Text
-              style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
-            >
+            <Text style={styles.errorText}>
               {errors[item.id]?.sellingPrice}
             </Text>
           )}
@@ -818,6 +825,17 @@ const RestockForm: React.FC<RestockFormProps> = ({
                   </ScrollView>
                 )}
               </View>
+
+              {errors.general && (
+                <Text
+                  style={[
+                    styles.errorText,
+                    { textAlign: "center", marginBottom: 16 },
+                  ]}
+                >
+                  {errors.general}
+                </Text>
+              )}
 
               <View style={styles.footer}>
                 <Text style={styles.attachmentLabel}>Attachment</Text>
@@ -1157,6 +1175,11 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: "100%",
+  },
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 
