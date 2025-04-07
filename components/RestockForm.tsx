@@ -42,6 +42,14 @@ interface RestockFormProps {
   onClose: () => void;
 }
 
+interface FormErrors {
+  [key: string]: {
+    quantity?: string;
+    buyingPrice?: string;
+    sellingPrice?: string;
+  };
+}
+
 const RestockForm: React.FC<RestockFormProps> = ({
   items,
   onSubmit,
@@ -60,13 +68,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const [newSellingPrices, setNewSellingPrices] = useState<{
     [key: string]: string;
   }>({});
-  const [errors, setErrors] = useState<{
-    [key: string]: {
-      quantity?: string;
-      buyingPrice?: string;
-      sellingPrice?: string;
-    };
-  }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [applyImmediately, setApplyImmediately] = useState(false);
   const [isBuyingPriceEditable, setIsBuyingPriceEditable] = useState(false);
   const [isSellingPriceEditable, setIsSellingPriceEditable] = useState(false);
@@ -117,13 +119,7 @@ const RestockForm: React.FC<RestockFormProps> = ({
   };
 
   const validateInputs = () => {
-    const newErrors: {
-      [key: string]: {
-        quantity?: string;
-        buyingPrice?: string;
-        sellingPrice?: string;
-      };
-    } = {};
+    const newErrors: FormErrors = {};
     let hasErrors = false;
 
     selectedItems.forEach((item) => {
@@ -310,9 +306,14 @@ const RestockForm: React.FC<RestockFormProps> = ({
       numericValue = parts[0] + "." + parts[1].slice(0, 2);
     }
 
+    // If the value is empty or just a decimal point, set it to "0"
+    if (numericValue === "" || numericValue === ".") {
+      numericValue = "0";
+    }
+
     setQuantities((prev) => ({
       ...prev,
-      [itemId]: numericValue,
+      [itemId]: parseFloat(numericValue),
     }));
   };
 
@@ -342,6 +343,11 @@ const RestockForm: React.FC<RestockFormProps> = ({
     // Limit to 2 decimal places
     if (parts.length === 2) {
       numericValue = parts[0] + "." + parts[1].slice(0, 2);
+    }
+
+    // If the value is empty or just a decimal point, set it to "0"
+    if (numericValue === "" || numericValue === ".") {
+      numericValue = "0";
     }
 
     if (type === "buying") {
@@ -510,33 +516,79 @@ const RestockForm: React.FC<RestockFormProps> = ({
   const renderTableCell = (item: FormItem) => (
     <>
       <View style={[styles.cell, { flex: 0.15 }]}>
-        {renderInput(
-          item,
-          quantities[item.id]?.toString() || "",
-          (text) => handleQuantityChange(item.id, text),
-          "0",
-          "quantity"
+        <TextInput
+          style={[
+            styles.input,
+            errors[item.id]?.quantity && { borderColor: theme.colors.error },
+            Platform.OS === "web" && {
+              width: measureTextWidth(quantities[item.id]?.toString() || "0"),
+            },
+          ]}
+          value={quantities[item.id]?.toString() || ""}
+          onChangeText={(text) => handleQuantityChange(item.id, text)}
+          keyboardType="numeric"
+          placeholder="0"
+          error={!!errors[item.id]?.quantity}
+        />
+        {errors[item.id]?.quantity && (
+          <Text
+            style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
+          >
+            {errors[item.id]?.quantity}
+          </Text>
         )}
       </View>
       {isBuyingPriceEditable && (
         <View style={[styles.cell, { flex: 0.25 }]}>
-          {renderInput(
-            item,
-            newBuyingPrices[item.id] || "",
-            (text) => handlePriceChange(item.id, text, "buying"),
-            "0.00",
-            "buyingPrice"
+          <TextInput
+            style={[
+              styles.input,
+              errors[item.id]?.buyingPrice && {
+                borderColor: theme.colors.error,
+              },
+              Platform.OS === "web" && {
+                width: measureTextWidth(newBuyingPrices[item.id] || "0.00"),
+              },
+            ]}
+            value={newBuyingPrices[item.id] || ""}
+            onChangeText={(text) => handlePriceChange(item.id, text, "buying")}
+            keyboardType="numeric"
+            placeholder="0.00"
+            error={!!errors[item.id]?.buyingPrice}
+          />
+          {errors[item.id]?.buyingPrice && (
+            <Text
+              style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
+            >
+              {errors[item.id]?.buyingPrice}
+            </Text>
           )}
         </View>
       )}
       {isSellingPriceEditable && (
         <View style={[styles.cell, { flex: 0.25 }]}>
-          {renderInput(
-            item,
-            newSellingPrices[item.id] || "",
-            (text) => handlePriceChange(item.id, text, "selling"),
-            "0.00",
-            "sellingPrice"
+          <TextInput
+            style={[
+              styles.input,
+              errors[item.id]?.sellingPrice && {
+                borderColor: theme.colors.error,
+              },
+              Platform.OS === "web" && {
+                width: measureTextWidth(newSellingPrices[item.id] || "0.00"),
+              },
+            ]}
+            value={newSellingPrices[item.id] || ""}
+            onChangeText={(text) => handlePriceChange(item.id, text, "selling")}
+            keyboardType="numeric"
+            placeholder="0.00"
+            error={!!errors[item.id]?.sellingPrice}
+          />
+          {errors[item.id]?.sellingPrice && (
+            <Text
+              style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}
+            >
+              {errors[item.id]?.sellingPrice}
+            </Text>
           )}
         </View>
       )}

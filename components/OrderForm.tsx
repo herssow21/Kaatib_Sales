@@ -17,6 +17,7 @@ import { useAlertContext } from "../contexts/AlertContext";
 import { generateId } from "../utils/idGenerator";
 import { globalStyles } from "../theme/globalStyles";
 import { spacing, colors, borderRadius } from "../theme/theme";
+import { orderFormStyles } from "../styles/components/OrderForm";
 
 interface OrderItem {
   product: string;
@@ -83,6 +84,13 @@ const calculateGrandTotal = (
   return subtotal - (discount || 0);
 };
 
+interface FormErrors {
+  clientName?: string;
+  clientContact?: string;
+  items?: string;
+  [key: string]: string | undefined;
+}
+
 const OrderForm: React.FC<OrderFormProps> = ({
   onSubmit,
   onClose,
@@ -106,6 +114,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [orderDate, setOrderDate] = useState(
     initialData?.orderDate || new Date().toISOString().split("T")[0]
   );
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const filteredItems = inventoryItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -233,23 +242,31 @@ const OrderForm: React.FC<OrderFormProps> = ({
     return phone.length === 9 && /^[17]\d{8}$/.test(phone);
   };
 
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.clientName.trim()) {
+      newErrors.clientName = "Please enter client name";
+    }
+
+    if (!formData.clientContact.trim()) {
+      newErrors.clientContact = "Please enter client contact";
+    }
+
+    if (formData.items.length === 0) {
+      newErrors.items = "Please add at least one item";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      if (!formData.clientName.trim()) {
-        showError("Please enter client name");
-        return;
-      }
-
-      if (formData.items.length === 0) {
-        showError("Please add at least one item");
-        return;
-      }
-
-      if (formData.items.some((item) => !item.product)) {
-        showError("Please select products for all items");
-        return;
-      }
-
       // Check stock availability only for products (not services)
       const insufficientStock = formData.items.some((item) => {
         const inventoryItem = inventoryItems.find(
@@ -344,11 +361,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   const renderProductSelection = (index: number, selectedProduct: string) => (
-    <View style={styles.productSelectionContainer}>
+    <View style={orderFormStyles.productSelectionContainer}>
       <Picker
         selectedValue={selectedProduct}
         onValueChange={(value) => handleProductChange(value, index)}
-        style={styles.picker}
+        style={orderFormStyles.picker}
       >
         <Picker.Item label="Select a product/service" value="" />
         {filteredItems.map((item) => (
@@ -511,147 +528,19 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setAmountPaid(isNaN(numValue) ? 0 : numValue);
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      ...globalStyles.container,
-      padding: spacing.md,
-    },
-    title: {
-      ...globalStyles.title,
-    },
-    topSection: {
-      marginBottom: spacing.lg,
-    },
-    inputGroup: {
-      ...globalStyles.formGroup,
-      flex: 1,
-      marginRight: spacing.sm,
-    },
-    label: {
-      ...globalStyles.label,
-    },
-    input: {
-      ...globalStyles.input,
-      height: 40,
-    },
-    discountInput: {
-      ...globalStyles.input,
-      width: Platform.OS === "android" ? "50%" : "40%",
-      height: 40,
-    },
-    productLabel: {
-      ...globalStyles.subtitle,
-      marginTop: spacing.lg,
-    },
-    productName: {
-      ...globalStyles.caption,
-    },
-    itemContainer: {
-      ...globalStyles.row,
-      justifyContent: "space-between",
-      width: "100%",
-    },
-    formGroup: {
-      flex: 1,
-      marginRight: spacing.sm,
-    },
-    picker: {
-      minHeight: 40,
-      backgroundColor: colors.input,
-      borderRadius: borderRadius.sm,
-      marginBottom: spacing.sm,
-      paddingHorizontal: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    button: {
-      ...globalStyles.button,
-      flex: 1,
-      marginHorizontal: spacing.xs,
-    },
-    actionButton: {
-      marginBottom: spacing.sm,
-    },
-    addButton: {
-      marginTop: spacing.sm,
-    },
-    buttonContainer: {
-      ...globalStyles.buttonContainer,
-    },
-    discountRow: {
-      ...globalStyles.row,
-      justifyContent: "space-between",
-      width: "100%",
-      marginBottom: spacing.sm,
-    },
-    alignRow: {
-      ...globalStyles.row,
-      justifyContent: "space-between",
-      marginVertical: spacing.xs,
-      padding: spacing.sm,
-      backgroundColor: colors.card,
-      borderRadius: borderRadius.sm,
-      marginTop: spacing.sm,
-    },
-    grandTotalLabel: {
-      ...globalStyles.subtitle,
-      flex: 1,
-      textAlign: "left",
-    },
-    grandTotalValue: {
-      ...globalStyles.subtitle,
-    },
-    dateInputContainer: {
-      ...globalStyles.row,
-    },
-    dateInput: {
-      flex: 1,
-      marginRight: spacing.sm,
-    },
-    amountPaidInput: {
-      ...globalStyles.input,
-      width: Platform.OS === "android" ? "50%" : "40%",
-      height: 40,
-    },
-    deleteButton: {
-      padding: spacing.sm,
-    },
-    bottomSection: {
-      ...globalStyles.card,
-      flexDirection: Platform.OS === "android" ? "column" : "row",
-      justifyContent: "space-between",
-      marginTop: spacing.sm,
-    },
-    leftColumn: {
-      width: Platform.OS === "android" ? "98%" : "48%",
-    },
-    rightColumn: {
-      width: Platform.OS === "android" ? "98%" : "48%",
-    },
-    searchSection: {
-      marginBottom: spacing.lg,
-      paddingHorizontal: spacing.lg,
-    },
-    searchInput: {
-      backgroundColor: colors.background,
-    },
-    productSelectionContainer: {
-      flex: 1,
-      marginRight: spacing.sm,
-    },
-  });
-
   return (
-    <ScrollView style={styles.container}>
-      <Title style={styles.title}>Create New Order</Title>
-      <View style={styles.topSection}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Order Date</Text>
-          <View style={styles.dateInputContainer}>
+    <ScrollView style={orderFormStyles.container}>
+      <Text style={orderFormStyles.title}>
+        {initialData ? "Edit Order" : "Add New Order"}
+      </Text>
+      <View style={orderFormStyles.topSection}>
+        <View style={orderFormStyles.inputGroup}>
+          <Text style={orderFormStyles.label}>Order Date</Text>
+          <View style={orderFormStyles.dateInputContainer}>
             <TextInput
               value={orderDate}
               onFocus={toggleDatePicker}
-              style={styles.dateInput}
+              style={orderFormStyles.dateInput}
               mode="outlined"
               editable={false}
               right={
@@ -677,8 +566,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
             )}
           </View>
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Client Contact</Text>
+        <View style={orderFormStyles.inputGroup}>
+          <Text style={orderFormStyles.label}>Client Contact</Text>
           <TextInput
             value={formData.clientContact}
             onChangeText={(value) => {
@@ -688,64 +577,76 @@ const OrderForm: React.FC<OrderFormProps> = ({
                   ...prev,
                   clientContact: numericValue,
                 }));
+                setErrors((prev) => ({ ...prev, clientContact: undefined }));
               }
             }}
-            style={styles.input}
+            style={orderFormStyles.input}
             keyboardType="numeric"
             mode="outlined"
             maxLength={10}
           />
+          {errors.clientContact && (
+            <Text style={orderFormStyles.errorText}>
+              {errors.clientContact}
+            </Text>
+          )}
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Client Name</Text>
+        <View style={orderFormStyles.inputGroup}>
+          <Text style={orderFormStyles.label}>Client Name</Text>
           <TextInput
             value={formData.clientName}
-            onChangeText={(value) =>
-              setFormData((prev) => ({ ...prev, clientName: value }))
-            }
-            style={styles.input}
+            onChangeText={(value) => {
+              setFormData((prev) => ({ ...prev, clientName: value }));
+              setErrors((prev) => ({ ...prev, clientName: undefined }));
+            }}
+            style={orderFormStyles.input}
             mode="outlined"
           />
+          {errors.clientName && (
+            <Text style={orderFormStyles.errorText}>{errors.clientName}</Text>
+          )}
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Address/Descriptions (Optional)</Text>
+        <View style={orderFormStyles.inputGroup}>
+          <Text style={orderFormStyles.label}>
+            Address/Descriptions (Optional)
+          </Text>
           <TextInput
             value={formData.address}
             onChangeText={(value) =>
               setFormData((prev) => ({ ...prev, address: value }))
             }
-            style={styles.input}
+            style={orderFormStyles.input}
             mode="outlined"
           />
         </View>
       </View>
 
-      <View style={styles.searchSection}>
-        <Text style={styles.label}>Search Products/Services</Text>
+      <View style={orderFormStyles.searchSection}>
+        <Text style={orderFormStyles.label}>Search Products/Services</Text>
         <TextInput
           mode="outlined"
           placeholder="Type to search..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          style={styles.searchInput}
+          style={orderFormStyles.searchInput}
         />
       </View>
 
       {formData.items.map((item, index) => (
-        <View key={index} style={styles.itemContainer}>
+        <View key={index} style={orderFormStyles.itemContainer}>
           {renderProductSelection(index, item.product)}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Rate</Text>
+          <View style={orderFormStyles.formGroup}>
+            <Text style={orderFormStyles.label}>Rate</Text>
             <TextInput
               mode="outlined"
               value={item.rate?.toString() || "0"}
               onChangeText={(value) => handleItemChange(index, "rate", value)}
               keyboardType="numeric"
-              style={styles.input}
+              style={orderFormStyles.input}
             />
           </View>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Quantity</Text>
+          <View style={orderFormStyles.formGroup}>
+            <Text style={orderFormStyles.label}>Quantity</Text>
             <TextInput
               mode="outlined"
               value={item.quantity?.toString() || "1"}
@@ -753,37 +654,41 @@ const OrderForm: React.FC<OrderFormProps> = ({
                 handleItemChange(index, "quantity", value)
               }
               keyboardType="numeric"
-              style={styles.input}
+              style={orderFormStyles.input}
             />
           </View>
           <TouchableOpacity
-            style={styles.deleteButton}
+            style={orderFormStyles.deleteButton}
             onPress={() => handleDeleteItem(index)}
           >
             <MaterialIcons name="delete" size={24} color="red" />
           </TouchableOpacity>
         </View>
       ))}
-      <Button mode="outlined" onPress={handleAddItem} style={styles.addButton}>
+      <Button
+        mode="outlined"
+        onPress={handleAddItem}
+        style={orderFormStyles.addButton}
+      >
         Add Another Product/Service
       </Button>
 
-      <View style={styles.bottomSection}>
-        <View style={styles.leftColumn}>
-          <View style={styles.inputGroup}>
-            <View style={styles.discountRow}>
-              <Text style={styles.label}>Discount</Text>
+      <View style={orderFormStyles.bottomSection}>
+        <View style={orderFormStyles.leftColumn}>
+          <View style={orderFormStyles.inputGroup}>
+            <View style={orderFormStyles.discountRow}>
+              <Text style={orderFormStyles.label}>Discount</Text>
               <TextInput
                 value={formData.discount?.toString() || "0"}
                 onChangeText={handleDiscountChange}
                 keyboardType="numeric"
-                style={styles.discountInput}
+                style={orderFormStyles.discountInput}
                 mode="outlined"
               />
             </View>
           </View>
-          <View style={styles.alignRow}>
-            <Text style={styles.label}>Subtotal:</Text>
+          <View style={orderFormStyles.alignRow}>
+            <Text style={orderFormStyles.label}>Subtotal:</Text>
             <Text>
               KES{" "}
               {formData.items.reduce(
@@ -792,13 +697,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
               )}
             </Text>
           </View>
-          <View style={styles.alignRow}>
-            <Text style={styles.label}>Order Discount:</Text>
+          <View style={orderFormStyles.alignRow}>
+            <Text style={orderFormStyles.label}>Order Discount:</Text>
             <Text>KES {formData.discount}</Text>
           </View>
-          <View style={styles.alignRow}>
-            <Text style={styles.grandTotalLabel}>Grand Total:</Text>
-            <Text style={styles.grandTotalValue}>
+          <View style={orderFormStyles.alignRow}>
+            <Text style={orderFormStyles.grandTotalLabel}>Grand Total:</Text>
+            <Text style={orderFormStyles.grandTotalValue}>
               KES{" "}
               {formData.items.reduce(
                 (acc, item) => acc + item.rate * item.quantity,
@@ -807,9 +712,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
             </Text>
           </View>
 
-          <View style={styles.alignRow}>
-            <Text style={styles.label}>Balance:</Text>
-            <Text style={styles.grandTotalValue}>
+          <View style={orderFormStyles.alignRow}>
+            <Text style={orderFormStyles.label}>Balance:</Text>
+            <Text style={orderFormStyles.grandTotalValue}>
               KES{" "}
               {formData.items.reduce(
                 (acc, item) => acc + item.rate * item.quantity,
@@ -821,37 +726,37 @@ const OrderForm: React.FC<OrderFormProps> = ({
           </View>
         </View>
 
-        <View style={styles.rightColumn}>
-          <View style={styles.alignRow}>
-            <Text style={styles.label}>Amount Paid:</Text>
+        <View style={orderFormStyles.rightColumn}>
+          <View style={orderFormStyles.alignRow}>
+            <Text style={orderFormStyles.label}>Amount Paid:</Text>
             <TextInput
               mode="outlined"
               value={amountPaid.toString()}
               onChangeText={handlePaidAmountChange}
               keyboardType="numeric"
-              style={styles.amountPaidInput}
+              style={orderFormStyles.amountPaidInput}
             />
           </View>
 
-          <Text style={styles.label}>Payment Method</Text>
+          <Text style={orderFormStyles.label}>Payment Method</Text>
           <Picker
             selectedValue={formData.paymentMethod}
             onValueChange={(itemValue) =>
               setFormData((prev) => ({ ...prev, paymentMethod: itemValue }))
             }
-            style={styles.picker}
+            style={orderFormStyles.picker}
           >
             <Picker.Item label="Cash" value="Cash" />
             <Picker.Item label="Credit" value="Credit" />
             <Picker.Item label="Debit" value="Debit" />
           </Picker>
-          <Text style={styles.label}>Payment Status</Text>
+          <Text style={orderFormStyles.label}>Payment Status</Text>
           <Picker
             selectedValue={formData.paymentStatus}
             onValueChange={(itemValue) =>
               setFormData((prev) => ({ ...prev, paymentStatus: itemValue }))
             }
-            style={styles.picker}
+            style={orderFormStyles.picker}
           >
             <Picker.Item label="No Payment" value="No Payment" />
             <Picker.Item label="Partial" value="Partial" />
@@ -861,23 +766,29 @@ const OrderForm: React.FC<OrderFormProps> = ({
         </View>
       </View>
 
-      <View style={styles.buttonContainer}>
+      <View style={orderFormStyles.buttonContainer}>
         <Button
           mode="outlined"
           onPress={handleReset}
-          style={[styles.button, styles.actionButton]}
+          style={[orderFormStyles.button, orderFormStyles.actionButton]}
         >
           Reset
         </Button>
         <Button
           mode="contained"
           onPress={handleSubmit}
-          style={[styles.button, styles.actionButton]}
+          style={[orderFormStyles.button, orderFormStyles.actionButton]}
         >
           Save Order
         </Button>
       </View>
       {/* <Button onPress={handleClose}>Cancel</Button> */}
+
+      {errors.items && (
+        <Text style={[orderFormStyles.errorText, { textAlign: "center" }]}>
+          {errors.items}
+        </Text>
+      )}
     </ScrollView>
   );
 };
