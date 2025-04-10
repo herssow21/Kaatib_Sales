@@ -259,8 +259,21 @@ const OrderForm: React.FC<OrderFormProps> = ({
       newErrors.clientContact = { message: "Please enter client contact" };
     }
 
+    // Check if any items have been added
     if (formData.items.length === 0) {
       newErrors.items = { message: "Please add at least one item" };
+    } else {
+      // Check if any items have a product selected and valid quantity
+      const hasValidItems = formData.items.some(
+        (item) => item.product.trim() && item.quantity > 0
+      );
+
+      if (!hasValidItems) {
+        newErrors.items = {
+          message:
+            "Please select at least one product/service and enter a valid quantity",
+        };
+      }
     }
 
     setErrors(newErrors);
@@ -273,8 +286,24 @@ const OrderForm: React.FC<OrderFormProps> = ({
         return;
       }
 
+      // Check if any items have a product selected and valid quantity
+      const validItems = formData.items.filter(
+        (item) => item.product.trim() && item.quantity > 0
+      );
+
+      if (validItems.length === 0) {
+        setErrors((prev) => ({
+          ...prev,
+          items: {
+            message:
+              "Please select at least one product/service and enter a valid quantity",
+          },
+        }));
+        return;
+      }
+
       // Check stock availability
-      const insufficientStockItems = formData.items.filter((item) => {
+      const insufficientStockItems = validItems.filter((item) => {
         const inventoryItem = inventoryItems.find(
           (i) => i.name === item.product
         );
@@ -297,7 +326,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       }
 
       // Create order items array for handleOrderSale
-      const orderItems = formData.items
+      const orderItems = validItems
         .map((item) => {
           const inventoryItem = inventoryItems.find(
             (i) => i.name === item.product
@@ -319,13 +348,14 @@ const OrderForm: React.FC<OrderFormProps> = ({
       const newOrder = {
         id: initialData?.id || generateId(),
         ...formData,
+        items: validItems, // Only include valid items
         category: selectedCategory || "default",
         status: initialData?.status || "Pending",
-        totalOrderItems: formData.items.reduce(
+        totalOrderItems: validItems.reduce(
           (sum, item) => sum + item.quantity,
           0
         ),
-        grandTotal: calculateGrandTotal(formData.items, formData.discount),
+        grandTotal: calculateGrandTotal(validItems, formData.discount),
       };
 
       onSubmit(newOrder);

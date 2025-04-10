@@ -566,7 +566,7 @@ Stock Value: KES ${item.stockValue}`;
     <View style={styles.container}>
       {isMobile ? (
         <>
-          <View style={{ ...styles.mobileHeader } as const}>
+          <View style={styles.mobileHeader}>
             <Text variant="headlineMedium">Inventory List</Text>
           </View>
 
@@ -584,7 +584,7 @@ Stock Value: KES ${item.stockValue}`;
                 setSelectedItem(null);
                 setItemModalVisible(true);
               }}
-              style={styles.mobileButton as ViewStyle}
+              style={styles.mobileButton}
             >
               Create Item
             </Button>
@@ -596,14 +596,12 @@ Stock Value: KES ${item.stockValue}`;
               Categories
             </Button>
           </View>
-          <ScrollView horizontal style={styles.mobileStatsScroll as ViewStyle}>
-            <View style={styles.mobileStatsContainer as ViewStyle}>
-              <Card style={styles.mobileStatBox as ViewStyle}>
+          <ScrollView horizontal style={styles.mobileStatsScroll}>
+            <View style={styles.mobileStatsContainer}>
+              <Card style={styles.mobileStatBox}>
                 <Card.Content>
-                  <Text style={styles.statLabel as TextStyle}>Total Items</Text>
-                  <Text style={styles.statValue as TextStyle}>
-                    {totalItems}
-                  </Text>
+                  <Text style={styles.statLabel}>Total Items</Text>
+                  <Text style={styles.statValue}>{totalItems}</Text>
                 </Card.Content>
               </Card>
               <Card style={styles.mobileStatBox}>
@@ -612,12 +610,10 @@ Stock Value: KES ${item.stockValue}`;
                   <Text style={styles.statValue}>{totalStockCount}</Text>
                 </Card.Content>
               </Card>
-              <Card style={styles.mobileStatBox as ViewStyle}>
+              <Card style={styles.mobileStatBox}>
                 <Card.Content>
-                  <Text style={styles.statLabel as TextStyle}>
-                    Estimated Sales
-                  </Text>
-                  <Text style={styles.statValue as TextStyle}>
+                  <Text style={styles.statLabel}>Estimated Sales</Text>
+                  <Text style={styles.statValue}>
                     {formatMoney(estimatedSales)}
                   </Text>
                 </Card.Content>
@@ -633,7 +629,7 @@ Stock Value: KES ${item.stockValue}`;
             </View>
           </ScrollView>
 
-          <View style={styles.mobileFilters as ViewStyle}>
+          <View style={styles.mobileFilters}>
             <TextInput
               mode="outlined"
               placeholder="Search Items"
@@ -645,9 +641,9 @@ Stock Value: KES ${item.stockValue}`;
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <View style={styles.mobileFilterRow as ViewStyle}>
-              <Text style={styles.filterLabel as TextStyle}>Filter:</Text>
-              <View style={styles.filterButtons as ViewStyle}>
+            <View style={styles.mobileFilterRow}>
+              <Text style={styles.filterLabel}>Filter:</Text>
+              <View style={styles.filterButtons}>
                 <Menu
                   visible={isCategoryMenuVisible}
                   onDismiss={() => setIsCategoryMenuVisible(false)}
@@ -723,30 +719,18 @@ Stock Value: KES ${item.stockValue}`;
 
           <ScrollView horizontal>
             <View>
-              <View style={styles.mobileTableHeader as ViewStyle}>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 40 }]}
-                >
-                  #
-                </Text>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 120 }]}
-                >
+              <View style={styles.mobileTableHeader}>
+                <Text style={[styles.mobileTableCell, { width: 40 }]}>#</Text>
+                <Text style={[styles.mobileTableCell, { width: 120 }]}>
                   Item
                 </Text>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
-                >
+                <Text style={[styles.mobileTableCell, { width: 100 }]}>
                   Category
                 </Text>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 80 }]}
-                >
+                <Text style={[styles.mobileTableCell, { width: 80 }]}>
                   Stock
                 </Text>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
-                >
+                <Text style={[styles.mobileTableCell, { width: 100 }]}>
                   Buy Price
                 </Text>
                 <Text style={[styles.mobileTableCell, { width: 100 }]}>
@@ -755,56 +739,26 @@ Stock Value: KES ${item.stockValue}`;
                 <Text style={[styles.mobileTableCell, { width: 120 }]}>
                   Value
                 </Text>
-                <Text
-                  style={[styles.mobileTableCell as TextStyle, { width: 100 }]}
-                >
+                <Text style={[styles.mobileTableCell, { width: 100 }]}>
                   Actions
                 </Text>
               </View>
               <ScrollView>
                 {filteredAndSortedItems.map((item, index) => (
-                  <View
-                    key={item.id}
-                    style={styles.mobileTableRow as ViewStyle}
-                  >
-                    <Text
-                      style={[
-                        styles.mobileTableCell as TextStyle,
-                        { width: 45 },
-                      ]}
-                    >
+                  <View key={item.id} style={styles.mobileTableRow}>
+                    <Text style={[styles.mobileTableCell, { width: 45 }]}>
                       {index + 1}
                     </Text>
-                    <Text
-                      style={[
-                        styles.mobileTableCell as TextStyle,
-                        { width: 120 },
-                      ]}
-                    >
+                    <Text style={[styles.mobileTableCell, { width: 120 }]}>
                       {item.name}
                     </Text>
-                    <Text
-                      style={[
-                        styles.mobileTableCell as TextStyle,
-                        { width: 100 },
-                      ]}
-                    >
+                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
                       {item.category}
                     </Text>
-                    <Text
-                      style={[
-                        styles.mobileTableCell as TextStyle,
-                        { width: 80 },
-                      ]}
-                    >
+                    <Text style={[styles.mobileTableCell, { width: 80 }]}>
                       {item.type === "service" ? "-" : item.quantity}
                     </Text>
-                    <Text
-                      style={[
-                        styles.mobileTableCell as TextStyle,
-                        { width: 100 },
-                      ]}
-                    >
+                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
                       {item.type === "service"
                         ? "-"
                         : formatMoney(item.buyingPrice || 0)}
@@ -819,7 +773,7 @@ Stock Value: KES ${item.stockValue}`;
                     </Text>
                     <View
                       style={[
-                        styles.mobileTableCell as ViewStyle,
+                        styles.mobileTableCell,
                         { width: 140, justifyContent: "flex-end" },
                       ]}
                     >
@@ -833,20 +787,20 @@ Stock Value: KES ${item.stockValue}`;
         </>
       ) : (
         <>
-          <View style={styles.header as ViewStyle}>
+          <View style={styles.header}>
             <Text variant="headlineMedium">Inventory List</Text>
-            <View style={styles.buttonContainer as ViewStyle}>
+            <View style={styles.buttonContainer}>
               <Button
                 mode="outlined"
                 onPress={() => setBulkRestoreModalVisible(true)}
-                style={styles.button as ViewStyle}
+                style={styles.button}
               >
                 Bulk Restock
               </Button>
               <Button
                 mode="outlined"
                 onPress={() => setCategoryModalVisible(true)}
-                style={styles.button as ViewStyle}
+                style={styles.button}
               >
                 Create Category
               </Button>
@@ -862,53 +816,45 @@ Stock Value: KES ${item.stockValue}`;
               </Button>
             </View>
           </View>
-          <View style={styles.statsContainer as ViewStyle}>
-            <Card style={styles.statBox as ViewStyle}>
+          <View style={styles.statsContainer}>
+            <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel as TextStyle}>Total Items</Text>
-                <Text style={styles.statValue as TextStyle}>{totalItems}</Text>
+                <Text style={styles.statLabel}>Total Items</Text>
+                <Text style={styles.statValue}>{totalItems}</Text>
               </Card.Content>
             </Card>
             <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel as TextStyle}>
-                  Total Stock Count
-                </Text>
-                <Text style={styles.statValue as TextStyle}>
-                  {totalStockCount}
-                </Text>
+                <Text style={styles.statLabel}>Total Stock Count</Text>
+                <Text style={styles.statValue}>{totalStockCount}</Text>
               </Card.Content>
             </Card>
-            <Card style={styles.statBox as ViewStyle}>
+            <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel as TextStyle}>
-                  Estimated Sales
-                </Text>
-                <Text style={styles.statValue as TextStyle}>
+                <Text style={styles.statLabel}>Estimated Sales</Text>
+                <Text style={styles.statValue}>
                   {formatMoney(estimatedSales)}
                 </Text>
               </Card.Content>
             </Card>
             <Card style={styles.statBox}>
               <Card.Content>
-                <Text style={styles.statLabel as TextStyle}>
-                  Total Stock Value
-                </Text>
-                <Text style={styles.statValue as TextStyle}>
+                <Text style={styles.statLabel}>Total Stock Value</Text>
+                <Text style={styles.statValue}>
                   {formatMoney(totalStockValue)}
                 </Text>
               </Card.Content>
             </Card>
           </View>
-          <View style={styles.filterContainer as ViewStyle}>
+          <View style={styles.filterContainer}>
             <TextInput
               mode="outlined"
               placeholder="Search Items"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={styles.searchInput as TextStyle}
+              style={styles.searchInput}
             />
-            <View style={styles.filtersRow as ViewStyle}>
+            <View style={styles.filtersRow}>
               <Menu
                 visible={isCategoryMenuVisible}
                 onDismiss={() => setIsCategoryMenuVisible(false)}
@@ -957,17 +903,10 @@ Stock Value: KES ${item.stockValue}`;
               </Text>
             ) : (
               <View>
-                <View style={styles.tableHeader as ViewStyle}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>#</Text>
                   <Text
-                    style={[styles.tableHeaderCell as TextStyle, { flex: 0.5 }]}
-                  >
-                    #
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tableHeaderCell as TextStyle,
-                      styles.sortableHeader as TextStyle,
-                    ]}
+                    style={[styles.tableHeaderCell, styles.sortableHeader]}
                     onPress={() => handleSort("name")}
                   >
                     Item{" "}
@@ -1021,22 +960,16 @@ Stock Value: KES ${item.stockValue}`;
                 </View>
                 <ScrollView style={styles.tableScrollView}>
                   {filteredAndSortedItems.map((item, index) => (
-                    <View key={item.id} style={styles.tableRow as ViewStyle}>
-                      <Text
-                        style={[styles.tableCell as TextStyle, { flex: 0.5 }]}
-                      >
+                    <View key={item.id} style={styles.tableRow}>
+                      <Text style={[styles.tableCell, { flex: 0.5 }]}>
                         {index + 1}
                       </Text>
-                      <Text style={styles.tableCell as TextStyle}>
-                        {item.name}
-                      </Text>
-                      <Text style={styles.tableCell as TextStyle}>
-                        {item.category}
-                      </Text>
-                      <Text style={styles.tableCell as TextStyle}>
+                      <Text style={styles.tableCell}>{item.name}</Text>
+                      <Text style={styles.tableCell}>{item.category}</Text>
+                      <Text style={styles.tableCell}>
                         {item.type === "service" ? "-" : item.quantity}
                       </Text>
-                      <Text style={styles.tableCell as TextStyle}>
+                      <Text style={styles.tableCell}>
                         {item.type === "service"
                           ? "-"
                           : formatMoney(item.buyingPrice || 0)}
@@ -1110,7 +1043,7 @@ Stock Value: KES ${item.stockValue}`;
               charges: data.charges,
             };
             if (selectedItem) {
-              updateItem(itemData as Required<InventoryItem>);
+              updateItem(selectedItem.id, itemData as Required<InventoryItem>);
             } else {
               addItem(itemData as Required<InventoryItem>);
             }
@@ -1135,7 +1068,10 @@ Stock Value: KES ${item.stockValue}`;
         }}
       >
         <RestockForm
-          items={items}
+          items={items.map((item) => ({
+            ...item,
+            currentStock: item.quantity,
+          }))}
           onClose={() => setBulkRestoreModalVisible(false)}
           onSubmit={(selectedItems) => {
             console.log("Selected items for restock:", selectedItems);
