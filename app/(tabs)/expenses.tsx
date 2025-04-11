@@ -66,32 +66,7 @@ export default function Expenses() {
     description: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [expensesList, setExpensesList] = useState<Expense[]>([
-    {
-      id: "1",
-      title: "Rent",
-      description: "Monthly apartment rent",
-      amount: 650.0,
-      date: "4/1/2025",
-      category: "Rent",
-    },
-    {
-      id: "2",
-      title: "Shopping",
-      description: "New clothes",
-      amount: 210.3,
-      date: "4/2/2025",
-      category: "Shopping",
-    },
-    {
-      id: "3",
-      title: "Transport",
-      description: "Uber rides",
-      amount: 45.0,
-      date: "4/3/2025",
-      category: "Transport",
-    },
-  ]);
+  const [expensesList, setExpensesList] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<string[]>(INITIAL_CATEGORIES);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategory, setNewCategory] = useState("");
@@ -102,19 +77,93 @@ export default function Expenses() {
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<
+    "today" | "week" | "month" | "all"
+  >("today");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-  const totalExpenses =
-    expensesList.length > 0
-      ? expensesList.reduce((sum, expense) => sum + expense.amount, 0)
-      : 0;
+  const getFilteredExpenses = () => {
+    const now = new Date();
+
+    switch (dateFilter) {
+      case "today":
+        const todayStr = now.toLocaleDateString();
+        return expensesList.filter((expense) => {
+          return expense.date === todayStr;
+        });
+
+      case "week":
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        weekStart.setHours(0, 0, 0, 0);
+
+        return expensesList.filter((expense) => {
+          // Parse the date string to a Date object
+          const parts = expense.date.split("/");
+          // Handle different date formats (MM/DD/YYYY or DD/MM/YYYY)
+          const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+          const day = parseInt(parts[1]);
+          const year = parseInt(parts[2]);
+          const expenseDate = new Date(year, month, day);
+
+          return expenseDate >= weekStart;
+        });
+
+      case "month":
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        return expensesList.filter((expense) => {
+          // Parse the date string to extract month and year
+          const parts = expense.date.split("/");
+          // Handle different date formats (MM/DD/YYYY or DD/MM/YYYY)
+          const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+          const year = parseInt(parts[2]);
+
+          return month === currentMonth && year === currentYear;
+        });
+
+      case "all":
+      default:
+        return expensesList;
+    }
+  };
+
+  const filteredByDateExpenses = getFilteredExpenses();
+
+  const getFilterTitle = () => {
+    switch (dateFilter) {
+      case "today":
+        return "Today";
+      case "week":
+        return "This Week";
+      case "month":
+        return "This Month";
+      case "all":
+        return "All Time";
+      default:
+        return "This Month";
+    }
+  };
+
+  const totalExpenses = filteredByDateExpenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
 
   const highestExpense =
-    expensesList.length > 0
-      ? expensesList.reduce(
+    filteredByDateExpenses.length > 0
+      ? filteredByDateExpenses.reduce(
           (max, expense) => (expense.amount > max.amount ? expense : max),
-          expensesList[0]
+          filteredByDateExpenses[0]
         )
       : { amount: 0, title: "No expenses" };
+
+  const filteredExpenses = filteredByDateExpenses.filter(
+    (expense) =>
+      expense.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      expense.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleAddExpense = () => {
     setFormData({ title: "", amount: "", category: "", description: "" });
@@ -183,12 +232,13 @@ export default function Expenses() {
 
   const handleSubmit = () => {
     if (validateForm()) {
+      const now = new Date();
       const newExpense: Expense = {
         id: Date.now().toString(),
         title: formData.title,
         description: formData.description,
         amount: parseFloat(formData.amount),
-        date: new Date().toLocaleDateString(),
+        date: now.toLocaleDateString(),
         category: formData.category,
       };
 
@@ -197,12 +247,6 @@ export default function Expenses() {
       setFormData({ title: "", amount: "", category: "", description: "" });
     }
   };
-
-  const filteredExpenses = expensesList.filter(
-    (expense) =>
-      expense.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      expense.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
@@ -353,6 +397,66 @@ export default function Expenses() {
     },
   });
 
+  const renderFilterOptions = () => {
+    if (Platform.OS === "web") {
+      return (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
+        >
+          <Button
+            mode={dateFilter === "today" ? "contained" : "outlined"}
+            onPress={() => setDateFilter("today")}
+            style={styles.filterButton}
+            labelStyle={styles.filterButtonLabel}
+            compact
+          >
+            Today
+          </Button>
+          <Button
+            mode={dateFilter === "week" ? "contained" : "outlined"}
+            onPress={() => setDateFilter("week")}
+            style={styles.filterButton}
+            labelStyle={styles.filterButtonLabel}
+            compact
+          >
+            This Week
+          </Button>
+          <Button
+            mode={dateFilter === "month" ? "contained" : "outlined"}
+            onPress={() => setDateFilter("month")}
+            style={styles.filterButton}
+            labelStyle={styles.filterButtonLabel}
+            compact
+          >
+            This Month
+          </Button>
+          <Button
+            mode={dateFilter === "all" ? "contained" : "outlined"}
+            onPress={() => setDateFilter("all")}
+            style={styles.filterButton}
+            labelStyle={styles.filterButtonLabel}
+            compact
+          >
+            All Time
+          </Button>
+        </ScrollView>
+      );
+    }
+
+    return (
+      <Button
+        mode="outlined"
+        onPress={() => setShowFilterMenu(true)}
+        style={styles.mobileFilterButton}
+        icon="calendar"
+      >
+        {getFilterTitle()}
+      </Button>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.pageTitle}>Expenses</Text>
@@ -374,7 +478,7 @@ export default function Expenses() {
               })}
             </Text>
           </View>
-          <Text style={componentStyles.summaryPeriod}>This Month</Text>
+          <Text style={componentStyles.summaryPeriod}>{getFilterTitle()}</Text>
         </Surface>
 
         <Surface
@@ -426,14 +530,17 @@ export default function Expenses() {
       <View style={styles.expensesSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>All Expenses</Text>
-          <IconButton
-            icon="plus"
-            mode="contained"
-            containerColor="#DC2626"
-            iconColor="#fff"
-            size={20}
-            onPress={() => setShowAddExpense(true)}
-          />
+          <View style={styles.headerActions}>
+            {renderFilterOptions()}
+            <IconButton
+              icon="plus"
+              mode="contained"
+              containerColor="#DC2626"
+              iconColor="#fff"
+              size={20}
+              onPress={() => setShowAddExpense(true)}
+            />
+          </View>
         </View>
 
         <TextInput
@@ -447,7 +554,8 @@ export default function Expenses() {
         <View style={styles.expensesListWrapper}>
           <ScrollView
             style={styles.expensesList}
-            showsVerticalScrollIndicator={Platform.OS === "web"}
+            contentContainerStyle={styles.expensesListContent}
+            showsVerticalScrollIndicator={true}
           >
             {filteredExpenses.length > 0 ? (
               filteredExpenses.map((expense) => (
@@ -455,7 +563,17 @@ export default function Expenses() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No expenses to show</Text>
+                <Text style={styles.emptyStateText}>
+                  {searchQuery
+                    ? "No matching expenses found"
+                    : dateFilter === "today"
+                    ? "No expenses for today"
+                    : dateFilter === "week"
+                    ? "No expenses for this week"
+                    : dateFilter === "month"
+                    ? "No expenses for this month"
+                    : "No expenses to show"}
+                </Text>
               </View>
             )}
           </ScrollView>
@@ -463,9 +581,10 @@ export default function Expenses() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Showing {filteredExpenses.length} of {expensesList.length} expenses
-            {filteredExpenses.length < expensesList.length && " | "}
-            {filteredExpenses.length < expensesList.length && (
+            Showing {filteredExpenses.length} of {filteredByDateExpenses.length}{" "}
+            expenses
+            {filteredExpenses.length < filteredByDateExpenses.length && " | "}
+            {filteredExpenses.length < filteredByDateExpenses.length && (
               <Text style={styles.seeMore} onPress={() => setSearchQuery("")}>
                 See more
               </Text>
@@ -695,6 +814,80 @@ export default function Expenses() {
             </Button>
           </Dialog.Actions>
         </Dialog>
+
+        <Dialog
+          visible={showFilterMenu}
+          onDismiss={() => setShowFilterMenu(false)}
+          style={styles.filterDialog}
+        >
+          <Dialog.Title>Select Time Period</Dialog.Title>
+          <Dialog.Content>
+            <List.Item
+              title="Today"
+              onPress={() => {
+                setDateFilter("today");
+                setShowFilterMenu(false);
+              }}
+              left={(props) => (
+                <List.Icon
+                  {...props}
+                  icon={
+                    dateFilter === "today"
+                      ? "radiobox-marked"
+                      : "radiobox-blank"
+                  }
+                />
+              )}
+            />
+            <List.Item
+              title="This Week"
+              onPress={() => {
+                setDateFilter("week");
+                setShowFilterMenu(false);
+              }}
+              left={(props) => (
+                <List.Icon
+                  {...props}
+                  icon={
+                    dateFilter === "week" ? "radiobox-marked" : "radiobox-blank"
+                  }
+                />
+              )}
+            />
+            <List.Item
+              title="This Month"
+              onPress={() => {
+                setDateFilter("month");
+                setShowFilterMenu(false);
+              }}
+              left={(props) => (
+                <List.Icon
+                  {...props}
+                  icon={
+                    dateFilter === "month"
+                      ? "radiobox-marked"
+                      : "radiobox-blank"
+                  }
+                />
+              )}
+            />
+            <List.Item
+              title="All Time"
+              onPress={() => {
+                setDateFilter("all");
+                setShowFilterMenu(false);
+              }}
+              left={(props) => (
+                <List.Icon
+                  {...props}
+                  icon={
+                    dateFilter === "all" ? "radiobox-marked" : "radiobox-blank"
+                  }
+                />
+              )}
+            />
+          </Dialog.Content>
+        </Dialog>
       </Portal>
     </View>
   );
@@ -776,27 +969,37 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     ...(Platform.OS === "web" && {
-      minHeight: 400, // Ensures space for at least 4-5 expenses
+      height: 400, // Fixed height for web to ensure scrolling works properly
     }),
   },
   expensesList: {
     flex: 1,
+    width: "100%",
+  },
+  expensesListContent: {
+    paddingBottom: 16,
   },
   expenseCardContainer: {
     position: "relative",
-    marginBottom: 8,
+    marginBottom: 6,
     flexDirection: "row",
   },
   expenseCard: {
     flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#f0f0f0",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   expenseContent: {
-    padding: 12,
+    padding: 10,
+    paddingBottom: 14,
   },
   expenseHeader: {
     flexDirection: "row",
@@ -824,26 +1027,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginTop: 6,
+    paddingTop: 2,
   },
   expenseDate: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#666",
     fontWeight: "500",
   },
   categoryContainer: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 16,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 10,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
   expenseDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#666",
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
   },
   footer: {
     paddingTop: 8,
@@ -967,4 +1172,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: 8,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  } as ViewStyle,
+  filterContainer: {
+    flexGrow: 0,
+    marginRight: 8,
+  } as ViewStyle,
+  filterButton: {
+    marginRight: 4,
+    borderColor: "#DC2626",
+  } as ViewStyle,
+  filterButtonLabel: {
+    fontSize: 12,
+    marginVertical: 0,
+  } as TextStyle,
+  mobileFilterButton: {
+    marginRight: 8,
+    borderColor: "#DC2626",
+  } as ViewStyle,
+  filterDialog: {
+    borderRadius: 12,
+    backgroundColor: "#fff",
+  } as ViewStyle,
 });
