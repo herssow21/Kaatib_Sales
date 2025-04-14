@@ -6,7 +6,6 @@ import { AlertProvider } from "../contexts/AlertContext";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const theme = {
   ...MD3LightTheme,
@@ -24,7 +23,7 @@ const theme = {
   },
 };
 
-export default function Layout() {
+export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -44,17 +43,13 @@ export default function Layout() {
       <AlertProvider>
         <InventoryProvider>
           <CategoryProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen
                 name="transaction-form"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "New Transaction",
                 }}
               />
@@ -62,6 +57,7 @@ export default function Layout() {
                 name="category-form"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "Category",
                 }}
               />
@@ -69,20 +65,15 @@ export default function Layout() {
                 name="policymodal"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "Terms & Policy",
-                }}
-              />
-              <Stack.Screen
-                name="users-management"
-                options={{
-                  presentation: "modal",
-                  title: "User Management",
                 }}
               />
               <Stack.Screen
                 name="payment-settings"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "Payment Settings",
                 }}
               />
@@ -90,6 +81,7 @@ export default function Layout() {
                 name="profile"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "My Profile",
                 }}
               />
@@ -97,7 +89,16 @@ export default function Layout() {
                 name="expense-form"
                 options={{
                   presentation: "modal",
+                  headerShown: true,
                   title: "New Expense",
+                }}
+              />
+              <Stack.Screen
+                name="users-management"
+                options={{
+                  presentation: "modal",
+                  headerShown: false,
+                  title: "User Management",
                 }}
               />
             </Stack>

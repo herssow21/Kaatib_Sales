@@ -1,31 +1,28 @@
-import React from "react";
 import { Tabs } from "expo-router";
+import { useTheme } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useThemeContext } from "../../contexts/ThemeContext";
 
 export default function TabsLayout() {
-  const { theme } = useThemeContext();
+  const theme = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          elevation: 0,
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.outline,
           backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.outline,
         },
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.outline,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
           title: "Dashboard",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="dashboard" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="dashboard" size={size} color={color} />
           ),
         }}
       />
@@ -33,8 +30,8 @@ export default function TabsLayout() {
         name="inventory"
         options={{
           title: "Inventory",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="inventory" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="inventory" size={size} color={color} />
           ),
         }}
       />
@@ -42,8 +39,8 @@ export default function TabsLayout() {
         name="orders"
         options={{
           title: "Orders",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="shopping-cart" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="shopping-cart" size={size} color={color} />
           ),
         }}
       />
@@ -51,12 +48,8 @@ export default function TabsLayout() {
         name="expenses"
         options={{
           title: "Expenses",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons
-              name="account-balance-wallet"
-              size={24}
-              color={color}
-            />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="account-balance-wallet" size={size} color={color} />
           ),
         }}
       />
@@ -64,8 +57,8 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="settings" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="settings" size={size} color={color} />
           ),
         }}
       />
