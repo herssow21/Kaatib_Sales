@@ -5,11 +5,12 @@ import {
   Text,
   IconButton,
   Menu,
-  useTheme,
   Button,
   Divider,
   Portal,
   Modal,
+  Dialog,
+  useTheme,
 } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,17 +18,17 @@ import { useRouter } from "expo-router";
 interface Customer {
   id: number;
   name: string;
-  email: string;
+  email?: string;
   phone: string;
-  address: string;
+  address?: string;
   totalOrders: number;
 }
 
 interface NewCustomer {
   name: string;
-  email: string;
+  email?: string;
   phone: string;
-  address: string;
+  address?: string;
 }
 
 const UserManagement: React.FC = () => {
@@ -35,12 +36,17 @@ const UserManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState<number | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const [newCustomer, setNewCustomer] = useState<NewCustomer>({
     name: "",
     email: "",
     phone: "",
     address: "",
   });
+  const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
 
   // Mock data for customers
@@ -82,24 +88,81 @@ const UserManagement: React.FC = () => {
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (customer.email &&
+        customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       customer.phone.includes(searchQuery) ||
-      customer.address.toLowerCase().includes(searchQuery.toLowerCase())
+      (customer.address &&
+        customer.address.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleAddCustomer = () => {
-    if (newCustomer.name && newCustomer.email) {
-      const newId = Math.max(...customers.map((c) => c.id)) + 1;
-      setCustomers([
-        ...customers,
-        {
-          ...newCustomer,
-          id: newId,
-          totalOrders: 0,
-        },
-      ]);
-      setNewCustomer({ name: "", email: "", phone: "", address: "" });
-      setIsAddModalVisible(false);
+    if (newCustomer.name && newCustomer.phone) {
+      if (isEditing) {
+        // Update existing customer
+        const customerToUpdate = customers.find(
+          (c) => c.name === newCustomer.name || c.phone === newCustomer.phone
+        );
+
+        if (customerToUpdate) {
+          setCustomers(
+            customers.map((customer) =>
+              customer.id === customerToUpdate.id
+                ? { ...customer, ...newCustomer }
+                : customer
+            )
+          );
+        }
+      } else {
+        // Add new customer
+        const newId = Math.max(...customers.map((c) => c.id)) + 1;
+        setCustomers([
+          ...customers,
+          {
+            ...newCustomer,
+            id: newId,
+            totalOrders: 0,
+          },
+        ]);
+      }
+      resetForm();
+    }
+  };
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDeleteDialogVisible(true);
+    setMenuVisible(null);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setNewCustomer({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone,
+      address: customer.address || "",
+    });
+    setIsEditing(true);
+    setIsAddModalVisible(true);
+    setMenuVisible(null);
+  };
+
+  const handleViewOrders = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setMenuVisible(null);
+  };
+
+  const resetForm = () => {
+    setNewCustomer({ name: "", email: "", phone: "", address: "" });
+    setIsAddModalVisible(false);
+    setIsEditing(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleBack = () => {
+    if (Platform.OS === "web") {
+      window.history.back();
+    } else {
+      router.back();
     }
   };
 
@@ -169,72 +232,59 @@ const UserManagement: React.FC = () => {
       flexDirection: "row",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
-      backgroundColor: theme.colors.surfaceVariant,
+      borderBottomColor: theme.colors.outline,
+      backgroundColor: theme.colors.surface,
     },
     headerCell: {
-      color: theme.colors.onSurfaceVariant,
-      fontSize: 14,
       fontWeight: "bold",
-      textTransform: "uppercase",
+      color: theme.colors.onSurface,
+    },
+    nameCell: {
+      flex: 2,
+    },
+    contactCell: {
+      flex: 2,
+    },
+    addressCell: {
+      flex: 3,
+    },
+    ordersCell: {
+      flex: 1,
+      alignItems: "center",
+    },
+    actionsCell: {
+      flex: 1,
+      alignItems: "center",
     },
     scrollView: {
       flex: 1,
-      ...(Platform.OS === "web" && {
-        height: 500,
-      }),
     },
     row: {
       flexDirection: "row",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: theme.colors.outlineVariant,
+      borderBottomColor: theme.colors.outline,
       backgroundColor: theme.colors.surface,
     },
     cell: {
       color: theme.colors.onSurface,
-      fontSize: 14,
-    },
-    nameCell: {
-      flex: 2,
-      minWidth: 120,
-    },
-    contactCell: {
-      flex: 2,
-      minWidth: 160,
-    },
-    addressCell: {
-      flex: 3,
-      minWidth: 200,
-    },
-    ordersCell: {
-      flex: 1,
-      minWidth: 80,
-      alignItems: "center",
-    },
-    actionsCell: {
-      flex: 1,
-      minWidth: 80,
-      alignItems: "flex-end",
     },
     footer: {
       padding: 16,
       borderTopWidth: 1,
-      borderTopColor: theme.colors.outlineVariant,
+      borderTopColor: theme.colors.outline,
       backgroundColor: theme.colors.surface,
     },
     footerText: {
       color: theme.colors.onSurfaceVariant,
-      textAlign: "center",
     },
     modalContent: {
       backgroundColor: theme.colors.surface,
       padding: 20,
       margin: 20,
       borderRadius: 8,
-      maxWidth: Platform.OS === "web" ? 400 : undefined,
+      width: Platform.OS === "web" ? 500 : "90%",
       alignSelf: "center",
-      width: "90%",
     },
     modalTitle: {
       fontSize: 20,
@@ -244,13 +294,66 @@ const UserManagement: React.FC = () => {
     },
     input: {
       marginBottom: 16,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.surface,
     },
     modalActions: {
       flexDirection: "row",
       justifyContent: "flex-end",
       marginTop: 16,
       gap: 8,
+    },
+    orderDetailsContainer: {
+      padding: 16,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      margin: 16,
+    },
+    orderDetailsTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      marginBottom: 8,
+      color: theme.colors.onSurface,
+    },
+    orderDetailsText: {
+      color: theme.colors.onSurface,
+      marginBottom: 4,
+    },
+    orderList: {
+      marginTop: 8,
+      paddingLeft: 16,
+    },
+    orderItem: {
+      color: theme.colors.onSurfaceVariant,
+      marginBottom: 4,
+    },
+    dialogContent: {
+      width: Platform.OS === "web" ? 400 : "auto",
+      alignSelf: "center",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+    },
+    dialogTitle: {
+      color: theme.colors.onSurface,
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
+    dialogMessage: {
+      color: theme.colors.onSurfaceVariant,
+      fontSize: 16,
+      lineHeight: 24,
+    },
+    dialogActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 16,
+      gap: 8,
+    },
+    orderListContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 8,
     },
   });
 
@@ -260,7 +363,7 @@ const UserManagement: React.FC = () => {
         <IconButton
           icon="arrow-left"
           size={24}
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={styles.backButton}
         />
         <View style={styles.headerContent}>
@@ -317,7 +420,7 @@ const UserManagement: React.FC = () => {
                 <Text style={styles.cell}>{customer.name}</Text>
               </View>
               <View style={styles.contactCell}>
-                <Text style={styles.cell}>{customer.email}</Text>
+                <Text style={styles.cell}>{customer.email || "N/A"}</Text>
                 <Text
                   style={[
                     styles.cell,
@@ -328,7 +431,7 @@ const UserManagement: React.FC = () => {
                 </Text>
               </View>
               <View style={styles.addressCell}>
-                <Text style={styles.cell}>{customer.address}</Text>
+                <Text style={styles.cell}>{customer.address || "N/A"}</Text>
               </View>
               <View style={styles.ordersCell}>
                 <Text style={styles.cell}>{customer.totalOrders}</Text>
@@ -346,36 +449,19 @@ const UserManagement: React.FC = () => {
                   }
                 >
                   <Menu.Item
-                    onPress={() => {
-                      console.log("View details", customer.id);
-                      setMenuVisible(null);
-                    }}
-                    title="View details"
-                    leadingIcon="eye"
-                  />
-                  <Menu.Item
-                    onPress={() => {
-                      console.log("Edit customer", customer.id);
-                      setMenuVisible(null);
-                    }}
-                    title="Edit customer"
-                    leadingIcon="pencil"
-                  />
-                  <Menu.Item
-                    onPress={() => {
-                      console.log("View orders", customer.id);
-                      setMenuVisible(null);
-                    }}
-                    title="View orders"
+                    onPress={() => handleViewOrders(customer)}
+                    title="View Orders"
                     leadingIcon="shopping"
+                  />
+                  <Menu.Item
+                    onPress={() => handleEditCustomer(customer)}
+                    title="Edit Customer"
+                    leadingIcon="pencil"
                   />
                   <Divider />
                   <Menu.Item
-                    onPress={() => {
-                      console.log("Delete customer", customer.id);
-                      setMenuVisible(null);
-                    }}
-                    title="Delete customer"
+                    onPress={() => handleDeleteCustomer(customer)}
+                    title="Delete Customer"
                     leadingIcon="delete"
                     titleStyle={{ color: theme.colors.error }}
                   />
@@ -395,12 +481,14 @@ const UserManagement: React.FC = () => {
       <Portal>
         <Modal
           visible={isAddModalVisible}
-          onDismiss={() => setIsAddModalVisible(false)}
+          onDismiss={resetForm}
           contentContainerStyle={styles.modalContent}
         >
-          <Text style={styles.modalTitle}>Add New Customer</Text>
+          <Text style={styles.modalTitle}>
+            {isEditing ? "Edit Customer" : "Add New Customer"}
+          </Text>
           <TextInput
-            label="Name"
+            label="Name *"
             value={newCustomer.name}
             onChangeText={(text) =>
               setNewCustomer({ ...newCustomer, name: text })
@@ -417,7 +505,7 @@ const UserManagement: React.FC = () => {
             keyboardType="email-address"
           />
           <TextInput
-            label="Phone"
+            label="Phone *"
             value={newCustomer.phone}
             onChangeText={(text) =>
               setNewCustomer({ ...newCustomer, phone: text })
@@ -434,22 +522,116 @@ const UserManagement: React.FC = () => {
             style={styles.input}
           />
           <View style={styles.modalActions}>
-            <Button
-              mode="outlined"
-              onPress={() => setIsAddModalVisible(false)}
-              style={{ marginRight: 8 }}
-            >
+            <Button mode="outlined" onPress={resetForm}>
               Cancel
             </Button>
             <Button
               mode="contained"
               onPress={handleAddCustomer}
-              disabled={!newCustomer.name || !newCustomer.email}
+              disabled={!newCustomer.name || !newCustomer.phone}
             >
-              Add Customer
+              {isEditing ? "Save Changes" : "Add Customer"}
             </Button>
           </View>
         </Modal>
+
+        <Dialog
+          visible={isDeleteDialogVisible}
+          onDismiss={() => setIsDeleteDialogVisible(false)}
+          style={styles.dialogContent}
+        >
+          <Dialog.Title style={styles.dialogTitle}>
+            Delete Customer
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogMessage}>
+              Are you sure you want to delete {selectedCustomer?.name}? This
+              action cannot be undone.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions style={styles.dialogActions}>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                setIsDeleteDialogVisible(false);
+                setSelectedCustomer(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                if (selectedCustomer) {
+                  setCustomers(
+                    customers.filter((c) => c.id !== selectedCustomer.id)
+                  );
+                  setIsDeleteDialogVisible(false);
+                  setSelectedCustomer(null);
+                }
+              }}
+              buttonColor={theme.colors.error}
+              textColor={theme.colors.onError}
+            >
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {selectedCustomer && !isDeleteDialogVisible && !isEditing && (
+          <Modal
+            visible={!!selectedCustomer}
+            onDismiss={() => setSelectedCustomer(null)}
+            contentContainerStyle={styles.modalContent}
+          >
+            <Text style={styles.orderDetailsTitle}>Customer Details</Text>
+            <Text style={styles.orderDetailsText}>
+              <Text style={{ fontWeight: "bold" }}>Name:</Text>{" "}
+              {selectedCustomer.name}
+            </Text>
+            <Text style={styles.orderDetailsText}>
+              <Text style={{ fontWeight: "bold" }}>Email:</Text>{" "}
+              {selectedCustomer.email || "N/A"}
+            </Text>
+            <Text style={styles.orderDetailsText}>
+              <Text style={{ fontWeight: "bold" }}>Phone:</Text>{" "}
+              {selectedCustomer.phone}
+            </Text>
+            <Text style={styles.orderDetailsText}>
+              <Text style={{ fontWeight: "bold" }}>Address:</Text>{" "}
+              {selectedCustomer.address || "N/A"}
+            </Text>
+            <Text style={styles.orderDetailsText}>
+              <Text style={{ fontWeight: "bold" }}>Total Orders:</Text>{" "}
+              {selectedCustomer.totalOrders}
+            </Text>
+            <Text style={[styles.orderDetailsTitle, { marginTop: 16 }]}>
+              Recent Orders
+            </Text>
+            <View style={styles.orderListContainer}>
+              {Array.from({ length: selectedCustomer.totalOrders }, (_, i) => (
+                <Text key={i} style={styles.orderItem}>
+                  #{selectedCustomer.id * 1000 + i + 1}
+                  {i < selectedCustomer.totalOrders - 1 ? ", " : ""}
+                </Text>
+              ))}
+            </View>
+            <View style={styles.modalActions}>
+              <Button mode="outlined" onPress={() => setSelectedCustomer(null)}>
+                Close
+              </Button>
+              <Button
+                mode="contained"
+                onPress={() => {
+                  setSelectedCustomer(null);
+                  router.push(`/orders?customerId=${selectedCustomer.id}`);
+                }}
+              >
+                View All Orders
+              </Button>
+            </View>
+          </Modal>
+        )}
       </Portal>
     </View>
   );
