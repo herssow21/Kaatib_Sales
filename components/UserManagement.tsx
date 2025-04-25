@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Platform, Alert } from "react-native";
 import {
   TextInput,
@@ -15,9 +15,10 @@ import {
 } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Customer {
-  id: number;
+  id: string;
   name: string;
   email?: string;
   phone: string;
@@ -32,10 +33,19 @@ interface NewCustomer {
   address?: string;
 }
 
+interface FormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+}
+
+const CUSTOMERS_STORAGE_KEY = "@kaatib_sales_customers";
+
 const UserManagement: React.FC = () => {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const [menuVisible, setMenuVisible] = useState<number | null>(null);
+  const [menuVisible, setMenuVisible] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -48,12 +58,7 @@ const UserManagement: React.FC = () => {
     address: "",
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [errors, setErrors] = useState<{
-    name?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-  }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarType, setSnackbarType] = useState<
@@ -61,77 +66,138 @@ const UserManagement: React.FC = () => {
   >("success");
   const router = useRouter();
 
+  // Initialize with empty array instead of mock data
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  // Load saved customers on component mount
+  useEffect(() => {
+    loadSavedCustomers();
+  }, []);
+
+  const loadSavedCustomers = async () => {
+    try {
+      const savedCustomers = await AsyncStorage.getItem(CUSTOMERS_STORAGE_KEY);
+      if (savedCustomers) {
+        setCustomers(JSON.parse(savedCustomers));
+      }
+    } catch (error) {
+      console.error("Error loading customers:", error);
+      showFeedback("Error loading customers", "error");
+    }
+  };
+
+  const saveCustomers = async (updatedCustomers: Customer[]) => {
+    try {
+      await AsyncStorage.setItem(
+        CUSTOMERS_STORAGE_KEY,
+        JSON.stringify(updatedCustomers)
+      );
+    } catch (error) {
+      console.error("Error saving customers:", error);
+      showFeedback("Error saving customers", "error");
+    }
+  };
+
+  const isPhoneNumberUnique = (phone: string, excludeCustomerId?: string) => {
+    return !customers.some(
+      (customer) =>
+        customer.phone === phone && customer.id !== excludeCustomerId
+    );
+  };
+
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return email === "" || emailRegex.test(email);
   };
 
   const validatePhone = (phone: string) => {
-    // Remove all non-digit characters
     const digitsOnly = phone.replace(/\D/g, "");
 
-    // Check if phone starts with 0 or 9
     if (digitsOnly.startsWith("0")) {
-      // If starts with 0, must be exactly 10 digits
-      return digitsOnly.length === 10;
+      return digitsOnly.length <= 10;
     } else if (digitsOnly.startsWith("9")) {
-      // If starts with 9, must be exactly 9 digits
-      return digitsOnly.length === 9;
+      return digitsOnly.length <= 9;
     }
-
-    // For other cases, must be exactly 10 digits
-    return digitsOnly.length === 10;
+    return digitsOnly.length <= 10;
   };
 
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digit characters
-    const cleaned = value.replace(/\D/g, "");
+    const digitsOnly = value.replace(/\D/g, "");
 
-    // Check if phone starts with 0 or 9
-    if (cleaned.startsWith("0")) {
-      // Format as 0XXX-XXX-XXXX (10 digits)
-      const match = cleaned.match(/^(\d{1})(\d{0,3})(\d{0,3})(\d{0,4})$/);
-      if (match) {
-        const formatted = [match[1], match[2], match[3], match[4]]
-          .filter(Boolean)
-          .join("-");
-        return formatted;
-      }
-    } else if (cleaned.startsWith("9")) {
-      // Format as 9XX-XXX-XXXX (9 digits)
-      const match = cleaned.match(/^(\d{1})(\d{0,2})(\d{0,3})(\d{0,3})$/);
-      if (match) {
-        const formatted = [match[1], match[2], match[3], match[4]]
-          .filter(Boolean)
-          .join("-");
-        return formatted;
-      }
+    // Apply length restrictions based on first digit
+    let restrictedValue = digitsOnly;
+    if (digitsOnly.startsWith("0")) {
+      restrictedValue = digitsOnly.slice(0, 10);
+    } else if (digitsOnly.startsWith("9")) {
+      restrictedValue = digitsOnly.slice(0, 9);
     } else {
-      // Format as XXX-XXX-XXXX (10 digits)
-      const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
-      if (match) {
-        const formatted = [match[1], match[2], match[3]]
-          .filter(Boolean)
-          .join("-");
-        return formatted;
-      }
+      restrictedValue = digitsOnly.slice(0, 10);
     }
-    return value;
+
+    // Format the number with dashes
+    if (restrictedValue.startsWith("0")) {
+      const parts = [
+        restrictedValue.slice(0, 4),
+        restrictedValue.slice(4, 7),
+        restrictedValue.slice(7),
+      ].filter(Boolean);
+      return parts.join("-");
+    } else if (restrictedValue.startsWith("9")) {
+      const parts = [
+        restrictedValue.slice(0, 3),
+        restrictedValue.slice(3, 6),
+        restrictedValue.slice(6),
+      ].filter(Boolean);
+      return parts.join("-");
+    } else {
+      const parts = [
+        restrictedValue.slice(0, 3),
+        restrictedValue.slice(3, 6),
+        restrictedValue.slice(6),
+      ].filter(Boolean);
+      return parts.join("-");
+    }
   };
 
-  const handleInputChange = (field: keyof NewCustomer, value: string) => {
-    let processedValue = value;
+  const handlePhoneNumberChange = (value: string) => {
+    const formattedValue = formatPhoneNumber(value);
+    if (validatePhone(value)) {
+      setNewCustomer((prev) => ({ ...prev, phone: formattedValue }));
 
+      // Check if we can find a customer with this phone number
+      const customer = (window as any).getCustomerByPhone?.(formattedValue);
+      if (customer) {
+        setNewCustomer((prev) => ({
+          ...prev,
+          name: customer.name,
+          email: customer.email,
+          address: customer.address,
+        }));
+      }
+    }
+  };
+
+  const handleInputChange = (
+    field: keyof typeof newCustomer,
+    value: string
+  ) => {
+    let formattedValue = value;
     if (field === "phone") {
-      // Format phone number as user types
-      processedValue = formatPhoneNumber(value);
+      formattedValue = formatPhoneNumber(value);
     }
 
-    setNewCustomer((prev) => ({ ...prev, [field]: processedValue }));
+    setNewCustomer((prev) => ({
+      ...prev,
+      [field]: formattedValue,
+    }));
 
-    // Clear error when user starts typing
+    // Clear error for the field when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }));
     }
   };
 
@@ -155,42 +221,6 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // Mock data for customers
-  const [customers, setCustomers] = useState<Customer[]>([
-    {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      phone: "(555) 123-4567",
-      address: "123 Main St, Anytown, CA 94321",
-      totalOrders: 12,
-    },
-    {
-      id: 2,
-      name: "Bob Smith",
-      email: "bob@example.com",
-      phone: "(555) 234-5678",
-      address: "456 Oak Ave, Somewhere, NY 10001",
-      totalOrders: 8,
-    },
-    {
-      id: 3,
-      name: "Carol Davis",
-      email: "carol@example.com",
-      phone: "(555) 345-6789",
-      address: "789 Pine Rd, Nowhere, TX 75001",
-      totalOrders: 3,
-    },
-    {
-      id: 4,
-      name: "David Wilson",
-      email: "david@example.com",
-      phone: "(555) 456-7890",
-      address: "101 Cedar Ln, Everywhere, FL 33101",
-      totalOrders: 15,
-    },
-  ]);
-
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -202,18 +232,20 @@ const UserManagement: React.FC = () => {
   );
 
   const validateForm = () => {
-    const newErrors: typeof errors = {};
+    const newErrors: FormErrors = {};
 
     if (!newCustomer.name.trim()) {
       newErrors.name = "Name is required";
     }
 
-    if (newCustomer.email && !validateEmail(newCustomer.email)) {
-      newErrors.email = "Please enter a valid email address";
+    if (!newCustomer.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!validatePhone(newCustomer.phone)) {
+      newErrors.phone = "Invalid phone number format";
     }
 
-    if (!newCustomer.phone || !validatePhone(newCustomer.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+    if (newCustomer.email && !validateEmail(newCustomer.email)) {
+      newErrors.email = "Invalid email format";
     }
 
     setErrors(newErrors);
@@ -279,78 +311,156 @@ const UserManagement: React.FC = () => {
 
   const handleAddCustomer = () => {
     if (!validateForm()) {
-      showFeedback("Please fill in all required fields correctly", "error");
       return;
     }
 
-    if (isEditing) {
-      // Update existing customer
-      const customerToUpdate = customers.find(
-        (c) => c.name === newCustomer.name || c.phone === newCustomer.phone
-      );
+    // Check for duplicate phone number
+    if (!isPhoneNumberUnique(newCustomer.phone, selectedCustomer?.id)) {
+      setErrors({
+        ...errors,
+        phone: "This phone number is already registered",
+      });
+      showFeedback("Phone number already exists", "error");
+      return;
+    }
 
-      if (customerToUpdate) {
-        setCustomers(
-          customers.map((customer) =>
-            customer.id === customerToUpdate.id
-              ? { ...customer, ...newCustomer }
-              : customer
-          )
-        );
-        showFeedback("Customer updated successfully", "warning");
-      }
+    let updatedCustomers: Customer[];
+
+    if (isEditing && selectedCustomer) {
+      // Update existing customer
+      updatedCustomers = customers.map((c) =>
+        c.id === selectedCustomer.id
+          ? {
+              ...selectedCustomer,
+              ...newCustomer,
+            }
+          : c
+      );
+      showFeedback("Customer updated successfully", "warning");
     } else {
       // Add new customer
-      const newId = Math.max(...customers.map((c) => c.id)) + 1;
-      setCustomers([
-        ...customers,
-        {
-          ...newCustomer,
-          id: newId,
-          totalOrders: 0,
-        },
-      ]);
+      const newCustomerData: Customer = {
+        ...newCustomer,
+        id: Date.now().toString(),
+        totalOrders: 0,
+      };
+      updatedCustomers = [...customers, newCustomerData];
       showFeedback("Customer added successfully", "success");
     }
+
+    setCustomers(updatedCustomers);
+    saveCustomers(updatedCustomers);
+    setIsAddModalVisible(false);
+    setIsEditing(false);
+    setSelectedCustomer(null);
     resetForm();
   };
 
   const handleDeleteCustomer = (customer: Customer) => {
     if (Platform.OS === "web") {
-      if (
-        window.confirm(
-          "Are you sure you want to delete this customer? This action cannot be undone."
-        )
-      ) {
-        setCustomers(customers.filter((c) => c.id !== customer.id));
-        showFeedback("Customer deleted successfully", "error");
-        setIsDeleteDialogVisible(false);
-        setSelectedCustomer(null);
-      } else {
-        setIsDeleteDialogVisible(false);
-        setSelectedCustomer(null);
+      // Custom styled web alert
+      const alertContainer = document.createElement("div");
+      alertContainer.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        ">
+          <div style="
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              margin-bottom: 16px;
+            ">
+              <span style="
+                color: #FF9800;
+                font-size: 24px;
+                margin-right: 12px;
+              ">⚠️</span>
+              <span style="
+                font-size: 20px;
+                font-weight: 500;
+              ">Warning</span>
+            </div>
+            <p style="
+              margin: 0 0 24px 0;
+              color: #666;
+              font-size: 16px;
+            ">Are you sure you want to delete this customer?</p>
+            <div style="
+              display: flex;
+              justify-content: flex-end;
+              gap: 12px;
+            ">
+              <button style="
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+                background: #f5f5f5;
+                color: #666;
+              " onclick="this.closest('.alert-container').remove();">Cancel</button>
+              <button style="
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+                background: #FF5722;
+                color: white;
+              " id="deleteConfirm">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+      alertContainer.classList.add("alert-container");
+      document.body.appendChild(alertContainer);
+
+      const deleteButton = alertContainer.querySelector("#deleteConfirm");
+      if (deleteButton) {
+        (deleteButton as HTMLElement).onclick = () => {
+          const updatedCustomers = customers.filter(
+            (c) => c.id !== customer.id
+          );
+          setCustomers(updatedCustomers);
+          saveCustomers(updatedCustomers);
+          showFeedback("Customer deleted successfully", "error");
+          alertContainer.remove();
+        };
       }
     } else {
       Alert.alert(
-        "Confirm Delete",
-        "Are you sure you want to delete this customer? This action cannot be undone.",
+        "Warning",
+        "Are you sure you want to delete this customer?",
         [
           {
             text: "Cancel",
             style: "cancel",
-            onPress: () => {
-              setIsDeleteDialogVisible(false);
-              setSelectedCustomer(null);
-            },
           },
           {
             text: "Delete",
             style: "destructive",
             onPress: () => {
-              setCustomers(customers.filter((c) => c.id !== customer.id));
+              const updatedCustomers = customers.filter(
+                (c) => c.id !== customer.id
+              );
+              setCustomers(updatedCustomers);
+              saveCustomers(updatedCustomers);
               showFeedback("Customer deleted successfully", "error");
-              setIsDeleteDialogVisible(false);
-              setSelectedCustomer(null);
             },
           },
         ],
@@ -360,6 +470,7 @@ const UserManagement: React.FC = () => {
   };
 
   const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
     setNewCustomer({
       name: customer.name,
       email: customer.email || "",
@@ -389,6 +500,53 @@ const UserManagement: React.FC = () => {
     } else {
       router.back();
     }
+  };
+
+  // Function to get customer by phone number
+  const getCustomerByPhone = (phone: string) => {
+    console.log("Searching for phone:", phone); // Add logging
+    const cleanedPhone = phone.replace(/\D/g, "");
+    console.log("Cleaned phone:", cleanedPhone); // Add logging
+    const foundCustomer = customers.find((customer) => {
+      const customerPhone = customer.phone.replace(/\D/g, "");
+      console.log("Comparing with:", customerPhone); // Add logging
+      return customerPhone === cleanedPhone;
+    });
+    console.log("Found customer:", foundCustomer); // Add logging
+    return foundCustomer;
+  };
+
+  // Function to get customer by email
+  const getCustomerByEmail = (email: string) => {
+    return customers.find(
+      (customer) => customer.email.toLowerCase() === email.toLowerCase()
+    );
+  };
+
+  // Export these functions to be used in order form
+  useEffect(() => {
+    // Make these functions available globally for the order form
+    (window as any).getCustomerByPhone = getCustomerByPhone;
+    (window as any).getCustomerByEmail = getCustomerByEmail;
+  }, [customers]);
+
+  const handleMenuClick = (customer: Customer, action: string) => {
+    // Delay the menu closing slightly to prevent accidental double-clicks
+    setTimeout(() => {
+      setMenuVisible(null);
+
+      switch (action) {
+        case "edit":
+          handleEditCustomer(customer);
+          break;
+        case "delete":
+          handleDeleteCustomer(customer);
+          break;
+        case "view":
+          handleViewOrders(customer);
+          break;
+      }
+    }, 100);
   };
 
   const styles = StyleSheet.create({
@@ -605,6 +763,19 @@ const UserManagement: React.FC = () => {
       fontSize: 14,
       flex: 1,
     },
+    emptyState: {
+      padding: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      margin: 16,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      color: theme.colors.onSurface,
+      textAlign: "center",
+    },
   });
 
   return (
@@ -699,18 +870,18 @@ const UserManagement: React.FC = () => {
                   }
                 >
                   <Menu.Item
-                    onPress={() => handleViewOrders(customer)}
+                    onPress={() => handleMenuClick(customer, "view")}
                     title="View Orders"
                     leadingIcon="shopping"
                   />
                   <Menu.Item
-                    onPress={() => handleEditCustomer(customer)}
+                    onPress={() => handleMenuClick(customer, "edit")}
                     title="Edit Customer"
                     leadingIcon="pencil"
                   />
                   <Divider />
                   <Menu.Item
-                    onPress={() => handleDeleteCustomer(customer)}
+                    onPress={() => handleMenuClick(customer, "delete")}
                     title="Delete Customer"
                     leadingIcon="delete"
                     titleStyle={{ color: theme.colors.error }}
@@ -775,7 +946,7 @@ const UserManagement: React.FC = () => {
           <TextInput
             label="Phone *"
             value={newCustomer.phone}
-            onChangeText={(text) => handleInputChange("phone", text)}
+            onChangeText={handlePhoneNumberChange}
             onBlur={() => handleBlur("phone", newCustomer.phone)}
             style={styles.input}
             mode="outlined"
@@ -901,7 +1072,7 @@ const UserManagement: React.FC = () => {
             <View style={styles.orderListContainer}>
               {Array.from({ length: selectedCustomer.totalOrders }, (_, i) => (
                 <Text key={i} style={styles.orderItem}>
-                  #{selectedCustomer.id * 1000 + i + 1}
+                  #{Number(selectedCustomer.id) * 1000 + i + 1}
                   {i < selectedCustomer.totalOrders - 1 ? ", " : ""}
                 </Text>
               ))}

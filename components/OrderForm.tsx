@@ -40,15 +40,6 @@ interface Order {
   paymentStatus: string;
 }
 
-// Mock function to simulate fetching client data
-const fetchClientByContact = (contact: string) => {
-  const clients = [
-    { contact: "1234567890", name: "John Doe" },
-    { contact: "0987654321", name: "Jane Smith" },
-  ];
-  return clients.find((client) => client.contact === contact);
-};
-
 interface OrderFormProps {
   onSubmit: (order: Order) => void;
   onClose: () => void;
@@ -121,6 +112,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
     initialData?.orderDate || new Date().toISOString().split("T")[0]
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [address, setAddress] = useState("");
 
   const filteredItems = inventoryItems.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -132,16 +127,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     name: item.name,
     price: item.sellingPrice,
   }));
-
-  useEffect(() => {
-    // Check if the client exists when the contact changes
-    const client = fetchClientByContact(formData.clientContact);
-    if (client) {
-      setFormData((prev) => ({ ...prev, clientName: client.name }));
-    } else {
-      setFormData((prev) => ({ ...prev, clientName: "" }));
-    }
-  }, [formData.clientContact]);
 
   useEffect(() => {
     if (initialData && initialData.orderDate) {
@@ -572,6 +557,77 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setAmountPaid(isNaN(numValue) ? 0 : numValue);
   };
 
+  const handlePhoneNumberChange = (value: string) => {
+    setPhoneNumber(value);
+
+    // Check if we can find a customer with this phone number
+    const customer = (window as any).getCustomerByPhone?.(value);
+    if (customer) {
+      setCustomerName(customer.name);
+      setEmail(customer.email);
+      setAddress(customer.address);
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+
+    // Check if we can find a customer with this email
+    const customer = (window as any).getCustomerByEmail?.(value);
+    if (customer) {
+      setCustomerName(customer.name);
+      setPhoneNumber(customer.phone);
+      setAddress(customer.address);
+    }
+  };
+
+  const handleClientContactChange = (value: string) => {
+    // Only allow numbers and limit to 10 digits
+    const numericValue = value.replace(/[^0-9]/g, "");
+    if (numericValue.length <= 10) {
+      // Try to find customer by phone number
+      const customer = (window as any).getCustomerByPhone?.(numericValue);
+
+      if (customer) {
+        console.log("Found customer:", customer); // Add logging to debug
+        // Update all customer-related fields at once in a single state update
+        setFormData((prev) => {
+          console.log("Updating form data with customer:", customer); // Add logging
+          return {
+            ...prev,
+            clientContact: numericValue,
+            clientName: customer.name,
+            address: customer.address || "",
+          };
+        });
+
+        // Clear any related errors
+        setErrors((prev) => ({
+          ...prev,
+          clientContact: undefined,
+          clientName: undefined,
+        }));
+      } else {
+        // If no customer found, only update the contact number
+        setFormData((prev) => ({
+          ...prev,
+          clientContact: numericValue,
+        }));
+      }
+    }
+  };
+
+  const handleNameChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      clientName: value,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      clientName: undefined,
+    }));
+  };
+
   // Create a custom theme that keeps labels black in all states
   const customInputTheme = {
     ...theme,
@@ -629,16 +685,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
           <TextInput
             label="Client Contact"
             value={formData.clientContact}
-            onChangeText={(value) => {
-              const numericValue = value.replace(/[^0-9]/g, "");
-              if (numericValue.length <= 10) {
-                setFormData((prev) => ({
-                  ...prev,
-                  clientContact: numericValue,
-                }));
-                setErrors((prev) => ({ ...prev, clientContact: undefined }));
-              }
-            }}
+            onChangeText={handleClientContactChange}
             style={orderFormStyles.input}
             keyboardType="numeric"
             mode="outlined"
@@ -657,10 +704,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
           <TextInput
             label="Client Name"
             value={formData.clientName}
-            onChangeText={(value) => {
-              setFormData((prev) => ({ ...prev, clientName: value }));
-              setErrors((prev) => ({ ...prev, clientName: undefined }));
-            }}
+            onChangeText={handleNameChange}
             style={orderFormStyles.input}
             mode="outlined"
             error={!!errors.clientName}
@@ -683,6 +727,32 @@ const OrderForm: React.FC<OrderFormProps> = ({
             style={orderFormStyles.input}
             mode="outlined"
             theme={customInputTheme}
+          />
+        </View>
+
+        <View style={orderFormStyles.inputGroup}>
+          <TextInput
+            label="Phone Number"
+            value={phoneNumber}
+            onChangeText={handlePhoneNumberChange}
+            mode="outlined"
+            keyboardType="phone-pad"
+            style={orderFormStyles.input}
+            maxLength={14}
+            inputMode="tel"
+            returnKeyType="done"
+          />
+        </View>
+
+        <View style={orderFormStyles.inputGroup}>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={handleEmailChange}
+            mode="outlined"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={orderFormStyles.input}
           />
         </View>
       </View>
