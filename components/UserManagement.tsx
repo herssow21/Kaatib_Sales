@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Platform, Alert } from "react-native";
 import {
   TextInput,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
   Dialog,
   useTheme,
+  Snackbar,
 } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -47,7 +48,112 @@ const UserManagement: React.FC = () => {
     address: "",
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+  }>({});
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarType, setSnackbarType] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
   const router = useRouter();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return email === "" || emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string) => {
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, "");
+
+    // Check if phone starts with 0 or 9
+    if (digitsOnly.startsWith("0")) {
+      // If starts with 0, must be exactly 10 digits
+      return digitsOnly.length === 10;
+    } else if (digitsOnly.startsWith("9")) {
+      // If starts with 9, must be exactly 9 digits
+      return digitsOnly.length === 9;
+    }
+
+    // For other cases, must be exactly 10 digits
+    return digitsOnly.length === 10;
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digit characters
+    const cleaned = value.replace(/\D/g, "");
+
+    // Check if phone starts with 0 or 9
+    if (cleaned.startsWith("0")) {
+      // Format as 0XXX-XXX-XXXX (10 digits)
+      const match = cleaned.match(/^(\d{1})(\d{0,3})(\d{0,3})(\d{0,4})$/);
+      if (match) {
+        const formatted = [match[1], match[2], match[3], match[4]]
+          .filter(Boolean)
+          .join("-");
+        return formatted;
+      }
+    } else if (cleaned.startsWith("9")) {
+      // Format as 9XX-XXX-XXXX (9 digits)
+      const match = cleaned.match(/^(\d{1})(\d{0,2})(\d{0,3})(\d{0,3})$/);
+      if (match) {
+        const formatted = [match[1], match[2], match[3], match[4]]
+          .filter(Boolean)
+          .join("-");
+        return formatted;
+      }
+    } else {
+      // Format as XXX-XXX-XXXX (10 digits)
+      const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+      if (match) {
+        const formatted = [match[1], match[2], match[3]]
+          .filter(Boolean)
+          .join("-");
+        return formatted;
+      }
+    }
+    return value;
+  };
+
+  const handleInputChange = (field: keyof NewCustomer, value: string) => {
+    let processedValue = value;
+
+    if (field === "phone") {
+      // Format phone number as user types
+      processedValue = formatPhoneNumber(value);
+    }
+
+    setNewCustomer((prev) => ({ ...prev, [field]: processedValue }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleBlur = (field: keyof NewCustomer, value: string) => {
+    if (field === "email" && value) {
+      if (!validateEmail(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          email: "Please enter a valid email address",
+        }));
+      }
+    }
+
+    if (field === "phone" && value) {
+      if (!validatePhone(value)) {
+        setErrors((prev) => ({
+          ...prev,
+          phone: "Please enter a valid phone number",
+        }));
+      }
+    }
+  };
 
   // Mock data for customers
   const [customers, setCustomers] = useState<Customer[]>([
@@ -95,43 +201,162 @@ const UserManagement: React.FC = () => {
         customer.address.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleAddCustomer = () => {
-    if (newCustomer.name && newCustomer.phone) {
-      if (isEditing) {
-        // Update existing customer
-        const customerToUpdate = customers.find(
-          (c) => c.name === newCustomer.name || c.phone === newCustomer.phone
-        );
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
 
-        if (customerToUpdate) {
-          setCustomers(
-            customers.map((customer) =>
-              customer.id === customerToUpdate.id
-                ? { ...customer, ...newCustomer }
-                : customer
-            )
-          );
-        }
-      } else {
-        // Add new customer
-        const newId = Math.max(...customers.map((c) => c.id)) + 1;
-        setCustomers([
-          ...customers,
-          {
-            ...newCustomer,
-            id: newId,
-            totalOrders: 0,
-          },
-        ]);
-      }
-      resetForm();
+    if (!newCustomer.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    if (newCustomer.email && !validateEmail(newCustomer.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!newCustomer.phone || !validatePhone(newCustomer.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const showFeedback = (
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "success"
+  ) => {
+    setSnackbarMessage(message);
+    setSnackbarType(type);
+    setSnackbarVisible(true);
+  };
+
+  const getSnackbarStyle = () => {
+    switch (snackbarType) {
+      case "success":
+        return {
+          backgroundColor: "#4CAF50", // Green
+          borderLeftWidth: 4,
+          borderLeftColor: "#81C784", // Light Green
+        };
+      case "error":
+        return {
+          backgroundColor: "#F44336", // Red
+          borderLeftWidth: 4,
+          borderLeftColor: "#E57373", // Light Red
+        };
+      case "info":
+        return {
+          backgroundColor: "#2196F3", // Blue
+          borderLeftWidth: 4,
+          borderLeftColor: "#64B5F6", // Light Blue
+        };
+      case "warning":
+        return {
+          backgroundColor: "#FFC107", // Yellow
+          borderLeftWidth: 4,
+          borderLeftColor: "#FFD54F", // Light Yellow
+        };
+      default:
+        return {
+          backgroundColor: "#4CAF50",
+        };
     }
   };
 
+  const getSnackbarIcon = () => {
+    switch (snackbarType) {
+      case "success":
+        return "check-circle";
+      case "error":
+        return "alert-circle";
+      case "info":
+        return "information";
+      case "warning":
+        return "alert";
+      default:
+        return "check-circle";
+    }
+  };
+
+  const handleAddCustomer = () => {
+    if (!validateForm()) {
+      showFeedback("Please fill in all required fields correctly", "error");
+      return;
+    }
+
+    if (isEditing) {
+      // Update existing customer
+      const customerToUpdate = customers.find(
+        (c) => c.name === newCustomer.name || c.phone === newCustomer.phone
+      );
+
+      if (customerToUpdate) {
+        setCustomers(
+          customers.map((customer) =>
+            customer.id === customerToUpdate.id
+              ? { ...customer, ...newCustomer }
+              : customer
+          )
+        );
+        showFeedback("Customer updated successfully", "warning");
+      }
+    } else {
+      // Add new customer
+      const newId = Math.max(...customers.map((c) => c.id)) + 1;
+      setCustomers([
+        ...customers,
+        {
+          ...newCustomer,
+          id: newId,
+          totalOrders: 0,
+        },
+      ]);
+      showFeedback("Customer added successfully", "success");
+    }
+    resetForm();
+  };
+
   const handleDeleteCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsDeleteDialogVisible(true);
-    setMenuVisible(null);
+    if (Platform.OS === "web") {
+      if (
+        window.confirm(
+          "Are you sure you want to delete this customer? This action cannot be undone."
+        )
+      ) {
+        setCustomers(customers.filter((c) => c.id !== customer.id));
+        showFeedback("Customer deleted successfully", "error");
+        setIsDeleteDialogVisible(false);
+        setSelectedCustomer(null);
+      } else {
+        setIsDeleteDialogVisible(false);
+        setSelectedCustomer(null);
+      }
+    } else {
+      Alert.alert(
+        "Confirm Delete",
+        "Are you sure you want to delete this customer? This action cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setIsDeleteDialogVisible(false);
+              setSelectedCustomer(null);
+            },
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              setCustomers(customers.filter((c) => c.id !== customer.id));
+              showFeedback("Customer deleted successfully", "error");
+              setIsDeleteDialogVisible(false);
+              setSelectedCustomer(null);
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   const handleEditCustomer = (customer: Customer) => {
@@ -295,6 +520,9 @@ const UserManagement: React.FC = () => {
     input: {
       marginBottom: 16,
       backgroundColor: theme.colors.surface,
+      height: Platform.OS === "web" ? 48 : 56,
+      fontSize: 16,
+      letterSpacing: 0.5,
     },
     modalActions: {
       flexDirection: "row",
@@ -354,6 +582,28 @@ const UserManagement: React.FC = () => {
       flexWrap: "wrap",
       gap: 8,
       marginTop: 8,
+    },
+    snackbar: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      margin: 16,
+      borderRadius: 8,
+      elevation: 4,
+    },
+    snackbarContent: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    snackbarIcon: {
+      margin: 0,
+      marginRight: 8,
+    },
+    snackbarText: {
+      color: theme.colors.onPrimary,
+      fontSize: 14,
+      flex: 1,
     },
   });
 
@@ -490,36 +740,76 @@ const UserManagement: React.FC = () => {
           <TextInput
             label="Name *"
             value={newCustomer.name}
-            onChangeText={(text) =>
-              setNewCustomer({ ...newCustomer, name: text })
-            }
+            onChangeText={(text) => handleInputChange("name", text)}
             style={styles.input}
+            mode="outlined"
+            error={!!errors.name}
+            textContentType="none"
+            autoComplete="off"
+            selectionColor={theme.colors.primary}
           />
           <TextInput
             label="Email"
             value={newCustomer.email}
-            onChangeText={(text) =>
-              setNewCustomer({ ...newCustomer, email: text })
-            }
+            onChangeText={(text) => handleInputChange("email", text)}
+            onBlur={() => handleBlur("email", newCustomer.email)}
             style={styles.input}
+            mode="outlined"
+            error={!!errors.email}
             keyboardType="email-address"
+            textContentType="none"
+            autoComplete="off"
+            selectionColor={theme.colors.primary}
           />
+          {errors.email && (
+            <Text
+              style={{
+                color: theme.colors.error,
+                marginTop: -12,
+                marginBottom: 12,
+              }}
+            >
+              {errors.email}
+            </Text>
+          )}
           <TextInput
             label="Phone *"
             value={newCustomer.phone}
-            onChangeText={(text) =>
-              setNewCustomer({ ...newCustomer, phone: text })
-            }
+            onChangeText={(text) => handleInputChange("phone", text)}
+            onBlur={() => handleBlur("phone", newCustomer.phone)}
             style={styles.input}
+            mode="outlined"
+            error={!!errors.phone}
             keyboardType="phone-pad"
+            textContentType="none"
+            autoComplete="off"
+            selectionColor={theme.colors.primary}
+            maxLength={14} // (XXX) XXX-XXXX
+            inputMode="tel"
+            returnKeyType="done"
+            blurOnSubmit={true}
           />
+          {errors.phone && (
+            <Text
+              style={{
+                color: theme.colors.error,
+                marginTop: -12,
+                marginBottom: 12,
+              }}
+            >
+              {errors.phone}
+            </Text>
+          )}
           <TextInput
             label="Address"
             value={newCustomer.address}
-            onChangeText={(text) =>
-              setNewCustomer({ ...newCustomer, address: text })
-            }
+            onChangeText={(text) => handleInputChange("address", text)}
             style={styles.input}
+            mode="outlined"
+            error={!!errors.address}
+            textContentType="none"
+            autoComplete="off"
+            selectionColor={theme.colors.primary}
           />
           <View style={styles.modalActions}>
             <Button mode="outlined" onPress={resetForm}>
@@ -633,6 +923,28 @@ const UserManagement: React.FC = () => {
           </Modal>
         )}
       </Portal>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        style={[styles.snackbar, getSnackbarStyle()]}
+        action={{
+          label: "Dismiss",
+          onPress: () => setSnackbarVisible(false),
+          textColor: theme.colors.onPrimary,
+        }}
+      >
+        <View style={styles.snackbarContent}>
+          <IconButton
+            icon={getSnackbarIcon()}
+            size={20}
+            iconColor={theme.colors.onPrimary}
+            style={styles.snackbarIcon}
+          />
+          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        </View>
+      </Snackbar>
     </View>
   );
 };
