@@ -14,10 +14,19 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useInventoryContext } from "../contexts/InventoryContext";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { useAlertContext } from "../contexts/AlertContext";
+import { useCustomerLookup } from "../contexts/CustomerLookupContext";
 import { generateId } from "../utils/idGenerator";
 import { globalStyles } from "../theme/globalStyles";
 import { spacing, colors, borderRadius } from "../theme/theme";
 import { orderFormStyles } from "../styles/components/OrderForm";
+
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+}
 
 interface OrderItem {
   product: string;
@@ -98,6 +107,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const { items: inventoryItems, handleOrderSale } = useInventoryContext();
   const { categories } = useCategoryContext();
   const { showError, showSuccess, showWarning } = useAlertContext();
+  const { getCustomerByPhone } = useCustomerLookup();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(
@@ -112,8 +122,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     initialData?.orderDate || new Date().toISOString().split("T")[0]
   );
   const [errors, setErrors] = useState<FormErrors>({});
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [email, setEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
 
@@ -557,49 +565,21 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setAmountPaid(isNaN(numValue) ? 0 : numValue);
   };
 
-  const handlePhoneNumberChange = (value: string) => {
-    setPhoneNumber(value);
-
-    // Check if we can find a customer with this phone number
-    const customer = (window as any).getCustomerByPhone?.(value);
-    if (customer) {
-      setCustomerName(customer.name);
-      setEmail(customer.email);
-      setAddress(customer.address);
-    }
-  };
-
-  const handleEmailChange = (value: string) => {
-    setEmail(value);
-
-    // Check if we can find a customer with this email
-    const customer = (window as any).getCustomerByEmail?.(value);
-    if (customer) {
-      setCustomerName(customer.name);
-      setPhoneNumber(customer.phone);
-      setAddress(customer.address);
-    }
-  };
-
   const handleClientContactChange = (value: string) => {
     // Only allow numbers and limit to 10 digits
     const numericValue = value.replace(/[^0-9]/g, "");
     if (numericValue.length <= 10) {
       // Try to find customer by phone number
-      const customer = (window as any).getCustomerByPhone?.(numericValue);
+      const customer = getCustomerByPhone(numericValue);
 
       if (customer) {
-        console.log("Found customer:", customer); // Add logging to debug
-        // Update all customer-related fields at once in a single state update
-        setFormData((prev) => {
-          console.log("Updating form data with customer:", customer); // Add logging
-          return {
-            ...prev,
-            clientContact: numericValue,
-            clientName: customer.name,
-            address: customer.address || "",
-          };
-        });
+        // Update all customer-related fields at once
+        setFormData((prev) => ({
+          ...prev,
+          clientContact: numericValue,
+          clientName: customer.name ?? "",
+          address: customer.address ?? "",
+        }));
 
         // Clear any related errors
         setErrors((prev) => ({
@@ -727,32 +707,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
             style={orderFormStyles.input}
             mode="outlined"
             theme={customInputTheme}
-          />
-        </View>
-
-        <View style={orderFormStyles.inputGroup}>
-          <TextInput
-            label="Phone Number"
-            value={phoneNumber}
-            onChangeText={handlePhoneNumberChange}
-            mode="outlined"
-            keyboardType="phone-pad"
-            style={orderFormStyles.input}
-            maxLength={14}
-            inputMode="tel"
-            returnKeyType="done"
-          />
-        </View>
-
-        <View style={orderFormStyles.inputGroup}>
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={handleEmailChange}
-            mode="outlined"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={orderFormStyles.input}
           />
         </View>
       </View>

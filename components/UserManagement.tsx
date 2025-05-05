@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, ScrollView, Platform, Alert } from "react-native";
 import {
   TextInput,
@@ -15,16 +15,8 @@ import {
 } from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface Customer {
-  id: string;
-  name: string;
-  email?: string;
-  phone: string;
-  address?: string;
-  totalOrders: number;
-}
+import { useCustomerLookup } from "../contexts/CustomerLookupContext";
+import type { Customer } from "../contexts/CustomerLookupContext";
 
 interface NewCustomer {
   name: string;
@@ -40,10 +32,14 @@ interface FormErrors {
   address?: string;
 }
 
-const CUSTOMERS_STORAGE_KEY = "@kaatib_sales_customers";
+// Helper function to generate unique customer IDs
+const generateCustomerId = (): string => {
+  return `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
-const UserManagement: React.FC = () => {
+const UserManagement = () => {
   const theme = useTheme();
+  const { customers, saveCustomers, getCustomerByPhone } = useCustomerLookup();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -66,42 +62,11 @@ const UserManagement: React.FC = () => {
   >("success");
   const router = useRouter();
 
-  // Initialize with empty array instead of mock data
-  const [customers, setCustomers] = useState<Customer[]>([]);
-
-  // Load saved customers on component mount
-  useEffect(() => {
-    loadSavedCustomers();
-  }, []);
-
-  const loadSavedCustomers = async () => {
-    try {
-      const savedCustomers = await AsyncStorage.getItem(CUSTOMERS_STORAGE_KEY);
-      if (savedCustomers) {
-        setCustomers(JSON.parse(savedCustomers));
-      }
-    } catch (error) {
-      console.error("Error loading customers:", error);
-      showFeedback("Error loading customers", "error");
-    }
-  };
-
-  const saveCustomers = async (updatedCustomers: Customer[]) => {
-    try {
-      await AsyncStorage.setItem(
-        CUSTOMERS_STORAGE_KEY,
-        JSON.stringify(updatedCustomers)
-      );
-    } catch (error) {
-      console.error("Error saving customers:", error);
-      showFeedback("Error saving customers", "error");
-    }
-  };
-
   const isPhoneNumberUnique = (phone: string, excludeCustomerId?: string) => {
     return !customers.some(
       (customer) =>
-        customer.phone === phone && customer.id !== excludeCustomerId
+        customer.phone === phone &&
+        (excludeCustomerId === undefined || customer.id !== excludeCustomerId)
     );
   };
 
@@ -166,7 +131,7 @@ const UserManagement: React.FC = () => {
       setNewCustomer((prev) => ({ ...prev, phone: formattedValue }));
 
       // Check if we can find a customer with this phone number
-      const customer = (window as any).getCustomerByPhone?.(formattedValue);
+      const customer = getCustomerByPhone(formattedValue);
       if (customer) {
         setNewCustomer((prev) => ({
           ...prev,
@@ -341,14 +306,13 @@ const UserManagement: React.FC = () => {
       // Add new customer
       const newCustomerData: Customer = {
         ...newCustomer,
-        id: Date.now().toString(),
+        id: generateCustomerId(),
         totalOrders: 0,
       };
       updatedCustomers = [...customers, newCustomerData];
       showFeedback("Customer added successfully", "success");
     }
 
-    setCustomers(updatedCustomers);
     saveCustomers(updatedCustomers);
     setIsAddModalVisible(false);
     setIsEditing(false);
@@ -436,7 +400,6 @@ const UserManagement: React.FC = () => {
           const updatedCustomers = customers.filter(
             (c) => c.id !== customer.id
           );
-          setCustomers(updatedCustomers);
           saveCustomers(updatedCustomers);
           showFeedback("Customer deleted successfully", "error");
           alertContainer.remove();
@@ -458,7 +421,6 @@ const UserManagement: React.FC = () => {
               const updatedCustomers = customers.filter(
                 (c) => c.id !== customer.id
               );
-              setCustomers(updatedCustomers);
               saveCustomers(updatedCustomers);
               showFeedback("Customer deleted successfully", "error");
             },
@@ -502,33 +464,19 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  // Function to get customer by phone number
-  const getCustomerByPhone = (phone: string) => {
-    console.log("Searching for phone:", phone); // Add logging
-    const cleanedPhone = phone.replace(/\D/g, "");
-    console.log("Cleaned phone:", cleanedPhone); // Add logging
-    const foundCustomer = customers.find((customer) => {
-      const customerPhone = customer.phone.replace(/\D/g, "");
-      console.log("Comparing with:", customerPhone); // Add logging
-      return customerPhone === cleanedPhone;
-    });
-    console.log("Found customer:", foundCustomer); // Add logging
-    return foundCustomer;
+  // Utility for development-only debugging
+  const DEBUG = __DEV__;
+  const debug = (label: string, value: any) => {
+    if (DEBUG) {
+      console.log(`[Customer Lookup] ${label}:`, value);
+    }
   };
 
-  // Function to get customer by email
   const getCustomerByEmail = (email: string) => {
-    return customers.find(
-      (customer) => customer.email.toLowerCase() === email.toLowerCase()
-    );
+    if (!email) return undefined;
+    const normalizedEmail = email.toLowerCase();
+    return customers.find((c) => c.email?.toLowerCase() === normalizedEmail);
   };
-
-  // Export these functions to be used in order form
-  useEffect(() => {
-    // Make these functions available globally for the order form
-    (window as any).getCustomerByPhone = getCustomerByPhone;
-    (window as any).getCustomerByEmail = getCustomerByEmail;
-  }, [customers]);
 
   const handleMenuClick = (customer: Customer, action: string) => {
     // Delay the menu closing slightly to prevent accidental double-clicks
@@ -1024,9 +972,10 @@ const UserManagement: React.FC = () => {
               mode="contained"
               onPress={() => {
                 if (selectedCustomer) {
-                  setCustomers(
-                    customers.filter((c) => c.id !== selectedCustomer.id)
+                  const updatedCustomers = customers.filter(
+                    (c) => c.id !== selectedCustomer.id
                   );
+                  saveCustomers(updatedCustomers);
                   setIsDeleteDialogVisible(false);
                   setSelectedCustomer(null);
                 }
@@ -1072,7 +1021,7 @@ const UserManagement: React.FC = () => {
             <View style={styles.orderListContainer}>
               {Array.from({ length: selectedCustomer.totalOrders }, (_, i) => (
                 <Text key={i} style={styles.orderItem}>
-                  #{Number(selectedCustomer.id) * 1000 + i + 1}
+                  #{i + 1}
                   {i < selectedCustomer.totalOrders - 1 ? ", " : ""}
                 </Text>
               ))}
