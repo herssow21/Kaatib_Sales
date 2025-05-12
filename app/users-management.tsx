@@ -1,6 +1,6 @@
 import React from "react";
-import UserManagement from "../components/UserManagement";
+import EmployeeManagement from "../components/EmployeeManagement";
 
 export default function UsersManagementScreen() {
-  return <UserManagement />;
+  return <EmployeeManagement />;
 }
