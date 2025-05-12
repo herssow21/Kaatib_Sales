@@ -76,7 +76,23 @@ export default function Settings() {
       <List.Section>
         <List.Subheader>User Management</List.Subheader>
         <List.Item
-          title="Manage Users"
+          title="Manage Customers"
+          onPress={() => router.push("/users-management" as any)}
+          style={{
+            backgroundColor: theme.colors.surface,
+            marginBottom: 2,
+            borderRadius: 8,
+          }}
+          right={(props) => (
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={theme.colors.outline}
+            />
+          )}
+        />
+        <List.Item
+          title="Manage Employees"
           onPress={() => router.push("/users-management" as any)}
           style={{
             backgroundColor: theme.colors.surface,
