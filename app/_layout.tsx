@@ -7,6 +7,7 @@ import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { CustomerLookupProvider } from "../contexts/CustomerLookupContext";
+import { PaymentMethodsProvider } from "../contexts/PaymentMethodsContext";
 
 const theme = {
   ...MD3LightTheme,
@@ -40,74 +41,79 @@ export default function RootLayout() {
   }
 
   return (
-    <PaperProvider theme={theme}>
-      <AlertProvider>
-        <CustomerLookupProvider>
-          <InventoryProvider>
-            <CategoryProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="transaction-form"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "New Transaction",
-                  }}
-                />
-                <Stack.Screen
-                  name="category-form"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "Category",
-                  }}
-                />
-                <Stack.Screen
-                  name="policymodal"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "Terms & Policy",
-                  }}
-                />
-                <Stack.Screen
-                  name="payment-settings"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "Payment Settings",
-                  }}
-                />
-                <Stack.Screen
-                  name="profile"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "My Profile",
-                  }}
-                />
-                <Stack.Screen
-                  name="expense-form"
-                  options={{
-                    presentation: "modal",
-                    headerShown: true,
-                    title: "New Expense",
-                  }}
-                />
-                <Stack.Screen
-                  name="users-management"
-                  options={{
-                    presentation: "modal",
-                    headerShown: false,
-                    title: "User Management",
-                  }}
-                />
-              </Stack>
-            </CategoryProvider>
-          </InventoryProvider>
-        </CustomerLookupProvider>
-      </AlertProvider>
-    </PaperProvider>
+    <PaymentMethodsProvider>
+      <PaperProvider theme={theme}>
+        <AlertProvider>
+          <CustomerLookupProvider>
+            <InventoryProvider>
+              <CategoryProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="transaction-form"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "New Transaction",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="category-form"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "Category",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="policymodal"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "Terms & Policy",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="payment-settings"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "Payment Settings",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="profile"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "My Profile",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="expense-form"
+                    options={{
+                      presentation: "modal",
+                      headerShown: true,
+                      title: "New Expense",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="users-management"
+                    options={{
+                      presentation: "modal",
+                      headerShown: false,
+                      title: "User Management",
+                    }}
+                  />
+                </Stack>
+              </CategoryProvider>
+            </InventoryProvider>
+          </CustomerLookupProvider>
+        </AlertProvider>
+      </PaperProvider>
+    </PaymentMethodsProvider>
   );
 }

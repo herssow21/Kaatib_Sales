@@ -19,6 +19,7 @@ import { generateId } from "../utils/idGenerator";
 import { globalStyles } from "../theme/globalStyles";
 import { spacing, colors, borderRadius } from "../theme/theme";
 import { orderFormStyles } from "../styles/components/OrderForm";
+import { usePaymentMethods } from "../contexts/PaymentMethodsContext";
 
 interface Customer {
   id: string;
@@ -108,6 +109,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const { categories } = useCategoryContext();
   const { showError, showSuccess, showWarning } = useAlertContext();
   const { getCustomerByPhone } = useCustomerLookup();
+  const { methods } = usePaymentMethods();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(
@@ -859,9 +861,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
             }
             style={orderFormStyles.picker}
           >
-            <Picker.Item label="Cash" value="Cash" />
-            <Picker.Item label="Credit" value="Credit" />
-            <Picker.Item label="Debit" value="Debit" />
+            {methods.map((method) => (
+              <Picker.Item
+                key={method.id}
+                label={method.type}
+                value={method.type}
+              />
+            ))}
           </Picker>
           <Text style={orderFormStyles.label}>Payment Status</Text>
           <Picker
