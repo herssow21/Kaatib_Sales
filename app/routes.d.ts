@@ -20,7 +20,9 @@ declare module "expo-router" {
     | "/category-form"
     | "/policymodal"
     | "/transaction-form"
-    | "/not-found";
+    | "/not-found"
+    | "/customer-management-screen"
+    | "/employee-management";
 
   export interface Router {
     push: (route: RouteNames | { pathname: RouteNames; params?: Record<string, string> }) => void;

@@ -1,6 +1,6 @@
 import React from "react";
 import EmployeeManagement from "../components/EmployeeManagement";
 
-export default function UsersManagementScreen() {
+export default function EmployeeManagementScreen() {
   return <EmployeeManagement />;
 }

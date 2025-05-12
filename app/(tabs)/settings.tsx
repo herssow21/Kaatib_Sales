@@ -4,7 +4,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
-import UserManagement from "../../components/UserManagement";
 
 export default function Settings() {
   const theme = useTheme();
@@ -77,7 +76,7 @@ export default function Settings() {
         <List.Subheader>User Management</List.Subheader>
         <List.Item
           title="Manage Customers"
-          onPress={() => router.push("/users-management" as any)}
+          onPress={() => router.push("/customer-management-screen")}
           style={{
             backgroundColor: theme.colors.surface,
             marginBottom: 2,
@@ -93,7 +92,7 @@ export default function Settings() {
         />
         <List.Item
           title="Manage Employees"
-          onPress={() => router.push("/users-management" as any)}
+          onPress={() => router.push("/employee-management")}
           style={{
             backgroundColor: theme.colors.surface,
             marginBottom: 2,
