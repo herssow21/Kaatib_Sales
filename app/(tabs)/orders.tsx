@@ -995,7 +995,7 @@ export default function Orders() {
               /* TODO: implement export */
             }}
             style={{
-              borderColor: colors.primary,
+              borderColor: colors.white,
               borderRadius: 8,
               marginRight: 8,
               backgroundColor: colors.primary,

@@ -852,16 +852,14 @@ export default function Expenses() {
           <Dialog.Title style={styles.dialogTitle}>
             Add New Expense
           </Dialog.Title>
-          <Divider style={styles.divider} />
-          <Dialog.Content style={styles.dialogContent}>
-            <View style={styles.formContainer}>
+          <Dialog.Content>
+            <View>
               <TextInput
                 label="Expense Title"
                 value={formData.title}
                 onChangeText={handleTitleChange}
                 mode="outlined"
-                style={styles.formInput}
-                inputStyle={{ color: styles.formInput.color }}
+                style={[styles.formInput, { color: styles.formInput.color }]}
                 error={!!errors.title}
                 autoComplete="off"
                 textContentType="none"
@@ -876,8 +874,7 @@ export default function Expenses() {
                 onChangeText={handleAmountChange}
                 keyboardType="numeric"
                 mode="outlined"
-                style={styles.formInput}
-                inputStyle={{ color: styles.formInput.color }}
+                style={[styles.formInput, { color: styles.formInput.color }]}
                 error={!!errors.amount}
                 autoComplete="off"
                 textContentType="none"
@@ -912,8 +909,8 @@ export default function Expenses() {
               />
             </View>
           </Dialog.Content>
-          <Divider style={styles.divider} />
-          <Dialog.Actions style={styles.dialogActions}>
+          <Divider />
+          <Dialog.Actions>
             <Button
               mode="outlined"
               onPress={() => setShowAddExpense(false)}
@@ -934,7 +931,7 @@ export default function Expenses() {
         <Dialog
           visible={showCategories}
           onDismiss={() => setShowCategories(false)}
-          style={[Platform.OS === "web" && styles.categoryDialog]}
+          style={Platform.OS === "web" ? styles.webDialog : undefined}
         >
           <Dialog.Title>Select Category</Dialog.Title>
           <Dialog.Content>
@@ -946,7 +943,7 @@ export default function Expenses() {
                   <View
                     {...props}
                     style={[
-                      styles.categoryDot,
+                      { width: 12, height: 12, borderRadius: 6 },
                       { backgroundColor: getCategoryColor(category) },
                     ]}
                   />
@@ -966,7 +963,11 @@ export default function Expenses() {
                   setErrors((prev) => ({ ...prev, category: undefined }));
                   setShowCategories(false);
                 }}
-                style={styles.categoryItem}
+                titleStyle={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  color: "#000",
+                }}
               />
             ))}
           </Dialog.Content>
@@ -975,7 +976,7 @@ export default function Expenses() {
         <Dialog
           visible={showNewCategory}
           onDismiss={() => setShowNewCategory(false)}
-          style={[Platform.OS === "web" && styles.categoryDialog]}
+          style={Platform.OS === "web" ? styles.webDialog : undefined}
         >
           <Dialog.Title>Create New Category</Dialog.Title>
           <Dialog.Content>
@@ -1027,15 +1028,11 @@ export default function Expenses() {
           }}
           style={[styles.dialog, Platform.OS === "web" && styles.webDialog]}
         >
-          <Dialog.Title style={styles.dialogTitle}>Delete Expense</Dialog.Title>
-          <Divider style={styles.divider} />
-          <Dialog.Content style={styles.dialogContent}>
-            <Text style={styles.confirmationText}>
-              Are you sure you want to delete this expense?
-            </Text>
+          <Dialog.Title>Delete Expense</Dialog.Title>
+          <Dialog.Content>
+            <Text>Are you sure you want to delete this expense?</Text>
           </Dialog.Content>
-          <Divider style={styles.divider} />
-          <Dialog.Actions style={styles.dialogActions}>
+          <Dialog.Actions>
             <Button
               mode="outlined"
               onPress={() => {
