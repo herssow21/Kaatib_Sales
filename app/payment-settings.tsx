@@ -266,7 +266,7 @@ export default function PaymentSettings() {
         style={styles.fab}
         color="#fff"
         onPress={openAdd}
-        label="Add Method"
+        label="Add New Method"
       />
     </View>
   );

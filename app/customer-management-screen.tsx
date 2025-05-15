@@ -18,6 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCustomerLookup } from "../contexts/CustomerLookupContext";
 import type { Customer } from "../contexts/CustomerLookupContext";
+import { useThemeContext } from "../contexts/ThemeContext";
 
 interface NewCustomer {
   name: string;
@@ -41,8 +42,56 @@ const generateCustomerId = (): string => {
 
 const reddish = "#D32F2F";
 
+// Add a type for the custom theme colors
+interface CustomColors {
+  primary: string;
+  secondary: string;
+  primaryContainer: string;
+  secondaryContainer: string;
+  background: string;
+  surface: string;
+  error: string;
+  outline: string;
+  surfaceVariant: string;
+  onSurface: string;
+  onSurfaceVariant: string;
+  onBackground: string;
+  onPrimary: string;
+  onSecondary: string;
+  onError: string;
+  elevation: any;
+  card: string;
+  cardBorder: string;
+  inputBackground: string;
+  inputBorder: string;
+  modalBackground: string;
+  modalBorder: string;
+  divider: string;
+  disabled: string;
+  placeholder: string;
+  backdrop: string;
+  text?: string;
+  textSecondary?: string;
+  buttonText?: string;
+  buttonBackground?: string;
+  buttonBorder?: string;
+  headerBackground?: string;
+  headerText?: string;
+  searchBackground?: string;
+  searchText?: string;
+  searchPlaceholder?: string;
+  listBackground?: string;
+  listBorder?: string;
+  listText?: string;
+  listTextSecondary?: string;
+  modalText?: string;
+  modalTextSecondary?: string;
+  modalOverlay?: string;
+}
+
 const CustomerManagementScreen = () => {
-  const theme = useTheme();
+  const { theme } = useThemeContext();
+  const colors = theme.colors as CustomColors;
   const { customers, saveCustomers, getCustomerByPhone } = useCustomerLookup();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
@@ -180,6 +229,11 @@ const CustomerManagementScreen = () => {
     setIsDeleteDialogVisible(false);
   };
 
+  const handleViewOrders = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setMenuVisible(null);
+  };
+
   const resetForm = () => {
     setNewCustomer({
       name: "",
@@ -198,6 +252,208 @@ const CustomerManagementScreen = () => {
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.phone.includes(searchQuery)
   );
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+      backgroundColor: colors.headerBackground,
+      elevation: 2,
+    },
+    backButton: {
+      marginRight: 8,
+      backgroundColor: reddish,
+      borderRadius: 24,
+      width: 40,
+      height: 40,
+      justifyContent: "center",
+      alignItems: "center",
+      elevation: 2,
+    },
+    headerContent: {
+      flex: 1,
+    },
+    headerText: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: colors.headerText,
+    },
+    subHeaderText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    addButtonContainer: {
+      padding: 16,
+      paddingTop: 8,
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
+    addButton: {
+      borderRadius: 8,
+      elevation: 2,
+      backgroundColor: colors.buttonBackground,
+    },
+    addButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      height: 48,
+    },
+    addButtonText: {
+      marginLeft: 12,
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.buttonText,
+    },
+    searchContainer: {
+      padding: 16,
+      paddingTop: 0,
+    },
+    searchInput: {
+      backgroundColor: colors.searchBackground,
+      color: colors.searchText,
+    },
+    tableContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+      margin: 16,
+      borderRadius: 8,
+      elevation: 2,
+      borderColor: colors.listBorder,
+      borderWidth: 1,
+    },
+    tableHeader: {
+      flexDirection: "row",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+      backgroundColor: colors.surfaceVariant,
+    },
+    headerCell: {
+      fontWeight: "bold",
+      color: colors.listText,
+    },
+    nameCell: {
+      flex: 2,
+    },
+    contactCell: {
+      flex: 2,
+    },
+    addressCell: {
+      flex: 3,
+    },
+    ordersCell: {
+      flex: 1,
+      alignItems: "center",
+    },
+    actionsCell: {
+      flex: 1,
+      alignItems: "center",
+    },
+    scrollView: {
+      flex: 1,
+    },
+    row: {
+      flexDirection: "row",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    cell: {
+      color: colors.listText,
+    },
+    footer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+      backgroundColor: colors.surfaceVariant,
+    },
+    footerText: {
+      color: colors.listTextSecondary,
+    },
+    modalContent: {
+      backgroundColor: colors.modalBackground,
+      padding: 24,
+      margin: 20,
+      borderRadius: 12,
+      maxHeight: "80%",
+      width: "90%",
+      maxWidth: 500,
+      alignSelf: "center",
+      elevation: 4,
+      borderColor: colors.modalBorder,
+      borderWidth: 1,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 16,
+      color: colors.modalText,
+    },
+    input: {
+      marginBottom: 16,
+      backgroundColor: colors.inputBackground,
+      color: colors.modalText,
+    },
+    errorText: {
+      color: colors.error,
+      marginTop: -12,
+      marginBottom: 12,
+      marginLeft: 4,
+      fontSize: 12,
+    },
+    modalActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 16,
+    },
+    modalButton: {
+      marginLeft: 8,
+    },
+    snackbar: {
+      margin: 16,
+      borderRadius: 8,
+    },
+    detailsContainer: {
+      marginBottom: 16,
+    },
+    detailsLabel: {
+      fontSize: 14,
+      marginTop: 12,
+      marginBottom: 4,
+      color: colors.modalTextSecondary,
+    },
+    detailsValue: {
+      fontSize: 16,
+      marginBottom: 8,
+      color: colors.modalText,
+    },
+    ordersListContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 8,
+    },
+    orderItemContainer: {
+      backgroundColor: colors.surfaceVariant,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.outline,
+    },
+    orderItem: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.listText,
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -260,12 +516,7 @@ const CustomerManagementScreen = () => {
               </View>
               <View style={styles.contactCell}>
                 <Text style={styles.cell}>{customer.email || "N/A"}</Text>
-                <Text
-                  style={[
-                    styles.cell,
-                    { color: theme.colors.onSurfaceVariant },
-                  ]}
-                >
+                <Text style={[styles.cell, { color: colors.onSurfaceVariant }]}>
                   {customer.phone}
                 </Text>
               </View>
@@ -289,6 +540,14 @@ const CustomerManagementScreen = () => {
                 >
                   <Menu.Item
                     onPress={() => {
+                      handleViewOrders(customer);
+                      setMenuVisible(null);
+                    }}
+                    title="View Orders"
+                    leadingIcon="shopping"
+                  />
+                  <Menu.Item
+                    onPress={() => {
                       handleEdit(customer);
                       setMenuVisible(null);
                     }}
@@ -302,7 +561,7 @@ const CustomerManagementScreen = () => {
                     }}
                     title="Delete"
                     leadingIcon="delete"
-                    titleStyle={{ color: theme.colors.error }}
+                    titleStyle={{ color: colors.error }}
                   />
                 </Menu>
               </View>
@@ -444,6 +703,140 @@ const CustomerManagementScreen = () => {
             </Button>
           </Dialog.Actions>
         </Dialog>
+
+        {selectedCustomer && (
+          <Modal
+            visible={!!selectedCustomer}
+            onDismiss={() => setSelectedCustomer(null)}
+            contentContainerStyle={[
+              styles.modalContent,
+              { backgroundColor: colors.surface },
+            ]}
+          >
+            <ScrollView>
+              <Text style={[styles.modalTitle, { color: colors.onSurface }]}>
+                Customer Details
+              </Text>
+              <View style={styles.detailsContainer}>
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Name
+                </Text>
+                <Text
+                  style={[styles.detailsValue, { color: colors.onSurface }]}
+                >
+                  {selectedCustomer.name}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Email
+                </Text>
+                <Text
+                  style={[styles.detailsValue, { color: colors.onSurface }]}
+                >
+                  {selectedCustomer.email || "N/A"}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Phone
+                </Text>
+                <Text
+                  style={[styles.detailsValue, { color: colors.onSurface }]}
+                >
+                  {selectedCustomer.phone}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Address
+                </Text>
+                <Text
+                  style={[styles.detailsValue, { color: colors.onSurface }]}
+                >
+                  {selectedCustomer.address || "N/A"}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Total Orders
+                </Text>
+                <Text
+                  style={[styles.detailsValue, { color: colors.onSurface }]}
+                >
+                  {selectedCustomer.totalOrders}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.detailsLabel,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  Recent Orders
+                </Text>
+                <View style={styles.ordersListContainer}>
+                  {Array.from(
+                    { length: selectedCustomer.totalOrders },
+                    (_, i) => (
+                      <View key={i} style={styles.orderItemContainer}>
+                        <Text
+                          style={[
+                            styles.orderItem,
+                            { color: colors.onSurface },
+                          ]}
+                        >
+                          #{i + 1}
+                        </Text>
+                      </View>
+                    )
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => setSelectedCustomer(null)}
+                  style={styles.modalButton}
+                >
+                  Close
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    setSelectedCustomer(null);
+                    router.push(`/orders?customerId=${selectedCustomer.id}`);
+                  }}
+                  style={styles.modalButton}
+                >
+                  View All Orders
+                </Button>
+              </View>
+            </ScrollView>
+          </Modal>
+        )}
       </Portal>
 
       <Snackbar
@@ -471,165 +864,5 @@ const CustomerManagementScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#fff",
-    elevation: 2,
-  },
-  backButton: {
-    marginRight: 8,
-    backgroundColor: reddish,
-    borderRadius: 24,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  subHeaderText: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
-  },
-  addButtonContainer: {
-    padding: 16,
-    paddingTop: 8,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  addButton: {
-    borderRadius: 8,
-    elevation: 2,
-  },
-  addButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    height: 48,
-  },
-  addButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  searchContainer: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  searchInput: {
-    backgroundColor: "#fff",
-  },
-  tableContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
-    margin: 16,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#fafafa",
-  },
-  headerCell: {
-    fontWeight: "bold",
-    color: "#333",
-  },
-  nameCell: {
-    flex: 2,
-  },
-  contactCell: {
-    flex: 2,
-  },
-  addressCell: {
-    flex: 3,
-  },
-  ordersCell: {
-    flex: 1,
-    alignItems: "center",
-  },
-  actionsCell: {
-    flex: 1,
-    alignItems: "center",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  row: {
-    flexDirection: "row",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  cell: {
-    color: "#333",
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    backgroundColor: "#fafafa",
-  },
-  footerText: {
-    color: "#666",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 24,
-    margin: 20,
-    borderRadius: 12,
-    maxHeight: "80%",
-    width: "90%",
-    maxWidth: 500,
-    alignSelf: "center",
-    elevation: 4,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 16,
-    backgroundColor: "#fff",
-  },
-  errorText: {
-    color: "#FF0000",
-    marginTop: -12,
-    marginBottom: 12,
-    marginLeft: 4,
-    fontSize: 12,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-  modalButton: {
-    marginLeft: 8,
-  },
-  snackbar: {
-    margin: 16,
-    borderRadius: 8,
-  },
-});
 
 export default CustomerManagementScreen;
