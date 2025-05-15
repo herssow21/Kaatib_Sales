@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
@@ -8,17 +8,21 @@ import {
   ViewStyle,
   TextStyle,
   Platform,
+  FlatList,
+  TouchableOpacity,
 } from "react-native";
 import {
   Text,
   Button,
   TextInput,
-  useTheme,
   Card,
   Modal,
   SegmentedButtons,
   Menu,
   IconButton,
+  DataTable,
+  Divider,
+  FAB,
 } from "react-native-paper";
 import { useInventoryContext } from "../../contexts/InventoryContext";
 import { useCategoryContext } from "../../contexts/CategoryContext";
@@ -30,6 +34,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatMoney } from "../../utils/formatters";
 import RestockForm from "../../components/RestockForm";
 import { useThemeContext } from "../../contexts/ThemeContext";
+import { CustomColors } from "../../types/theme";
 
 function generateSimpleId(): string {
   const timestamp = Date.now().toString(36);
@@ -49,14 +54,19 @@ interface InventoryItem {
   measuringUnit?: string;
   price: number;
   type: "product" | "service";
-  charges?: number; // for services
+  charges?: number;
+}
+
+// Define ProductInventoryItem by extending InventoryItem and adding currentStock
+interface ProductInventoryItem extends InventoryItem {
+  type: "product";
+  currentStock: number;
+  measuringUnit: string;
 }
 
 const InventoryScreen = () => {
-  const { theme, isDarkMode } = useThemeContext
-    ? useThemeContext()
-    : { theme: useTheme(), isDarkMode: false };
-  const colors = theme.colors as any; // type assertion to allow custom keys
+  const { theme, isDarkMode } = useThemeContext();
+  const colors = theme.colors as CustomColors;
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const { items, addItem, updateItem, handleSale, deleteItem } =
@@ -68,7 +78,7 @@ const InventoryScreen = () => {
   const [isItemModalVisible, setItemModalVisible] = useState(false);
   const [isBulkRestoreModalVisible, setBulkRestoreModalVisible] =
     useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "name",
@@ -76,8 +86,10 @@ const InventoryScreen = () => {
   });
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSort, setSelectedSort] = useState("recent");
-  const [isMenuVisible, setMenuVisible] = useState(false);
+  const [isMenuVisible, setMenuVisible] = useState<string | null>(null);
   const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(false);
+  const [page, setPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const totalItems = items.length;
   const totalStockCount = items.reduce(
@@ -100,9 +112,7 @@ const InventoryScreen = () => {
     { label: "Lowest Price", value: "lowPrice" },
   ];
 
-  // Sorting and filtering logic
-  const filteredAndSortedItems = React.useMemo(() => {
-    // First, filter by search query and category
+  const filteredAndSortedItems = useMemo(() => {
     let filtered = [...items];
 
     if (searchQuery) {
@@ -121,7 +131,6 @@ const InventoryScreen = () => {
       filtered = filtered.filter((item) => item.category === selectedCategory);
     }
 
-    // Then, sort the filtered items
     return filtered.sort((a, b) => {
       const direction = sortConfig.direction === "ascending" ? 1 : -1;
 
@@ -227,880 +236,649 @@ Stock Value: KES ${item.stockValue}`;
   };
 
   const handleEditItem = (item: InventoryItem) => {
-    // Implement your edit logic here
-    console.log("Edit item:", item);
+    setSelectedItem(item);
+    setItemModalVisible(true);
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      padding: 16,
-      backgroundColor: isDarkMode ? colors.background : "#fff",
+      padding: isMobile ? 8 : 16,
+      backgroundColor: colors.background,
     },
     header: {
-      flexDirection: "row",
+      flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
       marginBottom: 16,
+      gap: isMobile ? 8 : 0,
+    },
+    headerTitle: {
+      color: colors.text,
+      fontWeight: "bold",
+      fontSize: isMobile ? 20 : 24,
     },
     buttonContainer: {
       flexDirection: "row",
       gap: 8,
+      marginTop: isMobile ? 8 : 0,
+      justifyContent: isMobile ? "flex-start" : "flex-end",
     },
-    button: {
-      marginLeft: 8,
-      backgroundColor: "#fff",
-      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
-      borderWidth: 1,
-      borderRadius: 24,
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-      elevation: 2,
-    },
-    buttonText: {
-      color: "#222",
-      fontWeight: "bold",
-    },
-    statsContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginVertical: 24,
-      gap: 8,
-    },
-    statBox: {
-      flex: 1,
-      margin: 8,
-      backgroundColor: "#fff",
-      elevation: 2,
+    createItemButton: {
+      backgroundColor: colors.primary,
       borderRadius: 8,
-      overflow: "hidden",
-      borderLeftWidth: 4,
-      borderLeftColor: colors.primary,
-      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
-      borderWidth: 1,
     },
-    statText: {
-      fontSize: 16,
-      color: "#2c3e50",
-    },
-    statLabel: {
-      fontSize: 14,
-      color: "#7f8c8d",
-      marginBottom: 4,
-      fontWeight: "500",
-    },
-    statValue: {
-      fontSize: 20,
+    createItemButtonLabel: {
+      color: colors.onPrimary,
       fontWeight: "bold",
-      color: "#2c3e50",
     },
-    filterContainer: {
+    searchAndFilters: {
+      flexDirection: isMobile ? "column" : "row",
+      gap: isMobile ? 12 : 16,
       marginBottom: 16,
+      alignItems: isMobile ? "stretch" : "center",
     },
     searchInput: {
-      marginBottom: 8,
-      backgroundColor: colors.surfaceVariant,
-      color: colors.onSurface,
+      flex: isMobile ? undefined : 1,
     },
-    filtersRow: {
+    filterButtonsContainer: {
       flexDirection: "row",
-      alignItems: "center",
-      marginTop: 8,
-    },
-    categoryDropdown: {
-      flex: 1,
-      marginRight: 8,
-      backgroundColor: isDarkMode ? colors.background : "#fff",
-      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
-      borderWidth: 1,
-    },
-    sortButtons: {
-      flex: 1,
-      backgroundColor: isDarkMode ? colors.background : "#fff",
-      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
-      borderWidth: 1,
-    },
-    emptyText: {
-      textAlign: "center",
-      padding: 16,
-      color: isDarkMode ? "#fff" : "#666",
-    },
-    modalContainer: {
-      padding: 16,
-      backgroundColor: "transparent",
-      maxHeight: "100%",
-      marginVertical: 20,
-    },
-    bulkRestoreContainer: {
-      padding: 16,
-    },
-    sortableHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      cursor: "pointer",
-      opacity: 0.9,
-    },
-    tableHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      backgroundColor: isDarkMode ? colors.background : "#f8f9fa",
-      paddingVertical: 6,
-      paddingHorizontal: 8,
-      borderBottomWidth: 2,
-      borderBottomColor: isDarkMode ? "#fff" : "#e0e0e0",
-      elevation: 2,
-    },
-    tableHeaderCell: {
-      flex: 1,
-      fontWeight: "600",
-      textAlign: "left",
-      fontSize: 13,
-      color: isDarkMode ? "#fff" : "#444",
-    },
-    tableRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingVertical: 2,
-      paddingHorizontal: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: isDarkMode ? "#fff" : "#e0e0e0",
-      backgroundColor: isDarkMode ? colors.background : "white",
-      minHeight: 28,
-      alignItems: "center",
-    },
-    tableCell: {
-      flex: 1,
-      textAlign: "left",
-      paddingVertical: 0,
-      fontSize: 13,
-      color: isDarkMode ? "#fff" : "#333",
-      paddingRight: 4,
-    },
-    actionsContainer: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      flex: 0.8,
-      paddingLeft: 0,
-    },
-    sortIcon: {
-      marginLeft: 4,
-    },
-    mobileHeader: {
-      padding: 16,
-      flexDirection: "column",
-      gap: 16,
-    },
-    mobileButtonRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingHorizontal: 16,
-      paddingBottom: 16,
       gap: 8,
+      alignItems: "center",
     },
-    mobileButton: {
+    filterButton: {
+      borderColor: colors.outline,
+    },
+    filterButtonSelected: {
+      backgroundColor: colors.primaryContainer,
+      borderColor: colors.primary,
+    },
+    filterButtonLabel: {
+      color: colors.text,
+    },
+    filterButtonSelectedLabel: {
+      color: colors.primary,
+    },
+    statsContainer: {
+      flexDirection: isMobile ? "column" : "row",
+      justifyContent: "space-around",
+      marginBottom: 16,
+      gap: isMobile ? 8 : 16,
+    },
+    statCard: {
       flex: 1,
-    },
-    mobileStatsScroll: {
-      flexGrow: 0,
-    },
-    mobileStatsContainer: {
-      flexDirection: "row",
-      padding: 16,
-      gap: 12,
-    },
-    mobileStatBox: {
-      minWidth: 140,
-      elevation: 2,
-      backgroundColor: "#fff",
+      padding: isMobile ? 10 : 16,
+      backgroundColor: colors.surface,
       borderRadius: 8,
-      overflow: "hidden",
       borderLeftWidth: 4,
       borderLeftColor: colors.primary,
     },
-    mobileFilters: {
+    statTitle: {
+      fontSize: isMobile ? 13 : 14,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    statValue: {
+      fontSize: isMobile ? 17 : 18,
+      fontWeight: "bold",
+      color: colors.text,
+    },
+    tableHeader: {
+      backgroundColor: colors.surfaceVariant,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    headerCellText: {
+      color: colors.text,
+      fontWeight: "bold",
+      fontSize: 14,
+    },
+    tableRow: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+      backgroundColor: colors.surface,
+    },
+    cellText: {
+      color: colors.onSurface,
+      fontSize: 14,
+    },
+    serviceCellText: {
+      color: colors.textSecondary,
+      fontStyle: "italic",
+    },
+    actionsCell: {
+      justifyContent: "flex-end",
+    },
+    modalContainer: {
+      backgroundColor: colors.modalBackground,
       padding: 16,
-      gap: 8,
+      margin: isMobile ? 10 : 20,
+      borderRadius: 8,
+      maxHeight: "90%",
+      alignSelf: "center",
+      width: isMobile ? "95%" : "45%",
     },
-    mobileSearchInput: {
-      marginBottom: 8,
-    },
-    mobileFilterRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 8,
-      gap: 8,
-    },
-    filterLabel: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.primary,
-    },
-    mobileCardList: {
-      flex: 1,
-      padding: 8,
-    },
-    mobileItemCard: {
-      marginVertical: 4,
-      marginHorizontal: 8,
-      elevation: 2,
-    },
-    mobileItemHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    mobileItemName: {
-      fontSize: 16,
+    modalTitle: {
+      fontSize: 20,
       fontWeight: "bold",
+      marginBottom: 16,
+      color: colors.modalText,
+      textAlign: "center",
     },
-    mobileItemCategory: {
-      fontSize: 14,
-      color: "#666",
-    },
-    mobileItemDetails: {
-      gap: 4,
-    },
-    mobileItemDetail: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    mobileDetailLabel: {
-      color: "#666",
-    },
-    mobileDetailValue: {
-      fontWeight: "500",
-    },
-    mobileItemActions: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      marginTop: 8,
-      gap: 8,
-    },
-    mobileTableHeader: {
-      flexDirection: "row",
-      backgroundColor: "#f5f5f5",
-      borderBottomWidth: 1,
-      borderBottomColor: "#ddd",
-    },
-    mobileTableRow: {
-      flexDirection: "row",
-      borderBottomWidth: 1,
-      borderBottomColor: "#eee",
-      backgroundColor: "white",
-      minHeight: 36,
-      alignItems: "center",
-    },
-    mobileTableCell: {
-      paddingVertical: 2,
-      paddingHorizontal: 6,
-      justifyContent: "center",
-    },
-    filterButtons: {
-      flexDirection: "row",
-      gap: 8,
-    },
-    tableScrollView: {
-      maxHeight: "70%",
-    },
-    tableCellText: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: "#2c3e50",
-    },
-    actionButtons: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      gap: 8,
-      alignItems: "center",
-      height: 32,
-      width: 110,
-    },
-    itemContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: "#e0e0e0",
-    },
-    itemText: {
-      flex: 1,
-    },
-    actionContainer: {
-      flexDirection: "row",
-      gap: 8,
-    },
-    actionButton: {
-      margin: 0,
-      padding: 0,
-      minWidth: 22,
-      height: 32,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    actionIcon: {
-      margin: 0,
-      padding: 0,
-    },
-    deleteButton: {
-      color: "#e74c3c",
-    },
-    modalContentContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      marginVertical: Platform.OS === "web" ? 20 : 0,
-    },
+    nameColumn: { flex: isMobile ? 3 : 2.5 },
+    categoryColumn: { flex: isMobile ? 2 : 1.5 },
+    quantityColumn: { flex: 1, justifyContent: "flex-end" },
+    priceColumn: { flex: 1.5, justifyContent: "flex-end" },
+    stockValueColumn: { flex: 1.5, justifyContent: "flex-end" },
+    actionsColumn: { flex: isMobile ? 2 : 1.5, justifyContent: "flex-end" },
   });
+
+  const textInputTheme = {
+    colors: {
+      primary: colors.primary,
+      text: colors.onSurface,
+      placeholder: colors.placeholder,
+      background: colors.inputBackground,
+      surface: colors.inputBackground,
+      onSurface: colors.onSurface,
+      outline: colors.outline,
+      accent: colors.primary,
+      error: colors.error,
+      disabled: colors.disabled,
+    },
+  };
+
+  const itemsPerPageOptions = [5, 10, 15, 20].filter(
+    (ipp) => ipp <= totalItems || ipp === 5
+  );
+  if (!itemsPerPageOptions.includes(itemsPerPage) && totalItems > 0) {
+    setItemsPerPage(itemsPerPageOptions[0] || 5);
+  }
+
+  const from = page * itemsPerPage;
+  const to = Math.min((page + 1) * itemsPerPage, totalItems);
+  const paginatedItems = filteredAndSortedItems.slice(from, to);
+
   const renderItemActions = (item: InventoryItem) => (
-    <View style={styles.actionButtons}>
-      <IconButton
-        icon="eye"
-        onPress={() => handleViewItem(item)}
-        size={16}
-        style={styles.actionButton}
-        iconColor={colors.primary}
-      />
-      <IconButton
-        icon="pencil"
+    <Menu
+      visible={isMenuVisible === item.id}
+      onDismiss={() => setMenuVisible(null)}
+      anchor={
+        <IconButton
+          icon="dots-vertical"
+          onPress={() => setMenuVisible(item.id)}
+          iconColor={colors.text}
+        />
+      }
+      theme={{ colors: { surface: colors.surface } }}
+    >
+      <Menu.Item
         onPress={() => {
-          setSelectedItem(item);
-          setItemModalVisible(true);
+          handleViewItem(item);
+          setMenuVisible(null);
         }}
-        size={16}
-        style={styles.actionButton}
-        iconColor={colors.primary}
+        title="View Details"
+        titleStyle={{ color: colors.text }}
       />
-      <IconButton
-        icon="delete"
-        onPress={() => handleDeleteItem(item)}
-        size={16}
-        style={styles.actionButton}
-        iconColor="#e74c3c"
+      <Menu.Item
+        onPress={() => {
+          handleEditItem(item);
+          setMenuVisible(null);
+        }}
+        title="Edit Item"
+        titleStyle={{ color: colors.text }}
       />
-    </View>
+      <Divider style={{ backgroundColor: colors.divider }} />
+      <Menu.Item
+        onPress={() => {
+          handleDeleteItem(item);
+          setMenuVisible(null);
+        }}
+        title="Delete Item"
+        titleStyle={{ color: colors.error }}
+      />
+    </Menu>
   );
 
   return (
     <View style={styles.container}>
-      {isMobile ? (
-        <>
-          <View style={styles.mobileHeader}>
-            <Text variant="headlineMedium">Inventory List</Text>
-          </View>
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.headerTitle}>
+          Inventory Management
+        </Text>
+        <View style={styles.buttonContainer}>
+          <Button
+            icon="plus"
+            mode="outlined"
+            onPress={() => setCategoryModalVisible(true)}
+            textColor={colors.primary}
+            style={{ borderColor: colors.primary, borderRadius: 8 }}
+          >
+            Create Category
+          </Button>
+          <Button
+            icon="plus-circle"
+            mode="contained"
+            onPress={() => {
+              setSelectedItem(null);
+              setItemModalVisible(true);
+            }}
+            style={styles.createItemButton}
+            labelStyle={styles.createItemButtonLabel}
+          >
+            Create Item
+          </Button>
+          <Button
+            icon="package-variant-plus"
+            mode="outlined"
+            onPress={() => setBulkRestoreModalVisible(true)}
+            textColor={colors.primary}
+            style={{ borderColor: colors.primary, borderRadius: 8 }}
+          >
+            Bulk Restock
+          </Button>
+        </View>
+      </View>
 
-          <View style={styles.mobileButtonRow}>
-            <Button
-              mode="outlined"
-              onPress={() => setBulkRestoreModalVisible(true)}
-              style={styles.mobileButton}
-            >
-              Bulk Restock
-            </Button>
-            <Button
-              mode="contained"
-              onPress={() => {
-                setSelectedItem(null);
-                setItemModalVisible(true);
-              }}
-              style={styles.mobileButton}
-              labelStyle={{ color: "#222", fontWeight: "bold" }}
-            >
-              Create Item
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={() => setCategoryModalVisible(true)}
-              style={styles.mobileButton}
-            >
-              Categories
-            </Button>
-          </View>
-          <ScrollView horizontal style={styles.mobileStatsScroll}>
-            <View style={styles.mobileStatsContainer}>
-              <Card style={styles.mobileStatBox}>
-                <Card.Content>
-                  <Text style={styles.statLabel}>Total Items</Text>
-                  <Text style={styles.statValue}>{totalItems}</Text>
-                </Card.Content>
-              </Card>
-              <Card style={styles.mobileStatBox}>
-                <Card.Content>
-                  <Text style={styles.statLabel}>Total Stock Count</Text>
-                  <Text style={styles.statValue}>{totalStockCount}</Text>
-                </Card.Content>
-              </Card>
-              <Card style={styles.mobileStatBox}>
-                <Card.Content>
-                  <Text style={styles.statLabel}>Estimated Sales</Text>
-                  <Text style={styles.statValue}>
-                    {formatMoney(estimatedSales)}
-                  </Text>
-                </Card.Content>
-              </Card>
-              <Card style={styles.mobileStatBox}>
-                <Card.Content>
-                  <Text style={styles.statLabel}>Total Stock Value</Text>
-                  <Text style={styles.statValue}>
-                    {formatMoney(totalStockValue)}
-                  </Text>
-                </Card.Content>
-              </Card>
-            </View>
-          </ScrollView>
-
-          <View style={styles.mobileFilters}>
-            <TextInput
-              mode="outlined"
-              placeholder="Search Items"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.mobileSearchInput}
-              left={<TextInput.Icon icon="magnify" />}
-              clearButtonMode="while-editing"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <View style={styles.mobileFilterRow}>
-              <Text style={styles.filterLabel}>Filter:</Text>
-              <View style={styles.filterButtons}>
-                <Menu
-                  visible={isCategoryMenuVisible}
-                  onDismiss={() => setIsCategoryMenuVisible(false)}
-                  anchor={
-                    <Button
-                      mode="outlined"
-                      onPress={() => setIsCategoryMenuVisible(true)}
-                      icon="filter-variant"
-                    >
-                      {selectedCategory === "all"
-                        ? "All Categories"
-                        : selectedCategory}
-                    </Button>
-                  }
-                >
-                  <Menu.Item
-                    onPress={() => {
-                      setSelectedCategory("all");
-                      setIsCategoryMenuVisible(false);
-                    }}
-                    title="All Categories"
-                    leadingIcon="folder"
-                  />
-                  {categories.map((cat) => (
-                    <Menu.Item
-                      key={cat.id}
-                      onPress={() => {
-                        setSelectedCategory(cat.name);
-                        setIsCategoryMenuVisible(false);
-                      }}
-                      title={cat.name}
-                      leadingIcon="folder-outline"
-                    />
-                  ))}
-                </Menu>
-                <Menu
-                  visible={isMenuVisible}
-                  onDismiss={() => setMenuVisible(false)}
-                  anchor={
-                    <Button
-                      mode="outlined"
-                      onPress={() => setMenuVisible(true)}
-                      icon="sort-variant"
-                    >
-                      {sortOptions.find((opt) => opt.value === selectedSort)
-                        ?.label || "Sort By"}
-                    </Button>
-                  }
-                >
-                  {sortOptions.map((option) => (
-                    <Menu.Item
-                      key={option.value}
-                      onPress={() => {
-                        handleSortChange(option.value);
-                        setMenuVisible(false);
-                      }}
-                      title={option.label}
-                      leadingIcon={
-                        option.value === "recent"
-                          ? "clock-outline"
-                          : option.value === "relevant"
-                          ? "sort-alphabetical-ascending"
-                          : option.value === "highPrice"
-                          ? "sort-numeric-descending"
-                          : "sort-numeric-ascending"
-                      }
-                    />
-                  ))}
-                </Menu>
-              </View>
-            </View>
-          </View>
-
-          <ScrollView horizontal>
-            <View>
-              <View style={styles.mobileTableHeader}>
-                <Text style={[styles.mobileTableCell, { width: 40 }]}>#</Text>
-                <Text style={[styles.mobileTableCell, { width: 120 }]}>
-                  Item
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                  Category
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 80 }]}>
-                  Stock
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                  Buy Price
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                  Sell Price
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 120 }]}>
-                  Value
-                </Text>
-                <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                  Actions
-                </Text>
-              </View>
-              <ScrollView>
-                {filteredAndSortedItems.map((item, index) => (
-                  <View key={item.id} style={styles.mobileTableRow}>
-                    <Text style={[styles.mobileTableCell, { width: 45 }]}>
-                      {index + 1}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 120 }]}>
-                      {item.name}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {item.category}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 80 }]}>
-                      {item.type === "service" ? "-" : item.quantity}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {item.type === "service"
-                        ? "-"
-                        : formatMoney(item.buyingPrice || 0)}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {formatMoney(item.sellingPrice || 0)}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {item.type === "service"
-                        ? "-"
-                        : formatMoney(item.stockValue || 0)}
-                    </Text>
-                    <View
-                      style={[
-                        styles.mobileTableCell,
-                        { width: 140, justifyContent: "flex-end" },
-                      ]}
-                    >
-                      {renderItemActions(item)}
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          </ScrollView>
-        </>
-      ) : (
-        <>
-          <View style={styles.header}>
-            <Text variant="headlineMedium">Inventory List</Text>
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setBulkRestoreModalVisible(true)}
-                style={styles.button}
-              >
-                Bulk Restock
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={() => setCategoryModalVisible(true)}
-                style={styles.button}
-              >
-                Create Category
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => {
-                  setSelectedItem(null);
-                  setItemModalVisible(true);
-                }}
-                style={styles.button}
-                labelStyle={{ color: "#222", fontWeight: "bold" }}
-              >
-                Create an Item
-              </Button>
-            </View>
-          </View>
-          <View style={styles.statsContainer}>
-            <Card style={styles.statBox}>
-              <Card.Content>
-                <Text style={styles.statLabel}>Total Items</Text>
-                <Text style={styles.statValue}>{totalItems}</Text>
-              </Card.Content>
-            </Card>
-            <Card style={styles.statBox}>
-              <Card.Content>
-                <Text style={styles.statLabel}>Total Stock Count</Text>
-                <Text style={styles.statValue}>{totalStockCount}</Text>
-              </Card.Content>
-            </Card>
-            <Card style={styles.statBox}>
-              <Card.Content>
-                <Text style={styles.statLabel}>Estimated Sales</Text>
-                <Text style={styles.statValue}>
-                  {formatMoney(estimatedSales)}
-                </Text>
-              </Card.Content>
-            </Card>
-            <Card style={styles.statBox}>
-              <Card.Content>
-                <Text style={styles.statLabel}>Total Stock Value</Text>
-                <Text style={styles.statValue}>
-                  {formatMoney(totalStockValue)}
-                </Text>
-              </Card.Content>
-            </Card>
-          </View>
-          <View style={styles.filterContainer}>
-            <TextInput
-              mode="outlined"
-              placeholder="Search Items"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.searchInput}
-            />
-            <View style={styles.filtersRow}>
-              <Menu
-                visible={isCategoryMenuVisible}
-                onDismiss={() => setIsCategoryMenuVisible(false)}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={() => setIsCategoryMenuVisible(true)}
-                    style={styles.categoryDropdown}
-                  >
-                    {selectedCategory === "all"
-                      ? "All Categories"
-                      : selectedCategory}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => {
-                    setSelectedCategory("all");
-                    setIsCategoryMenuVisible(false);
-                  }}
-                  title="All Categories"
-                />
-                {categories.map((cat) => (
-                  <Menu.Item
-                    key={cat.id}
-                    onPress={() => {
-                      setSelectedCategory(cat.name);
-                      setIsCategoryMenuVisible(false);
-                    }}
-                    title={cat.name}
-                  />
-                ))}
-              </Menu>
-              <SegmentedButtons
-                value={selectedSort}
-                onValueChange={handleSortChange}
-                buttons={sortOptions}
-                style={styles.sortButtons}
+      <View style={styles.searchAndFilters}>
+        <TextInput
+          label="Search items by name, category, qty, price..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+          mode="outlined"
+          theme={textInputTheme}
+          left={<TextInput.Icon icon="magnify" color={colors.placeholder} />}
+          right={
+            searchQuery ? (
+              <TextInput.Icon
+                icon="close-circle"
+                onPress={() => setSearchQuery("")}
+                color={colors.placeholder}
               />
-            </View>
-          </View>
-          <ScrollView>
-            {filteredAndSortedItems.length === 0 ? (
-              <Text style={styles.emptyText}>
-                No items available in inventory.
-              </Text>
-            ) : (
-              <View>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderCell, { flex: 0.5 }]}>#</Text>
-                  <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
-                    onPress={() => handleSort("name")}
-                  >
-                    Item{" "}
-                    {sortConfig.key === "name" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
-                    onPress={() => handleSort("category")}
-                  >
-                    Category{" "}
-                    {sortConfig.key === "category" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tableHeaderCell as TextStyle,
-                      styles.sortableHeader as TextStyle,
-                    ]}
-                    onPress={() => handleSort("quantity")}
-                  >
-                    Stock Count{" "}
-                    {sortConfig.key === "quantity" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
-                    onPress={() => handleSort("buyingPrice")}
-                  >
-                    Buying Price{" "}
-                    {sortConfig.key === "buyingPrice" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
-                    onPress={() => handleSort("sellingPrice")}
-                  >
-                    Selling Price{" "}
-                    {sortConfig.key === "sellingPrice" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text
-                    style={[styles.tableHeaderCell, styles.sortableHeader]}
-                    onPress={() => handleSort("stockValue")}
-                  >
-                    Stock Value{" "}
-                    {sortConfig.key === "stockValue" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
-                  </Text>
-                  <Text style={styles.tableHeaderCell}>Actions</Text>
-                </View>
-                <ScrollView style={styles.tableScrollView}>
-                  {filteredAndSortedItems.map((item, index) => (
-                    <View key={item.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { flex: 0.5 }]}>
-                        {index + 1}
-                      </Text>
-                      <Text style={styles.tableCell}>{item.name}</Text>
-                      <Text style={styles.tableCell}>{item.category}</Text>
-                      <Text style={styles.tableCell}>
-                        {item.type === "service" ? "-" : item.quantity}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        {item.type === "service"
-                          ? "-"
-                          : formatMoney(item.buyingPrice || 0)}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        {formatMoney(item.sellingPrice || 0)}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        {item.type === "service"
-                          ? "-"
-                          : formatMoney(item.stockValue || 0)}
-                      </Text>
-                      <View style={styles.actionsContainer}>
-                        {renderItemActions(item)}
-                      </View>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </ScrollView>
-        </>
-      )}
-
-      {/* Category Modal */}
-      <Modal
-        visible={isCategoryModalVisible}
-        onDismiss={() => {
-          setCategoryModalVisible(false);
-          setSelectedItem(null);
-        }}
-        contentContainerStyle={styles.modalContentContainer}
-      >
-        <CategoryForm
-          onClose={() => {
-            setCategoryModalVisible(false);
-            setSelectedItem(null);
-          }}
+            ) : null
+          }
         />
-      </Modal>
+        <View style={styles.filterButtonsContainer}>
+          <Menu
+            visible={isCategoryMenuVisible}
+            onDismiss={() => setIsCategoryMenuVisible(false)}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setIsCategoryMenuVisible(true)}
+                icon="filter-variant"
+                style={styles.filterButton}
+                labelStyle={styles.filterButtonLabel}
+                textColor={colors.text}
+              >
+                {selectedCategory === "all"
+                  ? "All Categories"
+                  : selectedCategory}
+              </Button>
+            }
+            theme={{ colors: { surface: colors.surface } }}
+          >
+            <Menu.Item
+              onPress={() => {
+                setSelectedCategory("all");
+                setIsCategoryMenuVisible(false);
+              }}
+              title="All Categories"
+              titleStyle={{ color: colors.text }}
+            />
+            {categories.map((cat) => (
+              <Menu.Item
+                key={cat.id}
+                onPress={() => {
+                  setSelectedCategory(cat.name);
+                  setIsCategoryMenuVisible(false);
+                }}
+                title={cat.name}
+                titleStyle={{ color: colors.text }}
+              />
+            ))}
+            <Divider style={{ backgroundColor: colors.divider }} />
+            <Menu.Item
+              onPress={() => {
+                setCategoryModalVisible(true);
+                setIsCategoryMenuVisible(false);
+              }}
+              title="Create Category"
+              leadingIcon="plus"
+              titleStyle={{ color: colors.primary }}
+            />
+          </Menu>
+          <SegmentedButtons
+            value={selectedSort}
+            onValueChange={handleSortChange}
+            buttons={sortOptions.map((opt) => ({
+              value: opt.value,
+              label: opt.label,
+              style:
+                selectedSort === opt.value
+                  ? styles.filterButtonSelected
+                  : [
+                      styles.filterButton,
+                      { backgroundColor: colors.surfaceVariant },
+                    ],
+              labelStyle:
+                selectedSort === opt.value
+                  ? styles.filterButtonSelectedLabel
+                  : [
+                      styles.filterButtonLabel,
+                      { color: colors.onSurfaceVariant },
+                    ],
+            }))}
+            style={{ flex: isMobile ? 1 : undefined }}
+          />
+        </View>
+      </View>
 
-      {/* Item Modal */}
+      <View style={styles.statsContainer}>
+        <Card style={styles.statCard}>
+          <Card.Content>
+            <Text style={styles.statTitle}>Total Items</Text>
+            <Text style={styles.statValue}>{totalItems}</Text>
+          </Card.Content>
+        </Card>
+        <Card style={styles.statCard}>
+          <Card.Content>
+            <Text style={styles.statTitle}>Stock Count</Text>
+            <Text style={styles.statValue}>{totalStockCount}</Text>
+          </Card.Content>
+        </Card>
+        <Card style={styles.statCard}>
+          <Card.Content>
+            <Text style={styles.statTitle}>Est. Sales Value</Text>
+            <Text style={styles.statValue}>{formatMoney(estimatedSales)}</Text>
+          </Card.Content>
+        </Card>
+        <Card style={styles.statCard}>
+          <Card.Content>
+            <Text style={styles.statTitle}>Total Stock Value</Text>
+            <Text style={styles.statValue}>{formatMoney(totalStockValue)}</Text>
+          </Card.Content>
+        </Card>
+      </View>
+
+      <ScrollView style={{ flex: 1 }}>
+        <DataTable
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 8,
+            elevation: 1,
+          }}
+        >
+          <DataTable.Header style={styles.tableHeader}>
+            <DataTable.Title
+              onPress={() => handleSort("name")}
+              style={styles.nameColumn}
+            >
+              <Text style={styles.headerCellText}>
+                Name{" "}
+                {sortConfig.key === "name" &&
+                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
+              </Text>
+            </DataTable.Title>
+            <DataTable.Title
+              onPress={() => handleSort("category")}
+              style={styles.categoryColumn}
+            >
+              <Text style={styles.headerCellText}>
+                Category{" "}
+                {sortConfig.key === "category" &&
+                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
+              </Text>
+            </DataTable.Title>
+            <DataTable.Title
+              numeric
+              onPress={() => handleSort("quantity")}
+              style={styles.quantityColumn}
+            >
+              <Text style={styles.headerCellText}>
+                Qty{" "}
+                {sortConfig.key === "quantity" &&
+                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
+              </Text>
+            </DataTable.Title>
+            <DataTable.Title
+              numeric
+              onPress={() => handleSort("sellingPrice")}
+              style={styles.priceColumn}
+            >
+              <Text style={styles.headerCellText}>
+                Price{" "}
+                {sortConfig.key === "sellingPrice" &&
+                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
+              </Text>
+            </DataTable.Title>
+            <DataTable.Title
+              numeric
+              onPress={() => handleSort("stockValue")}
+              style={styles.stockValueColumn}
+            >
+              <Text style={styles.headerCellText}>
+                Stock Value{" "}
+                {sortConfig.key === "stockValue" &&
+                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
+              </Text>
+            </DataTable.Title>
+            <DataTable.Title style={[styles.actionsColumn]}>
+              <Text style={styles.headerCellText}>Actions</Text>
+            </DataTable.Title>
+          </DataTable.Header>
+
+          {paginatedItems.length > 0 ? (
+            paginatedItems.map((item) => (
+              <DataTable.Row
+                key={item.id}
+                style={styles.tableRow}
+                onPress={() => handleViewItem(item)}
+              >
+                <DataTable.Cell style={styles.nameColumn}>
+                  <Text style={styles.cellText}>{item.name}</Text>
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.categoryColumn}>
+                  <Text style={styles.cellText}>{item.category}</Text>
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.quantityColumn}>
+                  <Text
+                    style={
+                      item.type === "service"
+                        ? styles.serviceCellText
+                        : styles.cellText
+                    }
+                  >
+                    {item.type === "service" ? "N/A" : item.quantity}
+                  </Text>
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.priceColumn}>
+                  <Text style={styles.cellText}>
+                    {formatMoney(
+                      item.sellingPrice ||
+                        (item.type === "service" ? item.charges : 0) ||
+                        0
+                    )}
+                  </Text>
+                </DataTable.Cell>
+                <DataTable.Cell numeric style={styles.stockValueColumn}>
+                  <Text
+                    style={
+                      item.type === "service"
+                        ? styles.serviceCellText
+                        : styles.cellText
+                    }
+                  >
+                    {item.type === "service"
+                      ? "N/A"
+                      : formatMoney(item.stockValue || 0)}
+                  </Text>
+                </DataTable.Cell>
+                <DataTable.Cell style={styles.actionsCell}>
+                  {renderItemActions(item)}
+                </DataTable.Cell>
+              </DataTable.Row>
+            ))
+          ) : (
+            <Card
+              style={{
+                marginTop: 1,
+                backgroundColor: colors.surface,
+                borderRadius: 0,
+              }}
+            >
+              <Card.Content
+                style={{ alignItems: "center", paddingVertical: 20 }}
+              >
+                <MaterialCommunityIcons
+                  name="package-variant-closed"
+                  size={48}
+                  color={colors.textSecondary}
+                  style={{ marginBottom: 12 }}
+                />
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                    fontSize: 16,
+                    fontWeight: "bold",
+                  }}
+                >
+                  No Inventory Items
+                </Text>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                    marginTop: 4,
+                  }}
+                >
+                  Add items to your inventory to see them listed here.
+                </Text>
+                {searchQuery && (
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      textAlign: "center",
+                      fontSize: 12,
+                      marginTop: 8,
+                    }}
+                  >
+                    Try adjusting your search query or filters.
+                  </Text>
+                )}
+              </Card.Content>
+            </Card>
+          )}
+
+          <DataTable.Pagination
+            page={page}
+            numberOfPages={Math.ceil(
+              filteredAndSortedItems.length / itemsPerPage
+            )}
+            onPageChange={(p) => setPage(p)}
+            label={`${from + 1}-${to} of ${filteredAndSortedItems.length}`}
+            numberOfItemsPerPageList={
+              itemsPerPageOptions.length > 0 ? itemsPerPageOptions : [5, 10, 15]
+            }
+            numberOfItemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+            showFastPaginationControls
+            selectPageDropdownLabel={"Rows per page"}
+            theme={{
+              colors: {
+                surface: colors.surfaceVariant,
+                text: colors.text,
+                primary: colors.primary,
+                outline: colors.outline,
+              },
+            }}
+            style={{
+              backgroundColor: colors.surface,
+              marginTop: 0,
+              borderTopWidth: 1,
+              borderTopColor: colors.divider,
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8,
+            }}
+          />
+        </DataTable>
+      </ScrollView>
+
       <Modal
         visible={isItemModalVisible}
-        onDismiss={() => {
-          setItemModalVisible(false);
-          setSelectedItem(null);
-        }}
-        contentContainerStyle={styles.modalContainer}
+        onDismiss={() => setItemModalVisible(false)}
       >
-        <ProductForm
-          initialData={selectedItem}
-          categories={categories}
-          onClose={() => {
-            setItemModalVisible(false);
-            setSelectedItem(null);
+        <View
+          style={{
+            maxHeight: "60%",
+            minWidth: 320,
+            width: "100%",
+            maxWidth: 500,
+            alignSelf: "center",
+            backgroundColor: colors.modalBackground,
+            borderRadius: 8,
+            padding: 0,
           }}
-          onSubmit={(data) => {
-            const itemData: InventoryItem = {
-              id: selectedItem ? selectedItem.id : generateSimpleId(),
-              name: data.name,
-              quantity: data.quantity,
-              category: data.category,
-              buyingPrice: data.buyingPrice,
-              sellingPrice: data.sellingPrice,
-              measuringUnit: data.measuringUnit,
-              stockValue: data.buyingPrice * data.quantity,
-              createdAt: new Date().toISOString(),
-              price: data.sellingPrice,
-              type: data.type,
-              charges: data.charges,
-            };
-            if (selectedItem) {
-              updateItem(selectedItem.id, itemData as Required<InventoryItem>);
-            } else {
-              addItem(itemData as Required<InventoryItem>);
-            }
-            setItemModalVisible(false);
-          }}
-        />
+        >
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <ProductForm
+              initialData={selectedItem}
+              onSubmit={(data) => {
+                if (selectedItem) {
+                  updateItem(data.id, data);
+                  showSuccess("Item updated successfully!");
+                } else {
+                  addItem(data);
+                  showSuccess("Item created successfully!");
+                }
+                setItemModalVisible(false);
+                setSelectedItem(null);
+              }}
+              categories={categories}
+              onClose={() => setItemModalVisible(false)}
+            />
+          </ScrollView>
+        </View>
       </Modal>
 
-      {/* Bulk Restore Modal */}
+      <Modal
+        visible={isCategoryModalVisible}
+        onDismiss={() => setCategoryModalVisible(false)}
+      >
+        <ScrollView>
+          <CategoryForm
+            initialData={undefined}
+            onClose={() => setCategoryModalVisible(false)}
+          />
+        </ScrollView>
+      </Modal>
+
       <Modal
         visible={isBulkRestoreModalVisible}
         onDismiss={() => setBulkRestoreModalVisible(false)}
-        contentContainerStyle={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "white",
-          padding: Platform.OS === "web" ? 20 : 0,
-          margin: Platform.OS === "web" ? 40 : 0,
-        }}
+        contentContainerStyle={styles.modalContainer}
       >
-        <RestockForm
-          items={items.map((item) => ({
-            ...item,
-            currentStock: item.quantity,
-          }))}
-          onClose={() => setBulkRestoreModalVisible(false)}
-          onSubmit={(selectedItems) => {
-            console.log("Selected items for restock:", selectedItems);
-            setBulkRestoreModalVisible(false);
-          }}
-        />
+        <ScrollView>
+          <RestockForm
+            items={
+              items
+                .filter((item) => item.type === "product")
+                .map((item) => ({
+                  ...item,
+                  type: "product",
+                  measuringUnit: item.measuringUnit || "unit",
+                  currentStock: item.quantity || 0,
+                })) as ProductInventoryItem[]
+            }
+            onSubmit={(restockData) => {
+              showSuccess("Items restocked successfully!");
+              setBulkRestoreModalVisible(false);
+            }}
+            onClose={() => setBulkRestoreModalVisible(false)}
+          />
+        </ScrollView>
       </Modal>
     </View>
   );

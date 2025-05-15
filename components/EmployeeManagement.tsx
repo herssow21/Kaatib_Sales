@@ -558,6 +558,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: useTheme().dark ? useTheme().colors.background : "#f5f5f5",
   },
   header: {
     flexDirection: "row",
@@ -576,6 +577,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 16,
     borderRadius: 8,
+    backgroundColor: useTheme().dark ? useTheme().colors.surface : "#fff",
+    elevation: 2,
   },
   row: {
     flexDirection: "row",
@@ -593,19 +596,20 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "bold",
+    color: useTheme().colors.onSurface,
   },
   role: {
     fontSize: 14,
-    color: "#666",
+    color: useTheme().colors.onSurfaceVariant,
     marginBottom: 4,
   },
   meta: {
     fontSize: 12,
-    color: "#666",
+    color: useTheme().colors.onSurfaceVariant,
     marginBottom: 2,
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: useTheme().dark ? useTheme().colors.surface : "#fff",
     padding: 24,
     margin: 20,
     borderRadius: 12,
@@ -622,10 +626,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
+    color: useTheme().colors.onSurface,
   },
   input: {
     marginBottom: 16,
-    backgroundColor: "#fff",
+    backgroundColor: useTheme().dark
+      ? useTheme().colors.surfaceVariant
+      : "#fff",
+    color: useTheme().colors.onSurface,
   },
   modalActions: {
     flexDirection: "row",
@@ -650,10 +658,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
     flex: 1,
+    color: useTheme().colors.onSurface,
   },
   addButton: {
     borderRadius: 8,
     elevation: 2,
+    backgroundColor: useTheme().dark ? useTheme().colors.primary : undefined,
   },
   addButtonContent: {
     flexDirection: "row",
@@ -662,7 +672,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   errorText: {
-    color: "#FF0000",
+    color: useTheme().colors.error,
     marginTop: -12,
     marginBottom: 12,
     marginLeft: 4,
