@@ -29,6 +29,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatMoney } from "../../utils/formatters";
 import RestockForm from "../../components/RestockForm";
+import { useThemeContext } from "../../contexts/ThemeContext";
 
 function generateSimpleId(): string {
   const timestamp = Date.now().toString(36);
@@ -52,7 +53,10 @@ interface InventoryItem {
 }
 
 const InventoryScreen = () => {
-  const theme = useTheme();
+  const { theme, isDarkMode } = useThemeContext
+    ? useThemeContext()
+    : { theme: useTheme(), isDarkMode: false };
+  const colors = theme.colors as any; // type assertion to allow custom keys
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const { items, addItem, updateItem, handleSale, deleteItem } =
@@ -231,7 +235,7 @@ Stock Value: KES ${item.stockValue}`;
     container: {
       flex: 1,
       padding: 16,
-      backgroundColor: "#fff",
+      backgroundColor: isDarkMode ? colors.background : "#fff",
     },
     header: {
       flexDirection: "row",
@@ -245,6 +249,17 @@ Stock Value: KES ${item.stockValue}`;
     },
     button: {
       marginLeft: 8,
+      backgroundColor: "#fff",
+      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
+      borderWidth: 1,
+      borderRadius: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      elevation: 2,
+    },
+    buttonText: {
+      color: "#222",
+      fontWeight: "bold",
     },
     statsContainer: {
       flexDirection: "row",
@@ -260,7 +275,9 @@ Stock Value: KES ${item.stockValue}`;
       borderRadius: 8,
       overflow: "hidden",
       borderLeftWidth: 4,
-      borderLeftColor: theme.colors.primary,
+      borderLeftColor: colors.primary,
+      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
+      borderWidth: 1,
     },
     statText: {
       fontSize: 16,
@@ -282,6 +299,8 @@ Stock Value: KES ${item.stockValue}`;
     },
     searchInput: {
       marginBottom: 8,
+      backgroundColor: colors.surfaceVariant,
+      color: colors.onSurface,
     },
     filtersRow: {
       flexDirection: "row",
@@ -291,14 +310,20 @@ Stock Value: KES ${item.stockValue}`;
     categoryDropdown: {
       flex: 1,
       marginRight: 8,
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
+      borderWidth: 1,
     },
     sortButtons: {
       flex: 1,
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
+      borderWidth: 1,
     },
     emptyText: {
       textAlign: "center",
       padding: 16,
-      color: "#666",
+      color: isDarkMode ? "#fff" : "#666",
     },
     modalContainer: {
       padding: 16,
@@ -318,15 +343,11 @@ Stock Value: KES ${item.stockValue}`;
     tableHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-      backgroundColor: "#f8f9fa",
+      backgroundColor: isDarkMode ? colors.background : "#f8f9fa",
       paddingVertical: 6,
       paddingHorizontal: 8,
       borderBottomWidth: 2,
-      borderBottomColor: "#e0e0e0",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
+      borderBottomColor: isDarkMode ? "#fff" : "#e0e0e0",
       elevation: 2,
     },
     tableHeaderCell: {
@@ -334,7 +355,7 @@ Stock Value: KES ${item.stockValue}`;
       fontWeight: "600",
       textAlign: "left",
       fontSize: 13,
-      color: "#444",
+      color: isDarkMode ? "#fff" : "#444",
     },
     tableRow: {
       flexDirection: "row",
@@ -342,8 +363,8 @@ Stock Value: KES ${item.stockValue}`;
       paddingVertical: 2,
       paddingHorizontal: 8,
       borderBottomWidth: 1,
-      borderBottomColor: "#e0e0e0",
-      backgroundColor: "white",
+      borderBottomColor: isDarkMode ? "#fff" : "#e0e0e0",
+      backgroundColor: isDarkMode ? colors.background : "white",
       minHeight: 28,
       alignItems: "center",
     },
@@ -352,7 +373,7 @@ Stock Value: KES ${item.stockValue}`;
       textAlign: "left",
       paddingVertical: 0,
       fontSize: 13,
-      color: "#333",
+      color: isDarkMode ? "#fff" : "#333",
       paddingRight: 4,
     },
     actionsContainer: {
@@ -394,7 +415,7 @@ Stock Value: KES ${item.stockValue}`;
       borderRadius: 8,
       overflow: "hidden",
       borderLeftWidth: 4,
-      borderLeftColor: theme.colors.primary,
+      borderLeftColor: colors.primary,
     },
     mobileFilters: {
       padding: 16,
@@ -412,7 +433,7 @@ Stock Value: KES ${item.stockValue}`;
     filterLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: theme.colors.primary,
+      color: colors.primary,
     },
     mobileCardList: {
       flex: 1,
@@ -540,7 +561,7 @@ Stock Value: KES ${item.stockValue}`;
         onPress={() => handleViewItem(item)}
         size={16}
         style={styles.actionButton}
-        iconColor={theme.colors.primary}
+        iconColor={colors.primary}
       />
       <IconButton
         icon="pencil"
@@ -550,7 +571,7 @@ Stock Value: KES ${item.stockValue}`;
         }}
         size={16}
         style={styles.actionButton}
-        iconColor={theme.colors.primary}
+        iconColor={colors.primary}
       />
       <IconButton
         icon="delete"
@@ -585,6 +606,7 @@ Stock Value: KES ${item.stockValue}`;
                 setItemModalVisible(true);
               }}
               style={styles.mobileButton}
+              labelStyle={{ color: "#222", fontWeight: "bold" }}
             >
               Create Item
             </Button>
@@ -811,6 +833,7 @@ Stock Value: KES ${item.stockValue}`;
                   setItemModalVisible(true);
                 }}
                 style={styles.button}
+                labelStyle={{ color: "#222", fontWeight: "bold" }}
               >
                 Create an Item
               </Button>

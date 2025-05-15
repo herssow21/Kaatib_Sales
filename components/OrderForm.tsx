@@ -108,7 +108,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const { items: inventoryItems, handleOrderSale } = useInventoryContext();
   const { categories } = useCategoryContext();
   const { showError, showSuccess, showWarning } = useAlertContext();
-  const { getCustomerByPhone } = useCustomerLookup();
+  const { getCustomerByPhone, createCustomer, addOrderToCustomer } = useCustomerLookup();
   const { methods } = usePaymentMethods();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -275,7 +275,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
       if (!validateForm()) {
         return;
@@ -352,6 +352,23 @@ const OrderForm: React.FC<OrderFormProps> = ({
         ),
         grandTotal: calculateGrandTotal(validItems, formData.discount),
       };
+
+      // Check if customer exists, if not create them
+      let customer = getCustomerByPhone(formData.clientContact);
+      if (!customer) {
+        customer = await createCustomer({
+          name: formData.clientName,
+          phone: formData.clientContact,
+          address: formData.address || '',
+        });
+      }
+
+      // Add order to customer's recent orders
+      await addOrderToCustomer(customer.id, {
+        id: newOrder.id,
+        date: newOrder.orderDate,
+        total: newOrder.grandTotal,
+      });
 
       onSubmit(newOrder);
       setFormData(initialFormState); // Reset form

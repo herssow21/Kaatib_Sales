@@ -289,31 +289,37 @@ const UserManagement = () => {
       return;
     }
 
-    let updatedCustomers: Customer[];
-
     if (isEditing && selectedCustomer) {
       // Update existing customer
-      updatedCustomers = customers.map((c) =>
+      const updatedCustomers = customers.map((c) =>
         c.id === selectedCustomer.id
           ? {
-              ...selectedCustomer,
-              ...newCustomer,
+              ...c,
+              name: newCustomer.name,
+              email: newCustomer.email || undefined,
+              phone: newCustomer.phone,
+              address: newCustomer.address || undefined,
             }
           : c
       );
+      saveCustomers(updatedCustomers);
       showFeedback("Customer updated successfully", "warning");
     } else {
       // Add new customer
       const newCustomerData: Customer = {
-        ...newCustomer,
         id: generateCustomerId(),
+        name: newCustomer.name,
+        email: newCustomer.email || undefined,
+        phone: newCustomer.phone,
+        address: newCustomer.address || undefined,
         totalOrders: 0,
+        recentOrders: [],
       };
-      updatedCustomers = [...customers, newCustomerData];
+      const updatedCustomers = [...customers, newCustomerData];
+      saveCustomers(updatedCustomers);
       showFeedback("Customer added successfully", "success");
     }
 
-    saveCustomers(updatedCustomers);
     setIsAddModalVisible(false);
     setIsEditing(false);
     setSelectedCustomer(null);
@@ -497,6 +503,22 @@ const UserManagement = () => {
     }, 100);
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -600,28 +622,8 @@ const UserManagement = () => {
     cell: {
       color: theme.colors.onSurface,
     },
-    footer: {
-      padding: 16,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.outline,
-      backgroundColor: theme.colors.surface,
-    },
-    footerText: {
-      color: theme.colors.onSurfaceVariant,
-    },
-    modalContent: {
-      backgroundColor: theme.colors.surface,
-      padding: 20,
-      margin: 20,
-      borderRadius: 8,
-      width: Platform.OS === "web" ? 500 : "90%",
-      alignSelf: "center",
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      marginBottom: 16,
-      color: theme.colors.onSurface,
+    menuButton: {
+      margin: 0,
     },
     input: {
       marginBottom: 16,
@@ -630,35 +632,75 @@ const UserManagement = () => {
       fontSize: 16,
       letterSpacing: 0.5,
     },
+    modalContainer: {
+      margin: 20,
+      borderRadius: 8,
+      maxHeight: "80%",
+    },
+    modalContent: {
+      padding: 16,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+    },
+    detailsSection: {
+      marginBottom: 16,
+    },
+    detailLabel: {
+      fontSize: 14,
+      marginBottom: 4,
+    },
+    detailValue: {
+      fontSize: 16,
+    },
+    recentOrdersSection: {
+      marginTop: 24,
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      marginBottom: 12,
+    },
+    orderItem: {
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    orderHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    orderDate: {
+      fontSize: 14,
+    },
+    orderTotal: {
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    orderId: {
+      fontSize: 12,
+    },
     modalActions: {
       flexDirection: "row",
       justifyContent: "flex-end",
-      marginTop: 16,
+      marginTop: 24,
       gap: 8,
     },
-    orderDetailsContainer: {
-      padding: 16,
-      backgroundColor: theme.colors.surface,
-      borderRadius: 8,
-      margin: 16,
+    actionButton: {
+      minWidth: 100,
     },
-    orderDetailsTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      marginBottom: 8,
-      color: theme.colors.onSurface,
-    },
-    orderDetailsText: {
-      color: theme.colors.onSurface,
-      marginBottom: 4,
-    },
-    orderList: {
-      marginTop: 8,
-      paddingLeft: 16,
-    },
-    orderItem: {
-      color: theme.colors.onSurfaceVariant,
-      marginBottom: 4,
+    deleteButton: {
+      borderColor: theme.colors.error,
     },
     dialogContent: {
       width: Platform.OS === "web" ? 400 : "auto",
@@ -682,12 +724,6 @@ const UserManagement = () => {
       justifyContent: "flex-end",
       marginTop: 16,
       gap: 8,
-    },
-    orderListContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 8,
-      marginTop: 8,
     },
     snackbar: {
       position: "absolute",
@@ -722,6 +758,16 @@ const UserManagement = () => {
     emptyStateText: {
       fontSize: 16,
       color: theme.colors.onSurface,
+      textAlign: "center",
+    },
+    footer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.outline,
+      backgroundColor: theme.colors.surface,
+    },
+    footerText: {
+      color: theme.colors.onSurfaceVariant,
       textAlign: "center",
     },
   });
@@ -850,121 +896,120 @@ const UserManagement = () => {
       <Portal>
         <Modal
           visible={isAddModalVisible}
-          onDismiss={resetForm}
-          contentContainerStyle={styles.modalContent}
+          onDismiss={() => {
+            resetForm();
+            setIsAddModalVisible(false);
+          }}
+          contentContainerStyle={styles.modalContainer}
         >
-          <Text style={styles.modalTitle}>
-            {isEditing ? "Edit Customer" : "Add New Customer"}
-          </Text>
-          <TextInput
-            label="Name *"
-            value={newCustomer.name}
-            onChangeText={(text) => handleInputChange("name", text)}
-            style={styles.input}
-            mode="outlined"
-            error={!!errors.name}
-            textContentType="none"
-            autoComplete="off"
-            selectionColor={theme.colors.primary}
-          />
-          <TextInput
-            label="Email"
-            value={newCustomer.email}
-            onChangeText={(text) => handleInputChange("email", text)}
-            onBlur={() => handleBlur("email", newCustomer.email)}
-            style={styles.input}
-            mode="outlined"
-            error={!!errors.email}
-            keyboardType="email-address"
-            textContentType="none"
-            autoComplete="off"
-            selectionColor={theme.colors.primary}
-          />
-          {errors.email && (
+          <View style={styles.modalContent}>
             <Text
-              style={{
-                color: theme.colors.error,
-                marginTop: -12,
-                marginBottom: 12,
-              }}
+              style={[styles.modalTitle, { color: theme.colors.onSurface }]}
             >
-              {errors.email}
+              {isEditing ? "Edit Customer" : "Add New Customer"}
             </Text>
-          )}
-          <TextInput
-            label="Phone *"
-            value={newCustomer.phone}
-            onChangeText={handlePhoneNumberChange}
-            onBlur={() => handleBlur("phone", newCustomer.phone)}
-            style={styles.input}
-            mode="outlined"
-            error={!!errors.phone}
-            keyboardType="phone-pad"
-            textContentType="none"
-            autoComplete="off"
-            selectionColor={theme.colors.primary}
-            maxLength={14} // (XXX) XXX-XXXX
-            inputMode="tel"
-            returnKeyType="done"
-            blurOnSubmit={true}
-          />
-          {errors.phone && (
-            <Text
-              style={{
-                color: theme.colors.error,
-                marginTop: -12,
-                marginBottom: 12,
-              }}
-            >
-              {errors.phone}
-            </Text>
-          )}
-          <TextInput
-            label="Address"
-            value={newCustomer.address}
-            onChangeText={(text) => handleInputChange("address", text)}
-            style={styles.input}
-            mode="outlined"
-            error={!!errors.address}
-            textContentType="none"
-            autoComplete="off"
-            selectionColor={theme.colors.primary}
-          />
-          <View style={styles.modalActions}>
-            <Button mode="outlined" onPress={resetForm}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleAddCustomer}
-              disabled={!newCustomer.name || !newCustomer.phone}
-            >
-              {isEditing ? "Save Changes" : "Add Customer"}
-            </Button>
+
+            <TextInput
+              label="Name"
+              value={newCustomer.name}
+              onChangeText={(value) => handleInputChange("name", value)}
+              onBlur={() => handleBlur("name", newCustomer.name)}
+              error={!!errors.name}
+              style={styles.searchInput}
+            />
+            {errors.name && (
+              <Text style={{ color: theme.colors.error, fontSize: 12 }}>
+                {errors.name}
+              </Text>
+            )}
+
+            <TextInput
+              label="Email"
+              value={newCustomer.email}
+              onChangeText={(value) => handleInputChange("email", value)}
+              onBlur={() => handleBlur("email", newCustomer.email)}
+              error={!!errors.email}
+              style={styles.searchInput}
+            />
+            {errors.email && (
+              <Text style={{ color: theme.colors.error, fontSize: 12 }}>
+                {errors.email}
+              </Text>
+            )}
+
+            <TextInput
+              label="Phone"
+              value={newCustomer.phone}
+              onChangeText={handlePhoneNumberChange}
+              onBlur={() => handleBlur("phone", newCustomer.phone)}
+              error={!!errors.phone}
+              style={styles.searchInput}
+            />
+            {errors.phone && (
+              <Text style={{ color: theme.colors.error, fontSize: 12 }}>
+                {errors.phone}
+              </Text>
+            )}
+
+            <TextInput
+              label="Address"
+              value={newCustomer.address}
+              onChangeText={(value) => handleInputChange("address", value)}
+              onBlur={() => handleBlur("address", newCustomer.address)}
+              error={!!errors.address}
+              style={styles.searchInput}
+            />
+            {errors.address && (
+              <Text style={{ color: theme.colors.error, fontSize: 12 }}>
+                {errors.address}
+              </Text>
+            )}
+
+            <View style={styles.modalActions}>
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  resetForm();
+                  setIsAddModalVisible(false);
+                }}
+                style={styles.actionButton}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleAddCustomer}
+                style={styles.actionButton}
+              >
+                {isEditing ? "Update" : "Add"}
+              </Button>
+            </View>
           </View>
         </Modal>
+      </Portal>
 
+      <Portal>
         <Dialog
           visible={isDeleteDialogVisible}
           onDismiss={() => setIsDeleteDialogVisible(false)}
-          style={styles.dialogContent}
+          style={styles.modalContainer}
         >
-          <Dialog.Title style={styles.dialogTitle}>
+          <Dialog.Title
+            style={[styles.modalTitle, { color: theme.colors.onSurface }]}
+          >
             Delete Customer
           </Dialog.Title>
           <Dialog.Content>
-            <Text style={styles.dialogMessage}>
-              Are you sure you want to delete {selectedCustomer?.name}? This
-              action cannot be undone.
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>
+              Are you sure you want to delete this customer? This action cannot
+              be undone.
             </Text>
           </Dialog.Content>
-          <Dialog.Actions style={styles.dialogActions}>
+          <Dialog.Actions style={styles.modalActions}>
             <Button
               mode="outlined"
-              onPress={() => {
-                setIsDeleteDialogVisible(false);
-                setSelectedCustomer(null);
-              }}
+              onPress={() => setIsDeleteDialogVisible(false)}
+              style={styles.actionButton}
             >
               Cancel
             </Button>
@@ -972,99 +1017,231 @@ const UserManagement = () => {
               mode="contained"
               onPress={() => {
                 if (selectedCustomer) {
-                  const updatedCustomers = customers.filter(
-                    (c) => c.id !== selectedCustomer.id
-                  );
-                  saveCustomers(updatedCustomers);
-                  setIsDeleteDialogVisible(false);
-                  setSelectedCustomer(null);
+                  handleDeleteCustomer(selectedCustomer);
                 }
+                setIsDeleteDialogVisible(false);
               }}
-              buttonColor={theme.colors.error}
-              textColor={theme.colors.onError}
+              style={[styles.actionButton, styles.deleteButton]}
             >
               Delete
             </Button>
           </Dialog.Actions>
         </Dialog>
-
-        {selectedCustomer && !isDeleteDialogVisible && !isEditing && (
-          <Modal
-            visible={!!selectedCustomer}
-            onDismiss={() => setSelectedCustomer(null)}
-            contentContainerStyle={styles.modalContent}
-          >
-            <Text style={styles.orderDetailsTitle}>Customer Details</Text>
-            <Text style={styles.orderDetailsText}>
-              <Text style={{ fontWeight: "bold" }}>Name:</Text>{" "}
-              {selectedCustomer.name}
-            </Text>
-            <Text style={styles.orderDetailsText}>
-              <Text style={{ fontWeight: "bold" }}>Email:</Text>{" "}
-              {selectedCustomer.email || "N/A"}
-            </Text>
-            <Text style={styles.orderDetailsText}>
-              <Text style={{ fontWeight: "bold" }}>Phone:</Text>{" "}
-              {selectedCustomer.phone}
-            </Text>
-            <Text style={styles.orderDetailsText}>
-              <Text style={{ fontWeight: "bold" }}>Address:</Text>{" "}
-              {selectedCustomer.address || "N/A"}
-            </Text>
-            <Text style={styles.orderDetailsText}>
-              <Text style={{ fontWeight: "bold" }}>Total Orders:</Text>{" "}
-              {selectedCustomer.totalOrders}
-            </Text>
-            <Text style={[styles.orderDetailsTitle, { marginTop: 16 }]}>
-              Recent Orders
-            </Text>
-            <View style={styles.orderListContainer}>
-              {Array.from({ length: selectedCustomer.totalOrders }, (_, i) => (
-                <Text key={i} style={styles.orderItem}>
-                  #{i + 1}
-                  {i < selectedCustomer.totalOrders - 1 ? ", " : ""}
-                </Text>
-              ))}
-            </View>
-            <View style={styles.modalActions}>
-              <Button mode="outlined" onPress={() => setSelectedCustomer(null)}>
-                Close
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => {
-                  setSelectedCustomer(null);
-                  router.push(`/orders?customerId=${selectedCustomer.id}`);
-                }}
-              >
-                View All Orders
-              </Button>
-            </View>
-          </Modal>
-        )}
       </Portal>
 
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
-        style={[styles.snackbar, getSnackbarStyle()]}
-        action={{
-          label: "Dismiss",
-          onPress: () => setSnackbarVisible(false),
-          textColor: theme.colors.onPrimary,
-        }}
+        style={[
+          styles.modalContainer,
+          { backgroundColor: getSnackbarStyle().backgroundColor },
+        ]}
       >
-        <View style={styles.snackbarContent}>
-          <IconButton
-            icon={getSnackbarIcon()}
-            size={20}
-            iconColor={theme.colors.onPrimary}
-            style={styles.snackbarIcon}
-          />
-          <Text style={styles.snackbarText}>{snackbarMessage}</Text>
+        <View style={styles.modalContent}>
+          {getSnackbarIcon()}
+          <Text style={[styles.modalTitle, { color: theme.colors.onPrimary }]}>
+            {snackbarMessage}
+          </Text>
         </View>
       </Snackbar>
+
+      <Portal>
+        <Modal
+          visible={selectedCustomer !== null}
+          onDismiss={() => setSelectedCustomer(null)}
+          contentContainerStyle={[
+            styles.modalContainer,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          {selectedCustomer && (
+            <ScrollView style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text
+                  style={[styles.modalTitle, { color: theme.colors.onSurface }]}
+                >
+                  Customer Details
+                </Text>
+                <IconButton
+                  icon="close"
+                  size={24}
+                  onPress={() => setSelectedCustomer(null)}
+                  iconColor={theme.colors.onSurface}
+                />
+              </View>
+
+              <View style={styles.detailsSection}>
+                <Text
+                  style={[
+                    styles.detailLabel,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  Name
+                </Text>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    { color: theme.colors.onSurface },
+                  ]}
+                >
+                  {selectedCustomer.name}
+                </Text>
+              </View>
+
+              <View style={styles.detailsSection}>
+                <Text
+                  style={[
+                    styles.detailLabel,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  Phone
+                </Text>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    { color: theme.colors.onSurface },
+                  ]}
+                >
+                  {selectedCustomer.phone}
+                </Text>
+              </View>
+
+              {selectedCustomer.email && (
+                <View style={styles.detailsSection}>
+                  <Text
+                    style={[
+                      styles.detailLabel,
+                      { color: theme.colors.onSurfaceVariant },
+                    ]}
+                  >
+                    Email
+                  </Text>
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      { color: theme.colors.onSurface },
+                    ]}
+                  >
+                    {selectedCustomer.email}
+                  </Text>
+                </View>
+              )}
+
+              {selectedCustomer.address && (
+                <View style={styles.detailsSection}>
+                  <Text
+                    style={[
+                      styles.detailLabel,
+                      { color: theme.colors.onSurfaceVariant },
+                    ]}
+                  >
+                    Address
+                  </Text>
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      { color: theme.colors.onSurface },
+                    ]}
+                  >
+                    {selectedCustomer.address}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.detailsSection}>
+                <Text
+                  style={[
+                    styles.detailLabel,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  Total Orders
+                </Text>
+                <Text
+                  style={[
+                    styles.detailValue,
+                    { color: theme.colors.onSurface },
+                  ]}
+                >
+                  {selectedCustomer.totalOrders}
+                </Text>
+              </View>
+
+              {selectedCustomer.recentOrders &&
+                selectedCustomer.recentOrders.length > 0 && (
+                  <View style={styles.recentOrdersSection}>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: theme.colors.onSurface },
+                      ]}
+                    >
+                      Recent Orders
+                    </Text>
+                    {selectedCustomer.recentOrders.map((order) => (
+                      <View
+                        key={order.id}
+                        style={[
+                          styles.orderItem,
+                          { backgroundColor: theme.colors.surfaceVariant },
+                        ]}
+                      >
+                        <View style={styles.orderHeader}>
+                          <Text
+                            style={[
+                              styles.orderDate,
+                              { color: theme.colors.onSurfaceVariant },
+                            ]}
+                          >
+                            {formatDate(order.date)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.orderTotal,
+                              { color: theme.colors.onSurface },
+                            ]}
+                          >
+                            {formatCurrency(order.total)}
+                          </Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.orderId,
+                            { color: theme.colors.onSurfaceVariant },
+                          ]}
+                        >
+                          Order #{order.id}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => handleEditCustomer(selectedCustomer)}
+                  style={styles.actionButton}
+                  textColor={theme.colors.primary}
+                >
+                  Edit
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={() => handleDeleteCustomer(selectedCustomer)}
+                  style={[styles.actionButton, styles.deleteButton]}
+                  textColor={theme.colors.error}
+                >
+                  Delete
+                </Button>
+              </View>
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
     </View>
   );
 };

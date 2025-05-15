@@ -27,6 +27,7 @@ import {
   GestureHandlerRootView,
   Swipeable,
 } from "react-native-gesture-handler";
+import { useThemeContext } from "../../contexts/ThemeContext";
 
 interface Expense {
   id: string;
@@ -55,7 +56,10 @@ const INITIAL_CATEGORIES = [
 ];
 
 export default function Expenses() {
-  const theme = useTheme();
+  const { theme, isDarkMode } = useThemeContext
+    ? useThemeContext()
+    : { theme: useTheme(), isDarkMode: false };
+  const colors = theme.colors as any;
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -389,14 +393,6 @@ export default function Expenses() {
     );
   };
 
-  const componentStyles = StyleSheet.create({
-    ...styles,
-    emptyStateText: {
-      fontSize: 16,
-      color: theme.colors.onSurfaceVariant,
-    },
-  });
-
   const renderFilterOptions = () => {
     if (Platform.OS === "web") {
       return (
@@ -457,6 +453,282 @@ export default function Expenses() {
     );
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      padding: 16,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "bold",
+      color: isDarkMode ? "#fff" : "#222",
+      marginBottom: 24,
+    },
+    summaryContainer: {
+      flexDirection: "row",
+      gap: 16,
+      marginBottom: 24,
+    },
+    summaryCard: {
+      flex: 1,
+      backgroundColor: "#fff",
+      borderRadius: 12,
+      padding: 20,
+      marginRight: 8,
+      elevation: 2,
+      borderLeftWidth: 6,
+      borderLeftColor: colors.primary,
+      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
+      borderWidth: 1,
+    },
+    summaryLabel: {
+      fontSize: 16,
+      color: "#7f8c8d",
+      fontWeight: "500",
+    },
+    summaryAmount: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    amountText: {
+      fontSize: 28,
+      fontWeight: "bold",
+      color: "#2c3e50",
+    },
+    currencySymbol: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#2c3e50",
+      marginRight: 2,
+    },
+    summaryPeriod: {
+      fontSize: 14,
+      color: "#7f8c8d",
+    },
+    expensesSection: {
+      flex: 1,
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      borderRadius: 12,
+      padding: 16,
+      elevation: 2,
+      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
+      borderWidth: 1,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: isDarkMode ? "#fff" : "#222",
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    filterButton: {
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
+      borderWidth: 1,
+      marginRight: 8,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+    },
+    filterButtonLabel: {
+      color: isDarkMode ? "#fff" : "#222",
+      fontWeight: "bold",
+    },
+    searchInput: {
+      marginBottom: 12,
+      backgroundColor: colors.surfaceVariant,
+      color: colors.onSurface,
+    },
+    expensesListWrapper: {
+      flex: 1,
+      marginTop: 8,
+    },
+    expensesList: {
+      flex: 1,
+    },
+    expensesListContent: {
+      paddingBottom: 32,
+    },
+    expenseCardContainer: {
+      marginBottom: 16,
+    },
+    expenseCard: {
+      backgroundColor: isDarkMode ? colors.card : "#fff",
+      borderRadius: 10,
+      padding: 16,
+      elevation: 2,
+      borderColor: isDarkMode ? colors.divider : "#e0e0e0",
+      borderWidth: 1,
+    },
+    expandedCard: {
+      borderColor: colors.primary,
+      borderWidth: 2,
+    },
+    expenseContent: {
+      flexDirection: "column",
+    },
+    expenseHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    titleContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    expenseTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDarkMode ? "#fff" : "#222",
+    },
+    categoryContainer: {
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      backgroundColor: isDarkMode ? colors.surfaceVariant : "#f1f5f9",
+    },
+    categoryText: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: isDarkMode ? "#fff" : "#222",
+    },
+    expenseAmount: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.error,
+    },
+    expenseDetails: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 4,
+    },
+    expenseDate: {
+      fontSize: 13,
+      color: isDarkMode ? "#fff" : "#666",
+    },
+    expenseDescription: {
+      fontSize: 13,
+      color: isDarkMode ? "#fff" : "#666",
+      marginLeft: 8,
+      flex: 1,
+    },
+    deleteAction: {
+      position: "absolute",
+      right: 16,
+      top: 16,
+      backgroundColor: colors.error,
+      borderRadius: 20,
+      padding: 4,
+      zIndex: 2,
+    },
+    emptyState: {
+      alignItems: "center",
+      marginTop: 32,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      color: isDarkMode ? "#fff" : colors.onSurfaceVariant,
+    },
+    footer: {
+      marginTop: 16,
+      alignItems: "center",
+    },
+    footerText: {
+      color: isDarkMode ? "#fff" : "#666",
+    },
+    seeMore: {
+      color: colors.primary,
+      textDecorationLine: "underline",
+      marginLeft: 4,
+    },
+    dialog: {
+      backgroundColor: isDarkMode ? colors.modalBackground : "#fff",
+    },
+    webDialog: {
+      minWidth: 400,
+      maxWidth: 500,
+      alignSelf: "center",
+    },
+    dialogTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: isDarkMode ? "#fff" : "#222",
+      marginBottom: 12,
+    },
+    dialogInput: {
+      backgroundColor: colors.inputBackground,
+      color: colors.modalText,
+      marginBottom: 12,
+    },
+    dialogActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      marginTop: 16,
+    },
+    dialogButton: {
+      marginLeft: 8,
+    },
+    errorText: {
+      color: colors.error,
+      marginTop: -8,
+      marginBottom: 8,
+      marginLeft: 4,
+      fontSize: 12,
+    },
+    filterContainer: {
+      flexGrow: 0,
+      marginRight: 8,
+    } as ViewStyle,
+    mobileFilterButton: {
+      marginRight: 8,
+      borderColor: "#DC2626",
+    } as ViewStyle,
+    filterDialog: {
+      borderRadius: 12,
+      backgroundColor: "#fff",
+    } as ViewStyle,
+    categoryButton: {
+      backgroundColor: isDarkMode ? colors.inputBackground : "#fff",
+      borderWidth: 1,
+      borderColor: errors.category
+        ? colors.error
+        : isDarkMode
+        ? "#fff"
+        : "#666",
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 12,
+      minHeight: 48,
+      justifyContent: "center",
+      alignItems: "flex-start",
+      width: "100%",
+    },
+    categoryButtonText: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDarkMode ? "#fff" : "#1B1B1B",
+    },
+    formInput: {
+      marginBottom: 16,
+      backgroundColor: isDarkMode ? colors.inputBackground : "#fff",
+      color: isDarkMode ? "#fff" : "#1B1B1B",
+    },
+  });
+
   return (
     <View style={styles.container}>
       <Text style={styles.pageTitle}>Expenses</Text>
@@ -464,64 +736,42 @@ export default function Expenses() {
       <View style={styles.summaryContainer}>
         <Surface
           style={[
-            componentStyles.summaryCard as ViewStyle,
+            styles.summaryCard,
             { borderLeftColor: theme.colors.primary },
           ]}
         >
-          <Text style={componentStyles.summaryLabel}>Total Expenses</Text>
-          <View style={componentStyles.summaryAmount as ViewStyle}>
-            <Text style={componentStyles.amountText}>
-              <Text style={componentStyles.currencySymbol}>$</Text>
+          <Text style={styles.summaryLabel}>Total Expenses</Text>
+          <View style={styles.summaryAmount}>
+            <Text style={styles.amountText}>
+              <Text style={styles.currencySymbol}>$</Text>
               {totalExpenses.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </Text>
           </View>
-          <Text style={componentStyles.summaryPeriod}>{getFilterTitle()}</Text>
+          <Text style={styles.summaryPeriod}>{getFilterTitle()}</Text>
         </Surface>
 
         <Surface
           style={[
-            componentStyles.summaryCard as ViewStyle,
+            styles.summaryCard,
             { backgroundColor: "#DC2626", borderLeftColor: "#b91c1c" },
           ]}
         >
-          <Text
-            style={[
-              componentStyles.summaryLabel as TextStyle,
-              { color: "#fff" },
-            ]}
-          >
+          <Text style={[styles.summaryLabel, { color: "#fff" }]}>
             Highest Expense
           </Text>
-          <View style={componentStyles.summaryAmount as ViewStyle}>
-            <Text
-              style={[
-                componentStyles.amountText as TextStyle,
-                { color: "#fff" },
-              ]}
-            >
-              <Text
-                style={[
-                  componentStyles.currencySymbol as TextStyle,
-                  { color: "#fff" },
-                ]}
-              >
-                $
-              </Text>
+          <View style={styles.summaryAmount}>
+            <Text style={[styles.amountText, { color: "#fff" }]}>
+              <Text style={[styles.currencySymbol, { color: "#fff" }]}>$</Text>
               {highestExpense.amount.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </Text>
           </View>
-          <Text
-            style={[
-              componentStyles.summaryPeriod as TextStyle,
-              { color: "#fff" },
-            ]}
-          >
+          <Text style={[styles.summaryPeriod, { color: "#fff" }]}>
             {highestExpense.title}
           </Text>
         </Surface>
@@ -610,7 +860,8 @@ export default function Expenses() {
                 value={formData.title}
                 onChangeText={handleTitleChange}
                 mode="outlined"
-                style={[styles.formInput, { backgroundColor: "#fff" }]}
+                style={styles.formInput}
+                inputStyle={{ color: styles.formInput.color }}
                 error={!!errors.title}
                 autoComplete="off"
                 textContentType="none"
@@ -625,7 +876,8 @@ export default function Expenses() {
                 onChangeText={handleAmountChange}
                 keyboardType="numeric"
                 mode="outlined"
-                style={[styles.formInput, { backgroundColor: "#fff" }]}
+                style={styles.formInput}
+                inputStyle={{ color: styles.formInput.color }}
                 error={!!errors.amount}
                 autoComplete="off"
                 textContentType="none"
@@ -637,10 +889,7 @@ export default function Expenses() {
 
               <TouchableOpacity
                 onPress={() => setShowCategories(true)}
-                style={[
-                  styles.categoryButton,
-                  errors.category && styles.categoryButtonError,
-                ]}
+                style={styles.categoryButton}
               >
                 <Text style={styles.categoryButtonText}>
                   {formData.category || "Select Category"}
@@ -685,7 +934,7 @@ export default function Expenses() {
         <Dialog
           visible={showCategories}
           onDismiss={() => setShowCategories(false)}
-          style={[Platform.OS === "web" && componentStyles.categoryDialog]}
+          style={[Platform.OS === "web" && styles.categoryDialog]}
         >
           <Dialog.Title>Select Category</Dialog.Title>
           <Dialog.Content>
@@ -697,7 +946,7 @@ export default function Expenses() {
                   <View
                     {...props}
                     style={[
-                      componentStyles.categoryDot,
+                      styles.categoryDot,
                       { backgroundColor: getCategoryColor(category) },
                     ]}
                   />
@@ -717,7 +966,7 @@ export default function Expenses() {
                   setErrors((prev) => ({ ...prev, category: undefined }));
                   setShowCategories(false);
                 }}
-                style={componentStyles.categoryItem}
+                style={styles.categoryItem}
               />
             ))}
           </Dialog.Content>
@@ -726,7 +975,7 @@ export default function Expenses() {
         <Dialog
           visible={showNewCategory}
           onDismiss={() => setShowNewCategory(false)}
-          style={[Platform.OS === "web" && componentStyles.categoryDialog]}
+          style={[Platform.OS === "web" && styles.categoryDialog]}
         >
           <Dialog.Title>Create New Category</Dialog.Title>
           <Dialog.Content>
@@ -738,11 +987,11 @@ export default function Expenses() {
                 setCategoryError("");
               }}
               mode="outlined"
-              style={componentStyles.formInput}
+              style={styles.formInput}
               error={!!categoryError}
             />
             {categoryError && (
-              <Text style={componentStyles.errorText}>{categoryError}</Text>
+              <Text style={styles.errorText}>{categoryError}</Text>
             )}
           </Dialog.Content>
           <Dialog.Actions>
@@ -892,308 +1141,3 @@ export default function Expenses() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 16,
-  },
-  pageTitle: {
-    fontSize: Platform.OS === "web" ? 24 : 32,
-    fontWeight: "bold",
-    color: "#1B1B1B",
-    marginBottom: Platform.OS === "web" ? 12 : 24,
-  },
-  summaryContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: Platform.OS === "web" ? 12 : 24,
-    gap: 12,
-    ...(Platform.OS === "web" && {
-      maxHeight: 80,
-    }),
-  },
-  summaryCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    backgroundColor: "#fff",
-    borderLeftWidth: 4,
-    borderLeftColor: "#666",
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  summaryAmount: {
-    flexDirection: "row",
-    justifyContent: Platform.OS === "web" ? "flex-end" : "flex-start",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  amountText: {
-    fontSize: Platform.OS === "web" ? 24 : 20,
-    fontWeight: "bold",
-    color: "#1B1B1B",
-  },
-  summaryPeriod: {
-    fontSize: 12,
-    color: "#666",
-  },
-  expensesSection: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginTop: Platform.OS === "web" ? 8 : 16,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1B1B1B",
-  },
-  searchInput: {
-    marginBottom: 12,
-    backgroundColor: "#fff",
-  },
-  expensesListWrapper: {
-    flex: 1,
-    minHeight: 0,
-    ...(Platform.OS === "web" && {
-      height: 400, // Fixed height for web to ensure scrolling works properly
-    }),
-  },
-  expensesList: {
-    flex: 1,
-    width: "100%",
-  },
-  expensesListContent: {
-    paddingBottom: 16,
-  },
-  expenseCardContainer: {
-    position: "relative",
-    marginBottom: 6,
-    flexDirection: "row",
-  },
-  expenseCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  expenseContent: {
-    padding: 10,
-    paddingBottom: 14,
-  },
-  expenseHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 12,
-  },
-  expenseTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1B1B1B",
-  },
-  expenseAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1B1B1B",
-  },
-  expenseDetails: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 6,
-    paddingTop: 2,
-  },
-  expenseDate: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "500",
-  },
-  categoryContainer: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  expenseDescription: {
-    fontSize: 12,
-    color: "#666",
-    flex: 1,
-    marginLeft: 10,
-  },
-  footer: {
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-  footerText: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 12,
-  },
-  seeMore: {
-    color: "#DC2626",
-    textDecorationLine: "underline",
-  },
-  dialog: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    maxHeight: "90%",
-  },
-  dialogTitle: {
-    fontSize: 20,
-    textAlign: "center",
-    color: "#1B1B1B",
-  },
-  dialogContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  formContainer: {
-    gap: 8,
-  },
-  formInput: {
-    marginBottom: 16,
-    backgroundColor: "#fff",
-  },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 12,
-    marginTop: -12,
-    marginBottom: 12,
-  },
-  divider: {
-    backgroundColor: "#eee",
-  },
-  dialogActions: {
-    padding: 16,
-    justifyContent: "space-between",
-  },
-  dialogButton: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  categoryItem: {
-    paddingVertical: 8,
-  },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  categoryButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#666",
-    borderRadius: 8,
-    padding: 12,
-  },
-  categoryButtonError: {
-    borderColor: "#DC2626",
-  },
-  categoryButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1B1B1B",
-  },
-  currencySymbol: {
-    fontSize: 16,
-    color: "#1B1B1B",
-    marginRight: 2,
-  },
-  webDialog: {
-    maxWidth: 400,
-    width: "100%",
-    alignSelf: "center",
-  },
-  categoryDialog: {
-    maxWidth: 300,
-    alignSelf: "center",
-  },
-  deleteAction: {
-    backgroundColor: "#DC2626",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 60,
-    marginLeft: 1,
-    borderRadius: 12,
-  },
-  expandedCard: {
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  confirmationText: {
-    fontSize: 16,
-    color: "#1B1B1B",
-    textAlign: "center",
-    paddingVertical: 8,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  } as ViewStyle,
-  filterContainer: {
-    flexGrow: 0,
-    marginRight: 8,
-  } as ViewStyle,
-  filterButton: {
-    marginRight: 4,
-    borderColor: "#DC2626",
-  } as ViewStyle,
-  filterButtonLabel: {
-    fontSize: 12,
-    marginVertical: 0,
-  } as TextStyle,
-  mobileFilterButton: {
-    marginRight: 8,
-    borderColor: "#DC2626",
-  } as ViewStyle,
-  filterDialog: {
-    borderRadius: 12,
-    backgroundColor: "#fff",
-  } as ViewStyle,
-});

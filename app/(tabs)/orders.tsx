@@ -33,9 +33,13 @@ import { useInventoryContext } from "../../contexts/InventoryContext";
 import { useAlertContext } from "../../contexts/AlertContext";
 import { printReceipt } from "../../utils/printReceipt";
 import ThermalPrinter from "../../utils/ThermalPrinter";
+import { useThemeContext } from "../../contexts/ThemeContext";
 
 export default function Orders() {
-  const theme = useTheme();
+  const { theme, isDarkMode } = useThemeContext
+    ? useThemeContext()
+    : { theme: useTheme(), isDarkMode: false };
+  const colors = theme.colors as any;
   const { categories } = useCategoryContext();
   const {
     items: inventoryItems,
@@ -95,34 +99,38 @@ export default function Orders() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#f5f5f5",
+      backgroundColor: isDarkMode ? colors.background : "#f5f5f5",
     },
     header: {
       padding: 16,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: isDarkMode
+        ? colors.headerBackground
+        : theme.colors.primary,
       borderBottomLeftRadius: 16,
       borderBottomRightRadius: 16,
     },
     headerText: {
       fontWeight: "bold",
       fontSize: 24,
-      color: theme.colors.onPrimary,
+      color: isDarkMode ? colors.headerText : theme.colors.onPrimary,
     },
     tableContainer: {
       margin: 16,
       borderRadius: 8,
-      backgroundColor: "white",
+      backgroundColor: isDarkMode ? colors.card : "white",
       elevation: 2,
     },
     tableHeader: {
       flexDirection: "row",
-      backgroundColor: theme.colors.primary,
+      backgroundColor: isDarkMode
+        ? colors.headerBackground
+        : theme.colors.primary,
       paddingVertical: 8,
       paddingHorizontal: 8,
       width: "100%",
     },
     headerCell: {
-      color: theme.colors.onPrimary,
+      color: isDarkMode ? colors.headerText : theme.colors.onPrimary,
       fontSize: 13,
       fontWeight: "600",
       textAlign: "left",
@@ -134,11 +142,11 @@ export default function Orders() {
     tableRow: {
       flexDirection: "row",
       borderBottomWidth: 1,
-      borderBottomColor: "#e5e7eb",
+      borderBottomColor: isDarkMode ? colors.divider : "#e5e7eb",
       paddingVertical: 2,
       paddingHorizontal: 8,
       alignItems: "center",
-      backgroundColor: "white",
+      backgroundColor: isDarkMode ? colors.background : "white",
       width: "100%",
     },
     tableCell: {
@@ -146,12 +154,12 @@ export default function Orders() {
       paddingVertical: 4,
       justifyContent: "center",
       borderRightWidth: 2,
-      borderRightColor: "#ddd",
+      borderRightColor: isDarkMode ? colors.divider : "#ddd",
       borderStyle: "dotted",
     },
     tableCellText: {
       fontSize: 13,
-      color: "#374151",
+      color: isDarkMode ? "#fff" : "#374151",
     },
     statusBadge: {
       paddingHorizontal: 4,
@@ -164,7 +172,7 @@ export default function Orders() {
     tableFooter: {
       padding: 16,
       borderTopWidth: 1,
-      borderTopColor: "#e0e0e0",
+      borderTopColor: isDarkMode ? colors.divider : "#e0e0e0",
     },
     modalContainer: Platform.select({
       web: {
@@ -184,13 +192,13 @@ export default function Orders() {
     modalContent: Platform.select({
       web: {
         width: "58%",
-        backgroundColor: "white",
+        backgroundColor: isDarkMode ? colors.modalBackground : "white",
         borderRadius: 20,
         padding: 20,
         maxHeight: "90%",
       },
       android: {
-        backgroundColor: "white",
+        backgroundColor: isDarkMode ? colors.modalBackground : "white",
         borderRadius: 20,
         padding: 20,
         height: "95%",
@@ -211,15 +219,16 @@ export default function Orders() {
       width: 160,
       height: 40,
       marginRight: 16,
-      backgroundColor: "#f8f9fa",
+      backgroundColor: isDarkMode ? colors.background : "#f8f9fa",
       borderRadius: 8,
+      color: isDarkMode ? "#fff" : "#222",
     },
     filterContainer: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       padding: 16,
-      backgroundColor: "white",
+      backgroundColor: isDarkMode ? colors.background : "white",
       borderRadius: 8,
       margin: 16,
     },
@@ -232,6 +241,8 @@ export default function Orders() {
     searchbar: {
       width: "30%",
       marginLeft: 16,
+      backgroundColor: isDarkMode ? colors.surfaceVariant : "#fff",
+      color: isDarkMode ? "#fff" : "#222",
     },
     fab: {
       position: "absolute",
@@ -242,14 +253,14 @@ export default function Orders() {
     tableWrapper: Platform.select({
       web: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: isDarkMode ? colors.card : "white",
         borderRadius: 8,
         margin: 16,
         overflow: "hidden",
       },
       android: {
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: isDarkMode ? colors.card : "white",
         borderRadius: 8,
         marginHorizontal: 16,
         marginTop: 2,
@@ -294,7 +305,7 @@ export default function Orders() {
     detailsSection: {
       marginVertical: 16,
       padding: 16,
-      backgroundColor: "#f8f9fa",
+      backgroundColor: isDarkMode ? colors.card : "#f8f9fa",
       borderRadius: 8,
     },
     itemRow: {
@@ -302,18 +313,19 @@ export default function Orders() {
       justifyContent: "space-between",
       padding: 8,
       borderBottomWidth: 1,
-      borderBottomColor: "#e0e0e0",
+      borderBottomColor: isDarkMode ? colors.divider : "#e0e0e0",
     },
     detailsFooter: {
       marginTop: 16,
       padding: 16,
       borderTopWidth: 1,
-      borderTopColor: "#e0e0e0",
+      borderTopColor: isDarkMode ? colors.divider : "#e0e0e0",
     },
     grandTotal: {
       fontSize: 18,
       fontWeight: "bold",
       marginTop: 8,
+      color: isDarkMode ? "#fff" : "#222",
     },
     actionButtons: {
       flexDirection: "row",
@@ -326,10 +338,10 @@ export default function Orders() {
     },
     mobileTableRow: {
       flexDirection: "row",
-      backgroundColor: "white",
+      backgroundColor: isDarkMode ? colors.card : "white",
       width: "100%",
       borderBottomWidth: 2,
-      borderBottomColor: "#ddd",
+      borderBottomColor: isDarkMode ? colors.divider : "#ddd",
       borderStyle: "dotted",
       minHeight: 40,
     },
@@ -339,12 +351,12 @@ export default function Orders() {
     },
     mobileLabel: {
       fontSize: 12,
-      color: "#666",
+      color: isDarkMode ? "#fff" : "#666",
       marginBottom: 4,
     },
     mobileValue: {
       fontSize: 14,
-      color: "#333",
+      color: isDarkMode ? "#fff" : "#333",
       marginBottom: 8,
     },
     mobileHeader: {
@@ -358,7 +370,7 @@ export default function Orders() {
       gap: 8,
       marginTop: 8,
       borderTopWidth: 1,
-      borderTopColor: "#e0e0e0",
+      borderTopColor: isDarkMode ? colors.divider : "#e0e0e0",
       paddingTop: 8,
     },
     mobileFilters: {
@@ -367,6 +379,8 @@ export default function Orders() {
     },
     mobileSearchbar: {
       marginBottom: 8,
+      backgroundColor: isDarkMode ? colors.surfaceVariant : "#fff",
+      color: isDarkMode ? "#fff" : "#222",
     },
     mobileFilterRow: {
       flexDirection: "row",
@@ -375,7 +389,9 @@ export default function Orders() {
     },
     mobileTableHeader: {
       flexDirection: "row",
-      backgroundColor: theme.colors.primary,
+      backgroundColor: isDarkMode
+        ? colors.headerBackground
+        : theme.colors.primary,
       width: "100%",
       borderBottomWidth: 2,
       borderBottomColor: "rgba(255,255,255,0.3)",
@@ -383,7 +399,7 @@ export default function Orders() {
     },
     mobileHeaderCell: {
       padding: 8,
-      color: theme.colors.onPrimary,
+      color: isDarkMode ? colors.headerText : theme.colors.onPrimary,
       fontWeight: "bold",
       textAlign: "center",
       borderRightWidth: 2,
@@ -394,7 +410,7 @@ export default function Orders() {
       padding: 4,
       textAlign: "center",
       borderRightWidth: 2,
-      borderRightColor: "#ddd",
+      borderRightColor: isDarkMode ? colors.divider : "#ddd",
       borderStyle: "dotted",
       justifyContent: "center",
     },
@@ -402,7 +418,7 @@ export default function Orders() {
       width: 100,
       padding: 8,
       borderRightWidth: 2,
-      borderRightColor: "#ddd",
+      borderRightColor: isDarkMode ? colors.divider : "#ddd",
       borderStyle: "dotted",
     },
     actionsCell: {
@@ -418,6 +434,12 @@ export default function Orders() {
     filterButton: {
       height: 40,
       justifyContent: "center",
+      backgroundColor: isDarkMode ? colors.background : "#fff",
+      borderColor: isDarkMode ? "#fff" : "#e0e0e0",
+      borderWidth: 1,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
     },
     webFilters: {
       flexDirection: "row",

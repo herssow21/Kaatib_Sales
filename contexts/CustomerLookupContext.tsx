@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export interface Order {
+  id: string;
+  date: string;
+  total: number;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -8,6 +14,7 @@ export interface Customer {
   phone: string;
   address?: string;
   totalOrders: number;
+  recentOrders: Order[];
 }
 
 export interface CustomerLookupContextType {
@@ -16,6 +23,10 @@ export interface CustomerLookupContextType {
   getCustomerByPhone: (phone: string) => Customer | undefined;
   getCustomerByEmail: (email: string) => Customer | undefined;
   saveCustomers: (customers: Customer[]) => Promise<void>;
+  addOrderToCustomer: (customerId: string, order: Order) => Promise<void>;
+  createCustomer: (
+    customerData: Omit<Customer, "id" | "totalOrders" | "recentOrders">
+  ) => Promise<Customer>;
 }
 
 export const CustomerLookupContext =
@@ -69,6 +80,7 @@ export const CustomerLookupProvider: React.FC<{
         JSON.stringify(updatedCustomers)
       );
       setCustomers(updatedCustomers);
+      console.log("Saved customers:", updatedCustomers);
     } catch (error) {
       console.error("Error saving customers:", error);
     }
@@ -86,12 +98,48 @@ export const CustomerLookupProvider: React.FC<{
     return emailMap.get(normalizedEmail);
   };
 
+  const addOrderToCustomer = async (customerId: string, order: Order) => {
+    const updatedCustomers = customers.map((customer) => {
+      if (customer.id === customerId) {
+        const recentOrders = [order, ...(customer.recentOrders || [])].slice(
+          0,
+          5
+        );
+        return {
+          ...customer,
+          totalOrders: customer.totalOrders + 1,
+          recentOrders,
+        };
+      }
+      return customer;
+    });
+    await saveCustomers(updatedCustomers);
+  };
+
+  const createCustomer = async (
+    customerData: Omit<Customer, "id" | "totalOrders" | "recentOrders">
+  ) => {
+    const newCustomer: Customer = {
+      ...customerData,
+      id: Math.random().toString(36).substr(2, 9),
+      totalOrders: 0,
+      recentOrders: [],
+    };
+
+    const updatedCustomers = [...customers, newCustomer];
+    await saveCustomers(updatedCustomers);
+    console.log("Created new customer:", newCustomer);
+    return newCustomer;
+  };
+
   const contextValue: CustomerLookupContextType = {
     customers,
     setCustomers,
     getCustomerByPhone,
     getCustomerByEmail,
     saveCustomers,
+    addOrderToCustomer,
+    createCustomer,
   };
 
   return (

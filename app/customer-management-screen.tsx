@@ -187,6 +187,7 @@ const CustomerManagementScreen = () => {
       const newCustomerWithId = {
         ...newCustomer,
         id: generateCustomerId(),
+        recentOrders: [],
       };
       saveCustomers([...customers, newCustomerWithId]);
       setSnackbarMessage("Customer added successfully");
