@@ -966,6 +966,444 @@ export default function Orders() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.headerText}>
+          Order Management
+        </Text>
+        <View style={styles.actionContainer}>
+          <Button
+            icon="refresh"
+            mode="outlined"
+            onPress={() => {
+              /* TODO: implement refresh */
+            }}
+            textColor={isDarkMode ? colors.primary : colors.text}
+            style={{
+              borderColor: colors.primary,
+              borderRadius: 8,
+              marginRight: 8,
+              backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
+            }}
+          >
+            Refresh
+          </Button>
+          <Button
+            icon="download"
+            mode="outlined"
+            onPress={() => {
+              /* TODO: implement export */
+            }}
+            style={{
+              borderColor: colors.primary,
+              borderRadius: 8,
+              marginRight: 8,
+              backgroundColor: colors.primary,
+            }}
+            labelStyle={{ color: colors.onPrimary, fontWeight: "bold" }}
+          >
+            Export
+          </Button>
+          <Button
+            icon="plus"
+            mode="contained"
+            onPress={() => setFormVisible(true)}
+            style={{
+              backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
+            }}
+            textColor={isDarkMode ? colors.white : colors.text}
+          >
+            Create Order
+          </Button>
+        </View>
+      </View>
+
+      {/* Main Card */}
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderRadius: 12,
+          margin: 16,
+          padding: 24,
+          elevation: 1,
+        }}
+      >
+        <Text
+          style={{
+            fontWeight: "bold",
+            fontSize: 22,
+            color: colors.text,
+            marginBottom: 2,
+          }}
+        >
+          Orders
+        </Text>
+        <Text style={{ color: colors.textSecondary, marginBottom: 18 }}>
+          View and manage all customer orders in one place.
+        </Text>
+
+        {/* Filters and Search */}
+        <View
+          style={{
+            flexDirection: isMobile ? "column" : "row",
+            gap: 12,
+            marginBottom: 18,
+            alignItems: isMobile ? "stretch" : "center",
+          }}
+        >
+          <Menu
+            visible={isCategoryMenuVisible}
+            onDismiss={() => setIsCategoryMenuVisible(false)}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setIsCategoryMenuVisible(true)}
+                style={{
+                  borderColor: colors.outline,
+                  borderRadius: 8,
+                  minWidth: 140,
+                }}
+                textColor={colors.text}
+                icon="chevron-down"
+              >
+                {selectedCategory === "all"
+                  ? "All Categories"
+                  : selectedCategory}
+              </Button>
+            }
+            theme={{ colors: { surface: colors.surface } }}
+          >
+            <Menu.Item
+              onPress={() => {
+                setSelectedCategory("all");
+                setIsCategoryMenuVisible(false);
+              }}
+              title="All Categories"
+              titleStyle={{ color: colors.text }}
+            />
+            {categories.map((cat) => (
+              <Menu.Item
+                key={cat.id}
+                onPress={() => {
+                  setSelectedCategory(cat.name);
+                  setIsCategoryMenuVisible(false);
+                }}
+                title={cat.name}
+                titleStyle={{ color: colors.text }}
+              />
+            ))}
+          </Menu>
+          <Menu
+            visible={isSortMenuVisible}
+            onDismiss={() => setSortMenuVisible(false)}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setSortMenuVisible(true)}
+                style={{
+                  borderColor: colors.outline,
+                  borderRadius: 8,
+                  minWidth: 140,
+                }}
+                textColor={colors.text}
+                icon="chevron-down"
+              >
+                {sortBy === "date"
+                  ? "Newest First"
+                  : sortBy === "name"
+                  ? "Customer"
+                  : sortBy === "status"
+                  ? "Status"
+                  : sortBy === "paymentMode"
+                  ? "Payment"
+                  : "Category"}
+              </Button>
+            }
+            theme={{ colors: { surface: colors.surface } }}
+          >
+            <Menu.Item
+              onPress={() => {
+                setSortBy("date");
+                setSortMenuVisible(false);
+              }}
+              title="Newest First"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setSortBy("name");
+                setSortMenuVisible(false);
+              }}
+              title="Customer"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setSortBy("status");
+                setSortMenuVisible(false);
+              }}
+              title="Status"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setSortBy("paymentMode");
+                setSortMenuVisible(false);
+              }}
+              title="Payment"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setSortBy("category");
+                setSortMenuVisible(false);
+              }}
+              title="Category"
+              titleStyle={{ color: colors.text }}
+            />
+          </Menu>
+          <Menu
+            visible={isTimeMenuVisible}
+            onDismiss={() => setTimeMenuVisible(false)}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setTimeMenuVisible(true)}
+                style={{
+                  borderColor: colors.outline,
+                  borderRadius: 8,
+                  minWidth: 120,
+                }}
+                textColor={colors.text}
+                icon="chevron-down"
+              >
+                {timeFilter === "today"
+                  ? "Today"
+                  : timeFilter === "week"
+                  ? "This Week"
+                  : timeFilter === "month"
+                  ? "This Month"
+                  : "All"}
+              </Button>
+            }
+            theme={{ colors: { surface: colors.surface } }}
+          >
+            <Menu.Item
+              onPress={() => {
+                setTimeFilter("today");
+                setTimeMenuVisible(false);
+              }}
+              title="Today"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setTimeFilter("week");
+                setTimeMenuVisible(false);
+              }}
+              title="This Week"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setTimeFilter("month");
+                setTimeMenuVisible(false);
+              }}
+              title="This Month"
+              titleStyle={{ color: colors.text }}
+            />
+            <Menu.Item
+              onPress={() => {
+                setTimeFilter("all");
+                setTimeMenuVisible(false);
+              }}
+              title="All"
+              titleStyle={{ color: colors.text }}
+            />
+          </Menu>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <TextInput
+              placeholder="Search orders by ID, client, or product..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                flex: 1,
+                backgroundColor: colors.inputBackground,
+                borderRadius: 8,
+              }}
+              mode="outlined"
+              theme={{ colors: { ...colors, primary: colors.primary } }}
+              left={
+                <TextInput.Icon icon="magnify" color={colors.placeholder} />
+              }
+            />
+            <IconButton
+              icon="filter-variant"
+              onPress={() => {}}
+              style={{
+                backgroundColor: colors.surfaceVariant,
+                borderRadius: 8,
+              }}
+              iconColor={colors.textSecondary}
+            />
+          </View>
+        </View>
+
+        {/* Table */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 10,
+            marginTop: 12,
+            borderWidth: 1,
+            borderColor: colors.outline,
+            overflow: "hidden",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: colors.surfaceVariant,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.divider,
+            }}
+          >
+            <Text style={{ flex: 1.2, fontWeight: "bold", color: colors.text }}>
+              Order ID
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Category
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Date
+            </Text>
+            <Text style={{ flex: 1.2, fontWeight: "bold", color: colors.text }}>
+              Client
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Contact
+            </Text>
+            <Text style={{ flex: 0.8, fontWeight: "bold", color: colors.text }}>
+              Items
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Amount
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Status
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
+              Actions
+            </Text>
+          </View>
+          {displayOrders.length === 0 ? (
+            <View style={{ alignItems: "center", padding: 32 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 16,
+                  marginBottom: 4,
+                }}
+              >
+                No orders found
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                Create a new order or adjust your filters
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={{ maxHeight: 420 }}>
+              {displayOrders.map((order) => (
+                <View
+                  key={order.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.divider,
+                    backgroundColor: colors.surface,
+                  }}
+                >
+                  <Text style={{ flex: 1.2, color: colors.text }}>
+                    {order.id}
+                  </Text>
+                  <Text style={{ flex: 1, color: colors.text }}>
+                    {getCategoryIcon(order)}
+                  </Text>
+                  <Text style={{ flex: 1, color: colors.text }}>
+                    {new Date(order.orderDate).toLocaleDateString()}
+                  </Text>
+                  <Text style={{ flex: 1.2, color: colors.text }}>
+                    {order.clientName}
+                  </Text>
+                  <Text style={{ flex: 1, color: colors.text }}>
+                    {order.clientContact}
+                  </Text>
+                  <Text style={{ flex: 0.8, color: colors.text }}>
+                    {order.totalOrderItems}
+                  </Text>
+                  <Text style={{ flex: 1, color: colors.text }}>
+                    {order.grandTotal}
+                  </Text>
+                  <Text style={{ flex: 1, color: colors.text }}>
+                    {order.paymentStatus}
+                  </Text>
+                  <View style={{ flex: 1, flexDirection: "row", gap: 4 }}>
+                    <IconButton
+                      icon="eye"
+                      size={18}
+                      onPress={() => handleViewDetails(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="printer"
+                      size={18}
+                      onPress={() => handlePrint(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="pencil"
+                      size={18}
+                      onPress={() => handleEdit(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="delete"
+                      size={18}
+                      onPress={() => handleDelete(order.id)}
+                      iconColor={colors.error}
+                    />
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          <View
+            style={{
+              padding: 12,
+              backgroundColor: colors.surfaceVariant,
+              borderTopWidth: 1,
+              borderTopColor: colors.divider,
+            }}
+          >
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              Showing {displayOrders.length} of {orders.length} orders
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <Modal
         visible={isFormVisible}
         animationType="slide"
@@ -989,428 +1427,6 @@ export default function Orders() {
           </View>
         </View>
       </Modal>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.headerText}>
-          Manage Orders
-        </Text>
-      </View>
-
-      {isMobile ? (
-        <View style={styles.mobileFilters}>
-          <Searchbar
-            placeholder="Search orders..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.mobileSearchbar}
-          />
-          <View style={styles.mobileFilterRow}>
-            <Menu
-              visible={isCategoryMenuVisible}
-              onDismiss={() => setIsCategoryMenuVisible(false)}
-              anchor={
-                <Button
-                  mode="outlined"
-                  onPress={() => setIsCategoryMenuVisible(true)}
-                >
-                  {selectedCategory === "all" ? "All Categories" : "Category"}
-                </Button>
-              }
-            >
-              <Menu.Item
-                onPress={() => {
-                  setSelectedCategory("all");
-                  setIsCategoryMenuVisible(false);
-                }}
-                title="All Categories"
-              />
-              {categories.map((category) => (
-                <Menu.Item
-                  key={category.id}
-                  onPress={() => {
-                    setSelectedCategory(category.name);
-                    setIsCategoryMenuVisible(false);
-                  }}
-                  title={category.name}
-                />
-              ))}
-            </Menu>
-            <Menu
-              visible={isTimeMenuVisible}
-              onDismiss={() => setTimeMenuVisible(false)}
-              anchor={
-                <Button
-                  mode="outlined"
-                  onPress={() => setTimeMenuVisible(true)}
-                  style={styles.filterButton}
-                >
-                  {timePeriods.find((p) => p.value === timeFilter)?.label ||
-                    "Select Period"}
-                </Button>
-              }
-            >
-              {timePeriods.map((period) => (
-                <Menu.Item
-                  key={period.value}
-                  onPress={() => {
-                    setTimeFilter(period.value);
-                    setTimeMenuVisible(false);
-                  }}
-                  title={period.label}
-                />
-              ))}
-            </Menu>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.filterContainer}>
-          <View style={styles.filtersRow}>
-            <Picker
-              selectedValue={selectedCategory}
-              onValueChange={(value) => setSelectedCategory(value)}
-              style={styles.filterPicker}
-            >
-              <Picker.Item label="All Categories" value="all" />
-              {categories.map((category) => (
-                <Picker.Item
-                  key={category.id}
-                  label={category.name}
-                  value={category.name}
-                />
-              ))}
-            </Picker>
-
-            {Platform.OS === "web" ? (
-              <View style={styles.webFilters}>
-                <Picker
-                  selectedValue={sortBy}
-                  onValueChange={(value) => setSortBy(value)}
-                  style={styles.filterPicker}
-                >
-                  <Picker.Item label="Sort by Date" value="date" />
-                  <Picker.Item label="Sort by Name" value="name" />
-                  <Picker.Item label="Sort by Status" value="status" />
-                  <Picker.Item
-                    label="Sort by Payment Mode"
-                    value="paymentMode"
-                  />
-                  <Picker.Item label="Sort by Category" value="category" />
-                </Picker>
-                <IconButton
-                  icon={
-                    sortOrder === "desc" ? "sort-descending" : "sort-ascending"
-                  }
-                  onPress={() =>
-                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
-                  }
-                />
-              </View>
-            ) : (
-              <Menu
-                visible={isSortMenuVisible}
-                onDismiss={() => setSortMenuVisible(false)}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={() => setSortMenuVisible(true)}
-                    style={styles.sortButton}
-                  >
-                    {`Sort by ${
-                      sortBy.charAt(0).toUpperCase() + sortBy.slice(1)
-                    }`}
-                  </Button>
-                }
-              >
-                <Menu.Item
-                  onPress={() => {
-                    setSortBy("date");
-                    setSortMenuVisible(false);
-                  }}
-                  title="Sort by Date"
-                />
-                <Menu.Item
-                  onPress={() => {
-                    setSortBy("name");
-                    setSortMenuVisible(false);
-                  }}
-                  title="Sort by Name"
-                />
-                <Menu.Item
-                  onPress={() => {
-                    setSortBy("status");
-                    setSortMenuVisible(false);
-                  }}
-                  title="Sort by Status"
-                />
-                <Menu.Item
-                  onPress={() => {
-                    setSortBy("paymentMode");
-                    setSortMenuVisible(false);
-                  }}
-                  title="Sort by Payment Mode"
-                />
-                <Menu.Item
-                  onPress={() => {
-                    setSortBy("category");
-                    setSortMenuVisible(false);
-                  }}
-                  title="Sort by Category"
-                />
-              </Menu>
-            )}
-
-            <Picker
-              selectedValue={timeFilter}
-              onValueChange={setTimeFilter}
-              style={styles.filterPicker}
-            >
-              {timePeriods.map((period) => (
-                <Picker.Item
-                  key={period.value}
-                  label={period.label}
-                  value={period.value}
-                />
-              ))}
-            </Picker>
-          </View>
-          <Searchbar
-            placeholder="Search orders..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchbar}
-          />
-        </View>
-      )}
-
-      {isMobile ? (
-        <View style={styles.tableWrapper}>
-          <ScrollView horizontal>
-            <View style={styles.mobileTableContainer}>
-              <FlatList
-                data={displayOrders}
-                keyExtractor={(item) => item.id}
-                stickyHeaderIndices={[0]}
-                ListHeaderComponent={() => (
-                  <View style={styles.mobileTableHeader}>
-                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
-                      Order No.
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
-                      Category
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
-                      Date
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 140 }]}>
-                      Client
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 120 }]}>
-                      Contact
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 80 }]}>
-                      Items
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
-                      Mode
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 100 }]}>
-                      Status
-                    </Text>
-                    <Text style={[styles.mobileHeaderCell, { width: 160 }]}>
-                      Actions
-                    </Text>
-                  </View>
-                )}
-                renderItem={({ item }) => (
-                  <View style={styles.mobileTableRow}>
-                    <View style={[styles.mobileTableCell, { width: 100 }]}>
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <Text style={styles.tableCellText}>{item.id}</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.mobileTableCell, { width: 100 }]}>
-                      <View style={{ flexDirection: "row", margin: 4 }}>
-                        {getCategoryIcon(item)}
-                      </View>
-                    </View>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {new Date(item.orderDate).toLocaleDateString()}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 140 }]}>
-                      {item.clientName}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 120 }]}>
-                      {item.clientContact}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 80 }]}>
-                      {item.totalOrderItems}
-                    </Text>
-                    <Text style={[styles.mobileTableCell, { width: 100 }]}>
-                      {item.paymentMethod}
-                    </Text>
-                    <View style={[styles.statusContainer, { width: 100 }]}>
-                      <Text
-                        style={[
-                          styles.statusBadge,
-                          getPaymentStatusStyle(item.paymentStatus),
-                        ]}
-                      >
-                        {item.paymentStatus}
-                      </Text>
-                    </View>
-                    <View style={styles.actionContainer}>
-                      <View style={styles.actionButtons}>
-                        <IconButton
-                          icon="eye"
-                          size={20}
-                          onPress={() => handleViewDetails(item)}
-                        />
-                        <IconButton
-                          icon="printer"
-                          size={20}
-                          onPress={() => handlePrint(item)}
-                        />
-                        <IconButton
-                          icon="pencil"
-                          size={20}
-                          onPress={() => handleEdit(item)}
-                        />
-                        <IconButton
-                          icon="delete"
-                          size={20}
-                          iconColor="#e74c3c"
-                          onPress={() => handleDelete(item.id)}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                )}
-                ListFooterComponent={() => (
-                  <View style={styles.tableFooter}>
-                    <Text>
-                      Showing {displayOrders.length} of {orders.length} orders
-                    </Text>
-                  </View>
-                )}
-              />
-            </View>
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.tableWrapper}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.orderNoCell]}>
-              Order No.
-            </Text>
-            <Text style={[styles.headerCell, styles.categoryCell]}>
-              Category
-            </Text>
-            <Text style={[styles.headerCell, styles.dateCell]}>Date</Text>
-            <Text style={[styles.headerCell, styles.clientCell]}>
-              Client Name
-            </Text>
-            <Text style={[styles.headerCell, styles.contactCell]}>Contact</Text>
-            <Text style={[styles.headerCell, styles.itemsCell]}>Items</Text>
-            <Text style={[styles.headerCell, styles.modeCell]}>Mode</Text>
-            <Text style={[styles.headerCell, styles.statusCell]}>Status</Text>
-            <Text style={[styles.headerCell, styles.actionsCell]}>Actions</Text>
-          </View>
-
-          <FlatList
-            data={displayOrders}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.tableRow}>
-                <View style={[styles.tableCell, styles.orderNoCell]}>
-                  <Text style={styles.tableCellText}>{item.id}</Text>
-                </View>
-                <View style={[styles.tableCell, styles.categoryCell]}>
-                  {getCategoryIcon(item)}
-                </View>
-                <View style={[styles.tableCell, styles.dateCell]}>
-                  <Text style={styles.tableCellText}>
-                    {new Date(item.orderDate).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.clientCell]}>
-                  <Text style={styles.tableCellText} numberOfLines={1}>
-                    {item.clientName}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.contactCell]}>
-                  <Text style={styles.tableCellText} numberOfLines={1}>
-                    {item.clientContact}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.itemsCell]}>
-                  <Text style={styles.tableCellText}>
-                    {item.totalOrderItems}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.modeCell]}>
-                  <Text style={styles.tableCellText} numberOfLines={1}>
-                    {item.paymentMethod}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.statusCell]}>
-                  <Text
-                    style={[
-                      styles.statusBadge,
-                      getPaymentStatusStyle(item.paymentStatus),
-                    ]}
-                  >
-                    {item.paymentStatus}
-                  </Text>
-                </View>
-                <View style={[styles.tableCell, styles.actionsCell]}>
-                  <View style={styles.actionButtons}>
-                    <IconButton
-                      icon="eye"
-                      size={18}
-                      onPress={() => handleViewDetails(item)}
-                    />
-                    <IconButton
-                      icon="printer"
-                      size={18}
-                      onPress={() => handlePrint(item)}
-                    />
-                    <IconButton
-                      icon="pencil"
-                      size={18}
-                      onPress={() => handleEdit(item)}
-                    />
-                    <IconButton
-                      icon="delete"
-                      size={18}
-                      iconColor="#e74c3c"
-                      onPress={() => handleDelete(item.id)}
-                    />
-                  </View>
-                </View>
-              </View>
-            )}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyState}>
-                <Text>No orders found</Text>
-              </View>
-            )}
-            ListFooterComponent={() => (
-              <View style={styles.tableFooter}>
-                <Text>
-                  Showing {displayOrders.length} of {orders.length} orders
-                </Text>
-              </View>
-            )}
-          />
-        </View>
-      )}
-      <FAB
-        icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => setFormVisible(true)}
-        label="Add Order"
-      />
 
       {selectedOrderDetails && (
         <Modal
