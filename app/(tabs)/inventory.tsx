@@ -302,26 +302,27 @@ Stock Value: KES ${item.stockValue}`;
     statsContainer: {
       flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-around",
-      marginBottom: 16,
+      marginBottom: 1,
       gap: isMobile ? 8 : 16,
     },
     statCard: {
       flex: 1,
-      padding: isMobile ? 10 : 16,
+      padding: isMobile ? 5 : 10,
       backgroundColor: colors.surface,
       borderRadius: 8,
       borderLeftWidth: 4,
       borderLeftColor: colors.primary,
     },
     statTitle: {
-      fontSize: isMobile ? 13 : 14,
-      color: colors.textSecondary,
-      marginBottom: 4,
+      fontSize: isMobile ? 15 : 16,
+      color: colors.text,
+      textAlign: "center",
     },
     statValue: {
-      fontSize: isMobile ? 17 : 18,
+      fontSize: isMobile ? 28 : 24,
       fontWeight: "bold",
       color: colors.text,
+      textAlign: "center",
     },
     tableHeader: {
       backgroundColor: colors.surfaceVariant,
@@ -366,11 +367,11 @@ Stock Value: KES ${item.stockValue}`;
       textAlign: "center",
     },
     nameColumn: { flex: isMobile ? 3 : 2.5 },
-    categoryColumn: { flex: isMobile ? 2 : 1.5 },
-    quantityColumn: { flex: 1, justifyContent: "flex-end" },
-    priceColumn: { flex: 1.5, justifyContent: "flex-end" },
-    stockValueColumn: { flex: 1.5, justifyContent: "flex-end" },
-    actionsColumn: { flex: isMobile ? 2 : 1.5, justifyContent: "flex-end" },
+    categoryColumn: { flex: isMobile ? 1 : 1.5 },
+    quantityColumn: { flex: 1, justifyContent: "flex-start" },
+    priceColumn: { flex: 2.5, justifyContent: "flex-start" },
+    stockValueColumn: { flex: 1.5, justifyContent: "flex-start" },
+    actionsColumn: { flex: isMobile ? 1 : 1.5, justifyContent: "flex-start" },
   });
 
   const textInputTheme = {
@@ -442,17 +443,32 @@ Stock Value: KES ${item.stockValue}`;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, isMobile && { marginTop: 24 }]}>
         <Text variant="headlineMedium" style={styles.headerTitle}>
           Inventory Management
         </Text>
-        <View style={styles.buttonContainer}>
+        <View
+          style={[
+            styles.buttonContainer,
+            isMobile && {
+              flexDirection: "row",
+              width: "100%",
+              gap: 8,
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 12,
+            },
+          ]}
+        >
           <Button
             icon="plus"
             mode="outlined"
             onPress={() => setCategoryModalVisible(true)}
             textColor={colors.primary}
-            style={{ borderColor: colors.primary, borderRadius: 8 }}
+            style={[
+              { borderColor: colors.primary, borderRadius: 8 },
+              isMobile && { flex: 1, minWidth: 0, paddingHorizontal: 0 },
+            ]}
           >
             Create Category
           </Button>
@@ -463,7 +479,10 @@ Stock Value: KES ${item.stockValue}`;
               setSelectedItem(null);
               setItemModalVisible(true);
             }}
-            style={styles.createItemButton}
+            style={[
+              styles.createItemButton,
+              isMobile && { flex: 1, minWidth: 0, paddingHorizontal: 0 },
+            ]}
             labelStyle={styles.createItemButtonLabel}
           >
             Create Item
@@ -473,7 +492,10 @@ Stock Value: KES ${item.stockValue}`;
             mode="outlined"
             onPress={() => setBulkRestoreModalVisible(true)}
             textColor={colors.primary}
-            style={{ borderColor: colors.primary, borderRadius: 8 }}
+            style={[
+              { borderColor: colors.primary, borderRadius: 8 },
+              isMobile && { flex: 1, minWidth: 0, paddingHorizontal: 0 },
+            ]}
           >
             Bulk Restock
           </Button>
@@ -575,236 +597,511 @@ Stock Value: KES ${item.stockValue}`;
         </View>
       </View>
 
-      <View style={styles.statsContainer}>
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statTitle}>Total Items</Text>
-            <Text style={styles.statValue}>{totalItems}</Text>
-          </Card.Content>
-        </Card>
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statTitle}>Stock Count</Text>
-            <Text style={styles.statValue}>{totalStockCount}</Text>
-          </Card.Content>
-        </Card>
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statTitle}>Est. Sales Value</Text>
-            <Text style={styles.statValue}>{formatMoney(estimatedSales)}</Text>
-          </Card.Content>
-        </Card>
-        <Card style={styles.statCard}>
-          <Card.Content>
-            <Text style={styles.statTitle}>Total Stock Value</Text>
-            <Text style={styles.statValue}>{formatMoney(totalStockValue)}</Text>
-          </Card.Content>
-        </Card>
-      </View>
-
-      <ScrollView style={{ flex: 1 }}>
-        <DataTable
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 8,
-            elevation: 1,
+      {isMobile ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: width * 0.05,
+            alignItems: "center",
           }}
+          style={{ marginBottom: 0, marginTop: 0, height: 4 }}
         >
-          <DataTable.Header style={styles.tableHeader}>
-            <DataTable.Title
-              onPress={() => handleSort("name")}
-              style={styles.nameColumn}
-            >
-              <Text style={styles.headerCellText}>
-                Name{" "}
-                {sortConfig.key === "name" &&
-                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
-              </Text>
-            </DataTable.Title>
-            <DataTable.Title
-              onPress={() => handleSort("category")}
-              style={styles.categoryColumn}
-            >
-              <Text style={styles.headerCellText}>
-                Category{" "}
-                {sortConfig.key === "category" &&
-                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
-              </Text>
-            </DataTable.Title>
-            <DataTable.Title
-              numeric
-              onPress={() => handleSort("quantity")}
-              style={styles.quantityColumn}
-            >
-              <Text style={styles.headerCellText}>
-                Qty{" "}
-                {sortConfig.key === "quantity" &&
-                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
-              </Text>
-            </DataTable.Title>
-            <DataTable.Title
-              numeric
-              onPress={() => handleSort("sellingPrice")}
-              style={styles.priceColumn}
-            >
-              <Text style={styles.headerCellText}>
-                Price{" "}
-                {sortConfig.key === "sellingPrice" &&
-                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
-              </Text>
-            </DataTable.Title>
-            <DataTable.Title
-              numeric
-              onPress={() => handleSort("stockValue")}
-              style={styles.stockValueColumn}
-            >
-              <Text style={styles.headerCellText}>
-                Stock Value{" "}
-                {sortConfig.key === "stockValue" &&
-                  (sortConfig.direction === "ascending" ? "↑" : "↓")}
-              </Text>
-            </DataTable.Title>
-            <DataTable.Title style={[styles.actionsColumn]}>
-              <Text style={styles.headerCellText}>Actions</Text>
-            </DataTable.Title>
-          </DataTable.Header>
-
-          {paginatedItems.length > 0 ? (
-            paginatedItems.map((item) => (
-              <DataTable.Row
-                key={item.id}
-                style={styles.tableRow}
-                onPress={() => handleViewItem(item)}
-              >
-                <DataTable.Cell style={styles.nameColumn}>
-                  <Text style={styles.cellText}>{item.name}</Text>
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.categoryColumn}>
-                  <Text style={styles.cellText}>{item.category}</Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.quantityColumn}>
-                  <Text
-                    style={
-                      item.type === "service"
-                        ? styles.serviceCellText
-                        : styles.cellText
-                    }
-                  >
-                    {item.type === "service" ? "N/A" : item.quantity}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.priceColumn}>
-                  <Text style={styles.cellText}>
-                    {formatMoney(
-                      item.sellingPrice ||
-                        (item.type === "service" ? item.charges : 0) ||
-                        0
-                    )}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric style={styles.stockValueColumn}>
-                  <Text
-                    style={
-                      item.type === "service"
-                        ? styles.serviceCellText
-                        : styles.cellText
-                    }
-                  >
-                    {item.type === "service"
-                      ? "N/A"
-                      : formatMoney(item.stockValue || 0)}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.actionsCell}>
-                  {renderItemActions(item)}
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))
-          ) : (
+          {[
+            { title: "Total Items", value: totalItems },
+            { title: "Stock Count", value: totalStockCount },
+            { title: "Est. Sales Value", value: formatMoney(estimatedSales) },
+            { title: "Total Stock Value", value: formatMoney(totalStockValue) },
+          ].map((stat) => (
             <Card
-              style={{
-                marginTop: 1,
-                backgroundColor: colors.surface,
-                borderRadius: 0,
-              }}
+              key={stat.title}
+              style={[
+                styles.statCard,
+                {
+                  width: width * 0.85,
+                  maxHeight: 120,
+                  marginTop: 2,
+                  marginBottom: 5,
+                  marginRight: 5,
+                  marginLeft: 0,
+                  alignSelf: "center",
+                  justifyContent: "center",
+                  backgroundColor: colors.surface,
+                  borderLeftWidth: 4,
+                  borderLeftColor: colors.primary,
+                  borderRadius: 8,
+                  padding: 0,
+                  elevation: 1,
+                  shadowColor: colors.text,
+                  shadowOpacity: 0.08,
+                  shadowRadius: 2,
+                  shadowOffset: { width: 0, height: 1 },
+                  flexDirection: "column",
+                  alignItems: "center",
+                },
+              ]}
             >
               <Card.Content
-                style={{ alignItems: "center", paddingVertical: 20 }}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flex: 1,
+                  paddingVertical: 0,
+                  paddingHorizontal: 0,
+                }}
               >
-                <MaterialCommunityIcons
-                  name="package-variant-closed"
-                  size={48}
-                  color={colors.textSecondary}
-                  style={{ marginBottom: 12 }}
-                />
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    textAlign: "center",
-                    fontSize: 16,
-                    fontWeight: "bold",
-                  }}
-                >
-                  No Inventory Items
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    textAlign: "center",
-                    marginTop: 4,
-                  }}
-                >
-                  Add items to your inventory to see them listed here.
-                </Text>
-                {searchQuery && (
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      textAlign: "center",
-                      fontSize: 12,
-                      marginTop: 8,
-                    }}
-                  >
-                    Try adjusting your search query or filters.
-                  </Text>
-                )}
+                <Text style={styles.statTitle}>{stat.title}</Text>
+                <Text style={styles.statValue}>{stat.value}</Text>
               </Card.Content>
             </Card>
-          )}
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={styles.statsContainer}>
+          <Card style={styles.statCard}>
+            <Card.Content>
+              <Text style={styles.statTitle}>Total Items</Text>
+              <Text style={styles.statValue}>{totalItems}</Text>
+            </Card.Content>
+          </Card>
+          <Card style={styles.statCard}>
+            <Card.Content>
+              <Text style={styles.statTitle}>Stock Count</Text>
+              <Text style={styles.statValue}>{totalStockCount}</Text>
+            </Card.Content>
+          </Card>
+          <Card style={styles.statCard}>
+            <Card.Content>
+              <Text style={styles.statTitle}>Est. Sales Value</Text>
+              <Text style={styles.statValue}>
+                {formatMoney(estimatedSales)}
+              </Text>
+            </Card.Content>
+          </Card>
+          <Card style={styles.statCard}>
+            <Card.Content>
+              <Text style={styles.statTitle}>Total Stock Value</Text>
+              <Text style={styles.statValue}>
+                {formatMoney(totalStockValue)}
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
+      )}
 
-          <DataTable.Pagination
-            page={page}
-            numberOfPages={Math.ceil(
-              filteredAndSortedItems.length / itemsPerPage
-            )}
-            onPageChange={(p) => setPage(p)}
-            label={`${from + 1}-${to} of ${filteredAndSortedItems.length}`}
-            numberOfItemsPerPageList={
-              itemsPerPageOptions.length > 0 ? itemsPerPageOptions : [5, 10, 15]
-            }
-            numberOfItemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-            showFastPaginationControls
-            selectPageDropdownLabel={"Rows per page"}
-            theme={{
-              colors: {
-                surface: colors.surfaceVariant,
-                text: colors.text,
-                primary: colors.primary,
-                outline: colors.outline,
-              },
-            }}
+      {isMobile ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          style={{ flex: 1 }}
+        >
+          <View style={{ minWidth: 700, flex: 1 }}>
+            <DataTable
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 8,
+                elevation: 1,
+                minWidth: 700,
+              }}
+            >
+              <DataTable.Header style={styles.tableHeader}>
+                <DataTable.Title
+                  onPress={() => handleSort("name")}
+                  style={styles.nameColumn}
+                >
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Name{" "}
+                    {sortConfig.key === "name" &&
+                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title
+                  onPress={() => handleSort("category")}
+                  style={styles.categoryColumn}
+                >
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Category{" "}
+                    {sortConfig.key === "category" &&
+                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={styles.quantityColumn}>
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Qty{" "}
+                    {sortConfig.key === "quantity" &&
+                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={styles.priceColumn}>
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Price{" "}
+                    {sortConfig.key === "sellingPrice" &&
+                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={styles.stockValueColumn}>
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Stock Value{" "}
+                    {sortConfig.key === "stockValue" &&
+                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={[styles.actionsColumn]}>
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Actions
+                  </Text>
+                </DataTable.Title>
+              </DataTable.Header>
+              <ScrollView style={{ maxHeight: 420 }}>
+                {paginatedItems.length > 0 ? (
+                  paginatedItems.map((item) => (
+                    <DataTable.Row
+                      key={item.id}
+                      style={styles.tableRow}
+                      onPress={() => handleViewItem(item)}
+                    >
+                      <DataTable.Cell style={styles.nameColumn}>
+                        <Text style={[styles.cellText, { textAlign: "left" }]}>
+                          {item.name}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.categoryColumn}>
+                        <Text style={[styles.cellText, { textAlign: "left" }]}>
+                          {item.category}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.quantityColumn}>
+                        <Text
+                          style={[
+                            item.type === "service"
+                              ? styles.serviceCellText
+                              : styles.cellText,
+                            { textAlign: "left" },
+                          ]}
+                        >
+                          {item.type === "service" ? "N/A" : item.quantity}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.priceColumn}>
+                        <Text style={[styles.cellText, { textAlign: "left" }]}>
+                          {formatMoney(
+                            item.sellingPrice ||
+                              (item.type === "service" ? item.charges : 0) ||
+                              0
+                          )}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.stockValueColumn}>
+                        <Text
+                          style={[
+                            item.type === "service"
+                              ? styles.serviceCellText
+                              : styles.cellText,
+                            { textAlign: "left" },
+                          ]}
+                        >
+                          {item.type === "service"
+                            ? "N/A"
+                            : formatMoney(item.stockValue || 0)}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.actionsCell}>
+                        {renderItemActions(item)}
+                      </DataTable.Cell>
+                    </DataTable.Row>
+                  ))
+                ) : (
+                  <Card
+                    style={{
+                      marginTop: 1,
+                      backgroundColor: colors.surface,
+                      borderRadius: 0,
+                    }}
+                  >
+                    <Card.Content
+                      style={{ alignItems: "center", paddingVertical: 20 }}
+                    >
+                      <MaterialCommunityIcons
+                        name="package-variant-closed"
+                        size={48}
+                        color={colors.textSecondary}
+                        style={{ marginBottom: 12 }}
+                      />
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          textAlign: "center",
+                          fontSize: 16,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        No Inventory Items
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          textAlign: "center",
+                          marginTop: 4,
+                        }}
+                      >
+                        Add items to your inventory to see them listed here.
+                      </Text>
+                      {searchQuery && (
+                        <Text
+                          style={{
+                            color: colors.textSecondary,
+                            textAlign: "center",
+                            fontSize: 12,
+                            marginTop: 8,
+                          }}
+                        >
+                          Try adjusting your search query or filters.
+                        </Text>
+                      )}
+                    </Card.Content>
+                  </Card>
+                )}
+              </ScrollView>
+              <DataTable.Pagination
+                page={page}
+                numberOfPages={Math.ceil(
+                  filteredAndSortedItems.length / itemsPerPage
+                )}
+                onPageChange={(p) => setPage(p)}
+                label={`${from + 1}-${to} of ${filteredAndSortedItems.length}`}
+                numberOfItemsPerPageList={
+                  itemsPerPageOptions.length > 0
+                    ? itemsPerPageOptions
+                    : [5, 10, 15]
+                }
+                numberOfItemsPerPage={itemsPerPage}
+                onItemsPerPageChange={setItemsPerPage}
+                showFastPaginationControls
+                selectPageDropdownLabel={"Rows per page"}
+                theme={{
+                  colors: {
+                    surface: colors.surfaceVariant,
+                    text: colors.text,
+                    primary: colors.primary,
+                    outline: colors.outline,
+                  },
+                }}
+                style={{
+                  backgroundColor: colors.surface,
+                  marginTop: 0,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.divider,
+                  borderBottomLeftRadius: 8,
+                  borderBottomRightRadius: 8,
+                }}
+              />
+            </DataTable>
+          </View>
+        </ScrollView>
+      ) : (
+        <ScrollView style={{ flex: 1 }}>
+          <DataTable
             style={{
               backgroundColor: colors.surface,
-              marginTop: 0,
-              borderTopWidth: 1,
-              borderTopColor: colors.divider,
-              borderBottomLeftRadius: 8,
-              borderBottomRightRadius: 8,
+              borderRadius: 8,
+              elevation: 1,
             }}
-          />
-        </DataTable>
-      </ScrollView>
+          >
+            <DataTable.Header style={styles.tableHeader}>
+              <DataTable.Title
+                onPress={() => handleSort("name")}
+                style={styles.nameColumn}
+              >
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Name{" "}
+                  {sortConfig.key === "name" &&
+                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title
+                onPress={() => handleSort("category")}
+                style={styles.categoryColumn}
+              >
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Category{" "}
+                  {sortConfig.key === "category" &&
+                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title style={styles.quantityColumn}>
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Qty{" "}
+                  {sortConfig.key === "quantity" &&
+                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title style={styles.priceColumn}>
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Price{" "}
+                  {sortConfig.key === "sellingPrice" &&
+                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title style={styles.stockValueColumn}>
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Stock Value{" "}
+                  {sortConfig.key === "stockValue" &&
+                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title style={[styles.actionsColumn]}>
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Actions
+                </Text>
+              </DataTable.Title>
+            </DataTable.Header>
+            <ScrollView style={{ maxHeight: 420 }}>
+              {paginatedItems.length > 0 ? (
+                paginatedItems.map((item) => (
+                  <DataTable.Row
+                    key={item.id}
+                    style={styles.tableRow}
+                    onPress={() => handleViewItem(item)}
+                  >
+                    <DataTable.Cell style={styles.nameColumn}>
+                      <Text style={[styles.cellText, { textAlign: "left" }]}>
+                        {item.name}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.categoryColumn}>
+                      <Text style={[styles.cellText, { textAlign: "left" }]}>
+                        {item.category}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.quantityColumn}>
+                      <Text
+                        style={[
+                          item.type === "service"
+                            ? styles.serviceCellText
+                            : styles.cellText,
+                          { textAlign: "left" },
+                        ]}
+                      >
+                        {item.type === "service" ? "N/A" : item.quantity}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.priceColumn}>
+                      <Text style={[styles.cellText, { textAlign: "left" }]}>
+                        {formatMoney(
+                          item.sellingPrice ||
+                            (item.type === "service" ? item.charges : 0) ||
+                            0
+                        )}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.stockValueColumn}>
+                      <Text
+                        style={[
+                          item.type === "service"
+                            ? styles.serviceCellText
+                            : styles.cellText,
+                          { textAlign: "left" },
+                        ]}
+                      >
+                        {item.type === "service"
+                          ? "N/A"
+                          : formatMoney(item.stockValue || 0)}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.actionsCell}>
+                      {renderItemActions(item)}
+                    </DataTable.Cell>
+                  </DataTable.Row>
+                ))
+              ) : (
+                <Card
+                  style={{
+                    marginTop: 1,
+                    backgroundColor: colors.surface,
+                    borderRadius: 0,
+                  }}
+                >
+                  <Card.Content
+                    style={{ alignItems: "center", paddingVertical: 20 }}
+                  >
+                    <MaterialCommunityIcons
+                      name="package-variant-closed"
+                      size={48}
+                      color={colors.textSecondary}
+                      style={{ marginBottom: 12 }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.textSecondary,
+                        textAlign: "center",
+                        fontSize: 16,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      No Inventory Items
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.textSecondary,
+                        textAlign: "center",
+                        marginTop: 4,
+                      }}
+                    >
+                      Add items to your inventory to see them listed here.
+                    </Text>
+                    {searchQuery && (
+                      <Text
+                        style={{
+                          color: colors.textSecondary,
+                          textAlign: "center",
+                          fontSize: 12,
+                          marginTop: 8,
+                        }}
+                      >
+                        Try adjusting your search query or filters.
+                      </Text>
+                    )}
+                  </Card.Content>
+                </Card>
+              )}
+            </ScrollView>
+            <DataTable.Pagination
+              page={page}
+              numberOfPages={Math.ceil(
+                filteredAndSortedItems.length / itemsPerPage
+              )}
+              onPageChange={(p) => setPage(p)}
+              label={`${from + 1}-${to} of ${filteredAndSortedItems.length}`}
+              numberOfItemsPerPageList={
+                itemsPerPageOptions.length > 0
+                  ? itemsPerPageOptions
+                  : [5, 10, 15]
+              }
+              numberOfItemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              showFastPaginationControls
+              selectPageDropdownLabel={"Rows per page"}
+              theme={{
+                colors: {
+                  surface: colors.surfaceVariant,
+                  text: colors.text,
+                  primary: colors.primary,
+                  outline: colors.outline,
+                },
+              }}
+              style={{
+                backgroundColor: colors.surface,
+                marginTop: 0,
+                borderTopWidth: 1,
+                borderTopColor: colors.divider,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
+              }}
+            />
+          </DataTable>
+        </ScrollView>
+      )}
 
       <Modal
         visible={isItemModalVisible}

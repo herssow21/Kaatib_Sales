@@ -971,7 +971,19 @@ export default function Orders() {
         <Text variant="headlineMedium" style={styles.headerText}>
           Order Management
         </Text>
-        <View style={styles.actionContainer}>
+        <View
+          style={[
+            styles.actionContainer,
+            isMobile && {
+              flexDirection: "row",
+              width: "100%",
+              gap: 8,
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 12,
+            },
+          ]}
+        >
           <Button
             icon="refresh"
             mode="outlined"
@@ -979,12 +991,15 @@ export default function Orders() {
               /* TODO: implement refresh */
             }}
             textColor={isDarkMode ? colors.primary : colors.text}
-            style={{
-              borderColor: colors.primary,
-              borderRadius: 8,
-              marginRight: 8,
-              backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
-            }}
+            style={[
+              {
+                borderColor: colors.primary,
+                borderRadius: 8,
+                marginRight: 2,
+                backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
+              },
+              isMobile && { flex: 1, minWidth: 0, marginRight: 0 },
+            ]}
           >
             Refresh
           </Button>
@@ -994,12 +1009,15 @@ export default function Orders() {
             onPress={() => {
               /* TODO: implement export */
             }}
-            style={{
-              borderColor: colors.white,
-              borderRadius: 8,
-              marginRight: 8,
-              backgroundColor: colors.primary,
-            }}
+            style={[
+              {
+                borderColor: colors.white,
+                borderRadius: 8,
+                marginRight: 2,
+                backgroundColor: colors.primary,
+              },
+              isMobile && { flex: 1, minWidth: 0, marginRight: 0 },
+            ]}
             labelStyle={{ color: colors.onPrimary, fontWeight: "bold" }}
           >
             Export
@@ -1008,9 +1026,13 @@ export default function Orders() {
             icon="plus"
             mode="contained"
             onPress={() => setFormVisible(true)}
-            style={{
-              backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
-            }}
+            style={[
+              {
+                backgroundColor: isDarkMode ? undefined : colors.surfaceVariant,
+                borderRadius: 8,
+              },
+              isMobile && { flex: 1, minWidth: 0 },
+            ]}
             textColor={isDarkMode ? colors.white : colors.text}
           >
             Create Order
@@ -1227,6 +1249,8 @@ export default function Orders() {
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
+              marginTop: 24,
+              marginBottom: 12,
             }}
           >
             <TextInput
@@ -1255,153 +1279,539 @@ export default function Orders() {
             />
           </View>
         </View>
-
-        {/* Table */}
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 10,
-            marginTop: 12,
-            borderWidth: 1,
-            borderColor: colors.outline,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              backgroundColor: colors.surfaceVariant,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.divider,
-            }}
-          >
-            <Text style={{ flex: 1.2, fontWeight: "bold", color: colors.text }}>
-              Order ID
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Category
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Date
-            </Text>
-            <Text style={{ flex: 1.2, fontWeight: "bold", color: colors.text }}>
-              Client
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Contact
-            </Text>
-            <Text style={{ flex: 0.8, fontWeight: "bold", color: colors.text }}>
-              Items
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Amount
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Status
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", color: colors.text }}>
-              Actions
-            </Text>
-          </View>
-          {displayOrders.length === 0 ? (
-            <View style={{ alignItems: "center", padding: 32 }}>
-              <Text
+        {/* Orders List or Table comes directly below search bar */}
+        {isMobile ? (
+          <ScrollView horizontal style={{ width: "100%" }}>
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 10,
+                marginTop: 12,
+                borderWidth: 1,
+                borderColor: colors.outline,
+                overflow: "hidden",
+                minWidth: 900,
+              }}
+            >
+              {/* Table Header */}
+              <View
                 style={{
-                  color: colors.textSecondary,
-                  fontSize: 16,
-                  marginBottom: 4,
+                  flexDirection: "row",
+                  backgroundColor: colors.surfaceVariant,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.divider,
                 }}
               >
-                No orders found
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                Create a new order or adjust your filters
-              </Text>
-            </View>
-          ) : (
-            <ScrollView style={{ maxHeight: 420 }}>
-              {displayOrders.map((order) => (
-                <View
-                  key={order.id}
+                <Text
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.divider,
-                    backgroundColor: colors.surface,
+                    width: 120,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
                   }}
                 >
-                  <Text style={{ flex: 1.2, color: colors.text }}>
-                    {order.id}
+                  Order ID
+                </Text>
+                <Text
+                  style={{
+                    width: 100,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Category
+                </Text>
+                <Text
+                  style={{
+                    width: 100,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Date
+                </Text>
+                <Text
+                  style={{
+                    width: 120,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Client
+                </Text>
+                <Text
+                  style={{
+                    width: 100,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Contact
+                </Text>
+                <Text
+                  style={{
+                    width: 80,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Items
+                </Text>
+                <Text
+                  style={{
+                    width: 100,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Amount
+                </Text>
+                <Text
+                  style={{
+                    width: 100,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Status
+                </Text>
+                <Text
+                  style={{
+                    width: 175,
+                    fontWeight: "bold",
+                    color: colors.text,
+                    textAlign: "left",
+                  }}
+                >
+                  Actions
+                </Text>
+              </View>
+              {/* Table Rows */}
+              {displayOrders.length === 0 ? (
+                <View style={{ alignItems: "center", padding: 32 }}>
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: 16,
+                      marginBottom: 4,
+                    }}
+                  >
+                    No orders found
                   </Text>
-                  <Text style={{ flex: 1, color: colors.text }}>
-                    {getCategoryIcon(order)}
+                  <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                    Create a new order or adjust your filters
                   </Text>
-                  <Text style={{ flex: 1, color: colors.text }}>
-                    {new Date(order.orderDate).toLocaleDateString()}
-                  </Text>
-                  <Text style={{ flex: 1.2, color: colors.text }}>
-                    {order.clientName}
-                  </Text>
-                  <Text style={{ flex: 1, color: colors.text }}>
-                    {order.clientContact}
-                  </Text>
-                  <Text style={{ flex: 0.8, color: colors.text }}>
-                    {order.totalOrderItems}
-                  </Text>
-                  <Text style={{ flex: 1, color: colors.text }}>
-                    {order.grandTotal}
-                  </Text>
-                  <Text style={{ flex: 1, color: colors.text }}>
-                    {order.paymentStatus}
-                  </Text>
-                  <View style={{ flex: 1, flexDirection: "row", gap: 4 }}>
-                    <IconButton
-                      icon="eye"
-                      size={18}
-                      onPress={() => handleViewDetails(order)}
-                      iconColor={colors.text}
-                    />
-                    <IconButton
-                      icon="printer"
-                      size={18}
-                      onPress={() => handlePrint(order)}
-                      iconColor={colors.text}
-                    />
-                    <IconButton
-                      icon="pencil"
-                      size={18}
-                      onPress={() => handleEdit(order)}
-                      iconColor={colors.text}
-                    />
-                    <IconButton
-                      icon="delete"
-                      size={18}
-                      onPress={() => handleDelete(order.id)}
-                      iconColor={colors.error}
-                    />
-                  </View>
                 </View>
-              ))}
-            </ScrollView>
-          )}
+              ) : (
+                <ScrollView style={{ maxHeight: 420 }}>
+                  {displayOrders.map((order) => (
+                    <View
+                      key={order.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.divider,
+                        backgroundColor: colors.surface,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          width: 120,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.id}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 100,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {getCategoryIcon(order)}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 100,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {new Date(order.orderDate).toLocaleDateString()}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 120,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.clientName}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 100,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.clientContact}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 80,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.totalOrderItems}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 100,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.grandTotal}
+                      </Text>
+                      <Text
+                        style={{
+                          width: 100,
+                          color: colors.text,
+                          textAlign: "left",
+                        }}
+                      >
+                        {order.paymentStatus}
+                      </Text>
+                      <View
+                        style={{ width: 150, flexDirection: "row", gap: 4 }}
+                      >
+                        <IconButton
+                          icon="eye"
+                          size={18}
+                          onPress={() => handleViewDetails(order)}
+                          iconColor={colors.text}
+                        />
+                        <IconButton
+                          icon="printer"
+                          size={18}
+                          onPress={() => handlePrint(order)}
+                          iconColor={colors.text}
+                        />
+                        <IconButton
+                          icon="pencil"
+                          size={18}
+                          onPress={() => handleEdit(order)}
+                          iconColor={colors.text}
+                        />
+                        <IconButton
+                          icon="delete"
+                          size={18}
+                          onPress={() => handleDelete(order.id)}
+                          iconColor={colors.error}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+              <View
+                style={{
+                  padding: 12,
+                  backgroundColor: colors.surfaceVariant,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.divider,
+                }}
+              >
+                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                  Showing {displayOrders.length} of {orders.length} orders
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    marginTop: 8,
+                  }}
+                >
+                  <Button onPress={() => {}} disabled={true}>
+                    Previous
+                  </Button>
+                  <Button onPress={() => {}} disabled={false}>
+                    Next
+                  </Button>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        ) : (
           <View
             style={{
-              padding: 12,
-              backgroundColor: colors.surfaceVariant,
-              borderTopWidth: 1,
-              borderTopColor: colors.divider,
+              backgroundColor: colors.surface,
+              borderRadius: 10,
+              marginTop: 12,
+              borderWidth: 1,
+              borderColor: colors.outline,
+              overflow: "hidden",
             }}
           >
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Showing {displayOrders.length} of {orders.length} orders
-            </Text>
+            {/* Table Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: colors.surfaceVariant,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.divider,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1.2,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Order ID
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Category
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Date
+              </Text>
+              <Text
+                style={{
+                  flex: 1.2,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Client
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Contact
+              </Text>
+              <Text
+                style={{
+                  flex: 0.8,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Items
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Amount
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Status
+              </Text>
+              <Text
+                style={{
+                  flex: 1.5,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Actions
+              </Text>
+            </View>
+            {/* Table Rows */}
+            {displayOrders.length === 0 ? (
+              <View style={{ alignItems: "center", padding: 32 }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 16,
+                    marginBottom: 4,
+                  }}
+                >
+                  No orders found
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  Create a new order or adjust your filters
+                </Text>
+              </View>
+            ) : (
+              <ScrollView style={{ maxHeight: 420 }}>
+                {displayOrders.map((order) => (
+                  <View
+                    key={order.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.divider,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        flex: 1.2,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.id}
+                    </Text>
+                    <Text
+                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    >
+                      {getCategoryIcon(order)}
+                    </Text>
+                    <Text
+                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    >
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 1.2,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.clientName}
+                    </Text>
+                    <Text
+                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    >
+                      {order.clientContact}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 0.8,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.totalOrderItems}
+                    </Text>
+                    <Text
+                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    >
+                      {order.grandTotal}
+                    </Text>
+                    <Text
+                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    >
+                      {order.paymentStatus}
+                    </Text>
+                    <View style={{ flex: 1.5, flexDirection: "row", gap: 4 }}>
+                      <IconButton
+                        icon="eye"
+                        size={18}
+                        onPress={() => handleViewDetails(order)}
+                        iconColor={colors.text}
+                      />
+                      <IconButton
+                        icon="printer"
+                        size={18}
+                        onPress={() => handlePrint(order)}
+                        iconColor={colors.text}
+                      />
+                      <IconButton
+                        icon="pencil"
+                        size={18}
+                        onPress={() => handleEdit(order)}
+                        iconColor={colors.text}
+                      />
+                      <IconButton
+                        icon="delete"
+                        size={18}
+                        onPress={() => handleDelete(order.id)}
+                        iconColor={colors.error}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <View
+              style={{
+                padding: 12,
+                backgroundColor: colors.surfaceVariant,
+                borderTopWidth: 1,
+                borderTopColor: colors.divider,
+              }}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                Showing {displayOrders.length} of {orders.length} orders
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  marginTop: 8,
+                }}
+              >
+                <Button onPress={() => {}} disabled={true}>
+                  Previous
+                </Button>
+                <Button onPress={() => {}} disabled={false}>
+                  Next
+                </Button>
+              </View>
+            </View>
           </View>
-        </View>
+        )}
       </View>
 
       <Modal
