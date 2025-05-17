@@ -369,9 +369,9 @@ Stock Value: KES ${item.stockValue}`;
     nameColumn: { flex: isMobile ? 3 : 2.5 },
     categoryColumn: { flex: isMobile ? 1 : 1.5 },
     quantityColumn: { flex: 1, justifyContent: "flex-start" },
-    priceColumn: { flex: 2.5, justifyContent: "flex-start" },
+    priceColumn: { flex: 1.5, justifyContent: "flex-start" },
     stockValueColumn: { flex: 1.5, justifyContent: "flex-start" },
-    actionsColumn: { flex: isMobile ? 1 : 1.5, justifyContent: "flex-start" },
+    actionsColumn: { flex: isMobile ? 0.7 : 1, justifyContent: "flex-start" },
   });
 
   const textInputTheme = {
@@ -696,13 +696,13 @@ Stock Value: KES ${item.stockValue}`;
           showsHorizontalScrollIndicator
           style={{ flex: 1 }}
         >
-          <View style={{ minWidth: 700, flex: 1 }}>
+          <View style={{ minWidth: 900, flex: 1 }}>
             <DataTable
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 8,
                 elevation: 1,
-                minWidth: 700,
+                minWidth: 900,
               }}
             >
               <DataTable.Header style={styles.tableHeader}>
@@ -728,16 +728,19 @@ Stock Value: KES ${item.stockValue}`;
                 </DataTable.Title>
                 <DataTable.Title style={styles.quantityColumn}>
                   <Text style={[styles.headerCellText, { textAlign: "left" }]}>
-                    Qty{" "}
+                    In-Stock{" "}
                     {sortConfig.key === "quantity" &&
                       (sortConfig.direction === "ascending" ? "↑" : "↓")}
                   </Text>
                 </DataTable.Title>
                 <DataTable.Title style={styles.priceColumn}>
                   <Text style={[styles.headerCellText, { textAlign: "left" }]}>
-                    Price{" "}
-                    {sortConfig.key === "sellingPrice" &&
-                      (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                    Buying Price
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={styles.priceColumn}>
+                  <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                    Selling Price
                   </Text>
                 </DataTable.Title>
                 <DataTable.Title style={styles.stockValueColumn}>
@@ -785,11 +788,12 @@ Stock Value: KES ${item.stockValue}`;
                       </DataTable.Cell>
                       <DataTable.Cell style={styles.priceColumn}>
                         <Text style={[styles.cellText, { textAlign: "left" }]}>
-                          {formatMoney(
-                            item.sellingPrice ||
-                              (item.type === "service" ? item.charges : 0) ||
-                              0
-                          )}
+                          {formatMoney(item.buyingPrice)}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={styles.priceColumn}>
+                        <Text style={[styles.cellText, { textAlign: "left" }]}>
+                          {formatMoney(item.sellingPrice)}
                         </Text>
                       </DataTable.Cell>
                       <DataTable.Cell style={styles.stockValueColumn}>
@@ -906,6 +910,7 @@ Stock Value: KES ${item.stockValue}`;
               backgroundColor: colors.surface,
               borderRadius: 8,
               elevation: 1,
+              minWidth: 900,
             }}
           >
             <DataTable.Header style={styles.tableHeader}>
@@ -931,16 +936,19 @@ Stock Value: KES ${item.stockValue}`;
               </DataTable.Title>
               <DataTable.Title style={styles.quantityColumn}>
                 <Text style={[styles.headerCellText, { textAlign: "left" }]}>
-                  Qty{" "}
+                  In-Stock{" "}
                   {sortConfig.key === "quantity" &&
                     (sortConfig.direction === "ascending" ? "↑" : "↓")}
                 </Text>
               </DataTable.Title>
               <DataTable.Title style={styles.priceColumn}>
                 <Text style={[styles.headerCellText, { textAlign: "left" }]}>
-                  Price{" "}
-                  {sortConfig.key === "sellingPrice" &&
-                    (sortConfig.direction === "ascending" ? "↑" : "↓")}
+                  Buying Price
+                </Text>
+              </DataTable.Title>
+              <DataTable.Title style={styles.priceColumn}>
+                <Text style={[styles.headerCellText, { textAlign: "left" }]}>
+                  Selling Price
                 </Text>
               </DataTable.Title>
               <DataTable.Title style={styles.stockValueColumn}>
@@ -988,11 +996,12 @@ Stock Value: KES ${item.stockValue}`;
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.priceColumn}>
                       <Text style={[styles.cellText, { textAlign: "left" }]}>
-                        {formatMoney(
-                          item.sellingPrice ||
-                            (item.type === "service" ? item.charges : 0) ||
-                            0
-                        )}
+                        {formatMoney(item.buyingPrice)}
+                      </Text>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={styles.priceColumn}>
+                      <Text style={[styles.cellText, { textAlign: "left" }]}>
+                        {formatMoney(item.sellingPrice)}
                       </Text>
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.stockValueColumn}>

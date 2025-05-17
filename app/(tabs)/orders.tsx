@@ -501,6 +501,7 @@ export default function Orders() {
         switch (timeFilter) {
           case "today":
             return orderDate >= startOfDay;
+
           case "week":
             return orderDate >= startOfWeek;
           case "month":
@@ -1041,216 +1042,506 @@ export default function Orders() {
       </View>
 
       {/* Main Card */}
-      <View
+      <Text
         style={{
-          backgroundColor: colors.surface,
-          borderRadius: 12,
-          margin: 16,
-          padding: 24,
-          elevation: 1,
+          fontWeight: "bold",
+          fontSize: 22,
+          color: colors.text,
+          margin: 10,
         }}
       >
-        <Text
-          style={{
-            fontWeight: "bold",
-            fontSize: 22,
-            color: colors.text,
-            marginBottom: 2,
-          }}
-        >
-          Orders
-        </Text>
-        <Text style={{ color: colors.textSecondary, marginBottom: 18 }}>
-          View and manage all customer orders in one place.
-        </Text>
+        Orders
+      </Text>
+      <Text
+        style={{
+          color: colors.textSecondary,
+          marginBottom: 18,
+          marginLeft: 12,
+        }}
+      >
+        View and manage all customer orders in one place.
+      </Text>
 
-        {/* Filters and Search */}
-        <View
-          style={{
-            flexDirection: isMobile ? "column" : "row",
-            gap: 12,
-            marginBottom: 18,
-            alignItems: isMobile ? "stretch" : "center",
-          }}
-        >
-          <Menu
-            visible={isCategoryMenuVisible}
-            onDismiss={() => setIsCategoryMenuVisible(false)}
-            anchor={
-              <Button
-                mode="outlined"
-                onPress={() => setIsCategoryMenuVisible(true)}
-                style={{
-                  borderColor: colors.outline,
-                  borderRadius: 8,
-                  minWidth: 140,
-                }}
-                textColor={colors.text}
-                icon="chevron-down"
-              >
-                {selectedCategory === "all"
-                  ? "All Categories"
-                  : selectedCategory}
-              </Button>
-            }
-            theme={{ colors: { surface: colors.surface } }}
+      {/* Filters and Search */}
+      {isMobile ? (
+        <>
+          {/* Filters Row: All Categories, Sort, Time - in one row, working dropdowns */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 8,
+              marginBottom: 54,
+              width: "80%",
+            }}
           >
-            <Menu.Item
-              onPress={() => {
-                setSelectedCategory("all");
-                setIsCategoryMenuVisible(false);
-              }}
-              title="All Categories"
-              titleStyle={{ color: colors.text }}
-            />
-            {categories.map((cat) => (
+            {/* All Categories Filter */}
+            <Menu
+              visible={isCategoryMenuVisible}
+              onDismiss={() => setIsCategoryMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setIsCategoryMenuVisible(true)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    paddingHorizontal: 4,
+                    minHeight: 40,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                  labelStyle={{ fontSize: 12 }}
+                  contentStyle={{
+                    flexDirection: "row",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  {(selectedCategory === "all"
+                    ? "All Categories"
+                    : selectedCategory
+                  ).length > 12
+                    ? (selectedCategory === "all"
+                        ? "All Categories"
+                        : selectedCategory
+                      ).substring(0, 11) + "..."
+                    : selectedCategory === "all"
+                    ? "All Categories"
+                    : selectedCategory}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
               <Menu.Item
-                key={cat.id}
                 onPress={() => {
-                  setSelectedCategory(cat.name);
+                  setSelectedCategory("all");
                   setIsCategoryMenuVisible(false);
                 }}
-                title={cat.name}
+                title="All Categories"
                 titleStyle={{ color: colors.text }}
               />
-            ))}
-          </Menu>
-          <Menu
-            visible={isSortMenuVisible}
-            onDismiss={() => setSortMenuVisible(false)}
-            anchor={
-              <Button
-                mode="outlined"
-                onPress={() => setSortMenuVisible(true)}
-                style={{
-                  borderColor: colors.outline,
-                  borderRadius: 8,
-                  minWidth: 140,
+              {categories.map((cat) => (
+                <Menu.Item
+                  key={cat.id}
+                  onPress={() => {
+                    setSelectedCategory(cat.name);
+                    setIsCategoryMenuVisible(false);
+                  }}
+                  title={cat.name}
+                  titleStyle={{ color: colors.text }}
+                />
+              ))}
+            </Menu>
+            {/* Sort Filter */}
+            <Menu
+              visible={isSortMenuVisible}
+              onDismiss={() => setSortMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setSortMenuVisible(true)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    paddingHorizontal: 4,
+                    minHeight: 40,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                  labelStyle={{ fontSize: 12 }}
+                  contentStyle={{
+                    flexDirection: "row",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  {(sortBy === "date"
+                    ? "Newest First"
+                    : sortBy === "name"
+                    ? "Customer"
+                    : sortBy === "status"
+                    ? "Status"
+                    : sortBy === "paymentMode"
+                    ? "Payment"
+                    : "Category"
+                  ).length > 12
+                    ? (sortBy === "date"
+                        ? "Newest First"
+                        : sortBy === "name"
+                        ? "Customer"
+                        : sortBy === "status"
+                        ? "Status"
+                        : sortBy === "paymentMode"
+                        ? "Payment"
+                        : "Category"
+                      ).substring(0, 11) + "..."
+                    : sortBy === "date"
+                    ? "Newest First"
+                    : sortBy === "name"
+                    ? "Customer"
+                    : sortBy === "status"
+                    ? "Status"
+                    : sortBy === "paymentMode"
+                    ? "Payment"
+                    : "Category"}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("date");
+                  setSortMenuVisible(false);
                 }}
-                textColor={colors.text}
-                icon="chevron-down"
-              >
-                {sortBy === "date"
-                  ? "Newest First"
-                  : sortBy === "name"
-                  ? "Customer"
-                  : sortBy === "status"
-                  ? "Status"
-                  : sortBy === "paymentMode"
-                  ? "Payment"
-                  : "Category"}
-              </Button>
-            }
-            theme={{ colors: { surface: colors.surface } }}
-          >
-            <Menu.Item
-              onPress={() => {
-                setSortBy("date");
-                setSortMenuVisible(false);
-              }}
-              title="Newest First"
-              titleStyle={{ color: colors.text }}
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("name");
-                setSortMenuVisible(false);
-              }}
-              title="Customer"
-              titleStyle={{ color: colors.text }}
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("status");
-                setSortMenuVisible(false);
-              }}
-              title="Status"
-              titleStyle={{ color: colors.text }}
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("paymentMode");
-                setSortMenuVisible(false);
-              }}
-              title="Payment"
-              titleStyle={{ color: colors.text }}
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("category");
-                setSortMenuVisible(false);
-              }}
-              title="Category"
-              titleStyle={{ color: colors.text }}
-            />
-          </Menu>
-          <Menu
-            visible={isTimeMenuVisible}
-            onDismiss={() => setTimeMenuVisible(false)}
-            anchor={
-              <Button
-                mode="outlined"
-                onPress={() => setTimeMenuVisible(true)}
-                style={{
-                  borderColor: colors.outline,
-                  borderRadius: 8,
-                  minWidth: 120,
+                title="Newest First"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("name");
+                  setSortMenuVisible(false);
                 }}
-                textColor={colors.text}
-                icon="chevron-down"
-              >
-                {timeFilter === "today"
-                  ? "Today"
-                  : timeFilter === "week"
-                  ? "This Week"
-                  : timeFilter === "month"
-                  ? "This Month"
-                  : "All"}
-              </Button>
-            }
-            theme={{ colors: { surface: colors.surface } }}
+                title="Customer"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("status");
+                  setSortMenuVisible(false);
+                }}
+                title="Status"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("paymentMode");
+                  setSortMenuVisible(false);
+                }}
+                title="Payment"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("category");
+                  setSortMenuVisible(false);
+                }}
+                title="Category"
+                titleStyle={{ color: colors.text }}
+              />
+            </Menu>
+            {/* Time Filter */}
+            <Menu
+              visible={isTimeMenuVisible}
+              onDismiss={() => setTimeMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setTimeMenuVisible(true)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    paddingHorizontal: 4,
+                    minHeight: 40,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                  labelStyle={{ fontSize: 12 }}
+                  contentStyle={{
+                    flexDirection: "row",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  {(timeFilter === "today"
+                    ? "Today"
+                    : timeFilter === "week"
+                    ? "This Week"
+                    : timeFilter === "month"
+                    ? "This Month"
+                    : "All"
+                  ).length > 12
+                    ? (timeFilter === "today"
+                        ? "Today"
+                        : timeFilter === "week"
+                        ? "This Week"
+                        : timeFilter === "month"
+                        ? "This Month"
+                        : "All"
+                      ).substring(0, 11) + "..."
+                    : timeFilter === "today"
+                    ? "Today"
+                    : timeFilter === "week"
+                    ? "This Week"
+                    : timeFilter === "month"
+                    ? "This Month"
+                    : "All"}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("today");
+                  setTimeMenuVisible(false);
+                }}
+                title="Today"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("week");
+                  setTimeMenuVisible(false);
+                }}
+                title="This Week"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("month");
+                  setTimeMenuVisible(false);
+                }}
+                title="This Month"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("all");
+                  setTimeMenuVisible(false);
+                }}
+                title="All"
+                titleStyle={{ color: colors.text }}
+              />
+            </Menu>
+          </View>
+          {/* Search bar and filter icon in a row, 80% width */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              width: "100%",
+              marginBottom: 8,
+            }}
           >
-            <Menu.Item
-              onPress={() => {
-                setTimeFilter("today");
-                setTimeMenuVisible(false);
+            <TextInput
+              placeholder="Search orders by ID, client, or product..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                flex: 1,
+                backgroundColor: colors.inputBackground,
+                borderRadius: 8,
               }}
-              title="Today"
-              titleStyle={{ color: colors.text }}
+              mode="outlined"
+              theme={{ colors: { ...colors, primary: colors.primary } }}
+              left={
+                <TextInput.Icon icon="magnify" color={colors.placeholder} />
+              }
             />
-            <Menu.Item
-              onPress={() => {
-                setTimeFilter("week");
-                setTimeMenuVisible(false);
+            <IconButton
+              icon="filter-variant"
+              onPress={() => {}}
+              style={{
+                marginLeft: 4,
+                backgroundColor: colors.surfaceVariant,
+                borderRadius: 8,
               }}
-              title="This Week"
-              titleStyle={{ color: colors.text }}
+              iconColor={colors.textSecondary}
             />
-            <Menu.Item
-              onPress={() => {
-                setTimeFilter("month");
-                setTimeMenuVisible(false);
-              }}
-              title="This Month"
-              titleStyle={{ color: colors.text }}
-            />
-            <Menu.Item
-              onPress={() => {
-                setTimeFilter("all");
-                setTimeMenuVisible(false);
-              }}
-              title="All"
-              titleStyle={{ color: colors.text }}
-            />
-          </Menu>
+          </View>
+        </>
+      ) : (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 18,
+            width: "100%",
+          }}
+        >
+          {/* Filters group */}
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <Menu
+              visible={isCategoryMenuVisible}
+              onDismiss={() => setIsCategoryMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setIsCategoryMenuVisible(true)}
+                  style={{
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    minWidth: 140,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                >
+                  {selectedCategory === "all"
+                    ? "All Categories"
+                    : selectedCategory}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
+              <Menu.Item
+                onPress={() => {
+                  setSelectedCategory("all");
+                  setIsCategoryMenuVisible(false);
+                }}
+                title="All Categories"
+                titleStyle={{ color: colors.text }}
+              />
+              {categories.map((cat) => (
+                <Menu.Item
+                  key={cat.id}
+                  onPress={() => {
+                    setSelectedCategory(cat.name);
+                    setIsCategoryMenuVisible(false);
+                  }}
+                  title={cat.name}
+                  titleStyle={{ color: colors.text }}
+                />
+              ))}
+            </Menu>
+            <Menu
+              visible={isSortMenuVisible}
+              onDismiss={() => setSortMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setSortMenuVisible(true)}
+                  style={{
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    minWidth: 140,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                >
+                  {sortBy === "date"
+                    ? "Newest First"
+                    : sortBy === "name"
+                    ? "Customer"
+                    : sortBy === "status"
+                    ? "Status"
+                    : sortBy === "paymentMode"
+                    ? "Payment"
+                    : "Category"}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("date");
+                  setSortMenuVisible(false);
+                }}
+                title="Newest First"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("name");
+                  setSortMenuVisible(false);
+                }}
+                title="Customer"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("status");
+                  setSortMenuVisible(false);
+                }}
+                title="Status"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("paymentMode");
+                  setSortMenuVisible(false);
+                }}
+                title="Payment"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setSortBy("category");
+                  setSortMenuVisible(false);
+                }}
+                title="Category"
+                titleStyle={{ color: colors.text }}
+              />
+            </Menu>
+            <Menu
+              visible={isTimeMenuVisible}
+              onDismiss={() => setTimeMenuVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  onPress={() => setTimeMenuVisible(true)}
+                  style={{
+                    borderColor: colors.outline,
+                    borderRadius: 8,
+                    minWidth: 120,
+                  }}
+                  textColor={colors.text}
+                  icon="chevron-down"
+                >
+                  {timeFilter === "today"
+                    ? "Today"
+                    : timeFilter === "week"
+                    ? "This Week"
+                    : timeFilter === "month"
+                    ? "This Month"
+                    : "All"}
+                </Button>
+              }
+              theme={{ colors: { surface: colors.surface } }}
+            >
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("today");
+                  setTimeMenuVisible(false);
+                }}
+                title="Today"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("week");
+                  setTimeMenuVisible(false);
+                }}
+                title="This Week"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("month");
+                  setTimeMenuVisible(false);
+                }}
+                title="This Month"
+                titleStyle={{ color: colors.text }}
+              />
+              <Menu.Item
+                onPress={() => {
+                  setTimeFilter("all");
+                  setTimeMenuVisible(false);
+                }}
+                title="All"
+                titleStyle={{ color: colors.text }}
+              />
+            </Menu>
+          </View>
+          {/* Search bar fills remaining space */}
           <View
             style={{
               flex: 1,
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
-              marginTop: 24,
-              marginBottom: 12,
             }}
           >
             <TextInput
@@ -1279,286 +1570,10 @@ export default function Orders() {
             />
           </View>
         </View>
-        {/* Orders List or Table comes directly below search bar */}
-        {isMobile ? (
-          <ScrollView horizontal style={{ width: "100%" }}>
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 10,
-                marginTop: 12,
-                borderWidth: 1,
-                borderColor: colors.outline,
-                overflow: "hidden",
-                minWidth: 900,
-              }}
-            >
-              {/* Table Header */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  backgroundColor: colors.surfaceVariant,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.divider,
-                }}
-              >
-                <Text
-                  style={{
-                    width: 120,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Order ID
-                </Text>
-                <Text
-                  style={{
-                    width: 100,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Category
-                </Text>
-                <Text
-                  style={{
-                    width: 100,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Date
-                </Text>
-                <Text
-                  style={{
-                    width: 120,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Client
-                </Text>
-                <Text
-                  style={{
-                    width: 100,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Contact
-                </Text>
-                <Text
-                  style={{
-                    width: 80,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Items
-                </Text>
-                <Text
-                  style={{
-                    width: 100,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Amount
-                </Text>
-                <Text
-                  style={{
-                    width: 100,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Status
-                </Text>
-                <Text
-                  style={{
-                    width: 175,
-                    fontWeight: "bold",
-                    color: colors.text,
-                    textAlign: "left",
-                  }}
-                >
-                  Actions
-                </Text>
-              </View>
-              {/* Table Rows */}
-              {displayOrders.length === 0 ? (
-                <View style={{ alignItems: "center", padding: 32 }}>
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: 16,
-                      marginBottom: 4,
-                    }}
-                  >
-                    No orders found
-                  </Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                    Create a new order or adjust your filters
-                  </Text>
-                </View>
-              ) : (
-                <ScrollView style={{ maxHeight: 420 }}>
-                  {displayOrders.map((order) => (
-                    <View
-                      key={order.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 12,
-                        paddingHorizontal: 16,
-                        borderBottomWidth: 1,
-                        borderBottomColor: colors.divider,
-                        backgroundColor: colors.surface,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          width: 120,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.id}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 100,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {getCategoryIcon(order)}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 100,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {new Date(order.orderDate).toLocaleDateString()}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 120,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.clientName}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 100,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.clientContact}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 80,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.totalOrderItems}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 100,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.grandTotal}
-                      </Text>
-                      <Text
-                        style={{
-                          width: 100,
-                          color: colors.text,
-                          textAlign: "left",
-                        }}
-                      >
-                        {order.paymentStatus}
-                      </Text>
-                      <View
-                        style={{ width: 150, flexDirection: "row", gap: 4 }}
-                      >
-                        <IconButton
-                          icon="eye"
-                          size={18}
-                          onPress={() => handleViewDetails(order)}
-                          iconColor={colors.text}
-                        />
-                        <IconButton
-                          icon="printer"
-                          size={18}
-                          onPress={() => handlePrint(order)}
-                          iconColor={colors.text}
-                        />
-                        <IconButton
-                          icon="pencil"
-                          size={18}
-                          onPress={() => handleEdit(order)}
-                          iconColor={colors.text}
-                        />
-                        <IconButton
-                          icon="delete"
-                          size={18}
-                          onPress={() => handleDelete(order.id)}
-                          iconColor={colors.error}
-                        />
-                      </View>
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-              <View
-                style={{
-                  padding: 12,
-                  backgroundColor: colors.surfaceVariant,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.divider,
-                }}
-              >
-                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-                  Showing {displayOrders.length} of {orders.length} orders
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "flex-end",
-                    marginTop: 8,
-                  }}
-                >
-                  <Button onPress={() => {}} disabled={true}>
-                    Previous
-                  </Button>
-                  <Button onPress={() => {}} disabled={false}>
-                    Next
-                  </Button>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-        ) : (
+      )}
+      {/* Orders List or Table comes directly below search bar */}
+      {isMobile ? (
+        <ScrollView horizontal style={{ width: "100%" }}>
           <View
             style={{
               backgroundColor: colors.surface,
@@ -1567,6 +1582,7 @@ export default function Orders() {
               borderWidth: 1,
               borderColor: colors.outline,
               overflow: "hidden",
+              minWidth: 900,
             }}
           >
             {/* Table Header */}
@@ -1582,7 +1598,7 @@ export default function Orders() {
             >
               <Text
                 style={{
-                  flex: 1.2,
+                  width: 120,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1592,7 +1608,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1,
+                  width: 100,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1602,7 +1618,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1,
+                  width: 100,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1612,7 +1628,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1.2,
+                  width: 120,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1622,7 +1638,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1,
+                  width: 100,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1632,7 +1648,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 0.8,
+                  width: 80,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1642,7 +1658,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1,
+                  width: 100,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1652,7 +1668,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1,
+                  width: 100,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1662,7 +1678,7 @@ export default function Orders() {
               </Text>
               <Text
                 style={{
-                  flex: 1.5,
+                  width: 175,
                   fontWeight: "bold",
                   color: colors.text,
                   textAlign: "left",
@@ -1704,7 +1720,7 @@ export default function Orders() {
                   >
                     <Text
                       style={{
-                        flex: 1.2,
+                        width: 120,
                         color: colors.text,
                         textAlign: "left",
                       }}
@@ -1712,18 +1728,26 @@ export default function Orders() {
                       {order.id}
                     </Text>
                     <Text
-                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                      style={{
+                        width: 100,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
                     >
                       {getCategoryIcon(order)}
                     </Text>
                     <Text
-                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                      style={{
+                        width: 100,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
                     >
                       {new Date(order.orderDate).toLocaleDateString()}
                     </Text>
                     <Text
                       style={{
-                        flex: 1.2,
+                        width: 120,
                         color: colors.text,
                         textAlign: "left",
                       }}
@@ -1731,13 +1755,17 @@ export default function Orders() {
                       {order.clientName}
                     </Text>
                     <Text
-                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                      style={{
+                        width: 100,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
                     >
                       {order.clientContact}
                     </Text>
                     <Text
                       style={{
-                        flex: 0.8,
+                        width: 80,
                         color: colors.text,
                         textAlign: "left",
                       }}
@@ -1745,16 +1773,24 @@ export default function Orders() {
                       {order.totalOrderItems}
                     </Text>
                     <Text
-                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                      style={{
+                        width: 100,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
                     >
                       {order.grandTotal}
                     </Text>
                     <Text
-                      style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                      style={{
+                        width: 100,
+                        color: colors.text,
+                        textAlign: "left",
+                      }}
                     >
                       {order.paymentStatus}
                     </Text>
-                    <View style={{ flex: 1.5, flexDirection: "row", gap: 4 }}>
+                    <View style={{ width: 150, flexDirection: "row", gap: 4 }}>
                       <IconButton
                         icon="eye"
                         size={18}
@@ -1811,8 +1847,261 @@ export default function Orders() {
               </View>
             </View>
           </View>
-        )}
-      </View>
+        </ScrollView>
+      ) : (
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 10,
+            marginTop: 12,
+            borderWidth: 1,
+            borderColor: colors.outline,
+            overflow: "hidden",
+          }}
+        >
+          {/* Table Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: colors.surfaceVariant,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.divider,
+            }}
+          >
+            <Text
+              style={{
+                flex: 1.2,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Order ID
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Category
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Date
+            </Text>
+            <Text
+              style={{
+                flex: 1.2,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Client
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Contact
+            </Text>
+            <Text
+              style={{
+                flex: 0.8,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Items
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Amount
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Status
+            </Text>
+            <Text
+              style={{
+                flex: 1.5,
+                fontWeight: "bold",
+                color: colors.text,
+                textAlign: "left",
+              }}
+            >
+              Actions
+            </Text>
+          </View>
+          {/* Table Rows */}
+          {displayOrders.length === 0 ? (
+            <View style={{ alignItems: "center", padding: 32 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 16,
+                  marginBottom: 4,
+                }}
+              >
+                No orders found
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                Create a new order or adjust your filters
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={{ maxHeight: 420 }}>
+              {displayOrders.map((order) => (
+                <View
+                  key={order.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.divider,
+                    backgroundColor: colors.surface,
+                  }}
+                >
+                  <Text
+                    style={{
+                      flex: 1.2,
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    {order.id}
+                  </Text>
+                  <Text
+                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                  >
+                    {getCategoryIcon(order)}
+                  </Text>
+                  <Text
+                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                  >
+                    {new Date(order.orderDate).toLocaleDateString()}
+                  </Text>
+                  <Text
+                    style={{
+                      flex: 1.2,
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    {order.clientName}
+                  </Text>
+                  <Text
+                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                  >
+                    {order.clientContact}
+                  </Text>
+                  <Text
+                    style={{
+                      flex: 0.8,
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    {order.totalOrderItems}
+                  </Text>
+                  <Text
+                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                  >
+                    {order.grandTotal}
+                  </Text>
+                  <Text
+                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                  >
+                    {order.paymentStatus}
+                  </Text>
+                  <View style={{ flex: 1.5, flexDirection: "row", gap: 4 }}>
+                    <IconButton
+                      icon="eye"
+                      size={18}
+                      onPress={() => handleViewDetails(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="printer"
+                      size={18}
+                      onPress={() => handlePrint(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="pencil"
+                      size={18}
+                      onPress={() => handleEdit(order)}
+                      iconColor={colors.text}
+                    />
+                    <IconButton
+                      icon="delete"
+                      size={18}
+                      onPress={() => handleDelete(order.id)}
+                      iconColor={colors.error}
+                    />
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          <View
+            style={{
+              padding: 12,
+              backgroundColor: colors.surfaceVariant,
+              borderTopWidth: 1,
+              borderTopColor: colors.divider,
+            }}
+          >
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              Showing {displayOrders.length} of {orders.length} orders
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                marginTop: 8,
+              }}
+            >
+              <Button onPress={() => {}} disabled={true}>
+                Previous
+              </Button>
+              <Button onPress={() => {}} disabled={false}>
+                Next
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
 
       <Modal
         visible={isFormVisible}
