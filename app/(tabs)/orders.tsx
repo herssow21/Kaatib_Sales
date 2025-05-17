@@ -22,6 +22,7 @@ import {
   Menu,
   SegmentedButtons,
   TextInput,
+  DataTable,
 } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import OrderForm from "../../components/OrderForm";
@@ -115,7 +116,6 @@ export default function Orders() {
       color: isDarkMode ? colors.headerText : theme.colors.onPrimary,
     },
     tableContainer: {
-      margin: 16,
       borderRadius: 8,
       backgroundColor: isDarkMode ? colors.card : "white",
       elevation: 2,
@@ -1573,279 +1573,265 @@ export default function Orders() {
       )}
       {/* Orders List or Table comes directly below search bar */}
       {isMobile ? (
-        <ScrollView horizontal style={{ width: "100%" }}>
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 10,
-              marginTop: 12,
-              borderWidth: 1,
-              borderColor: colors.outline,
-              overflow: "hidden",
-              minWidth: 900,
-            }}
-          >
-            {/* Table Header */}
-            <View
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          style={{ width: "100%", marginBottom: 16 }}
+        >
+          <View style={{ minWidth: 900, height: 450, flex: 1 }}>
+            <DataTable
               style={{
-                flexDirection: "row",
-                backgroundColor: colors.surfaceVariant,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.divider,
+                backgroundColor: colors.surface,
+                borderRadius: 10,
+                marginTop: 12,
+                borderWidth: 1,
+                borderColor: colors.outline,
+                overflow: "hidden",
+                minWidth: 900,
               }}
             >
-              <Text
-                style={{
-                  width: 120,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
+              <DataTable.Header
+                style={{ backgroundColor: colors.surfaceVariant }}
               >
-                Order ID
-              </Text>
-              <Text
-                style={{
-                  width: 100,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Category
-              </Text>
-              <Text
-                style={{
-                  width: 100,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Date
-              </Text>
-              <Text
-                style={{
-                  width: 120,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Client
-              </Text>
-              <Text
-                style={{
-                  width: 100,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Contact
-              </Text>
-              <Text
-                style={{
-                  width: 80,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Items
-              </Text>
-              <Text
-                style={{
-                  width: 100,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Amount
-              </Text>
-              <Text
-                style={{
-                  width: 100,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Status
-              </Text>
-              <Text
-                style={{
-                  width: 175,
-                  fontWeight: "bold",
-                  color: colors.text,
-                  textAlign: "left",
-                }}
-              >
-                Actions
-              </Text>
-            </View>
-            {/* Table Rows */}
-            {displayOrders.length === 0 ? (
-              <View style={{ alignItems: "center", padding: 32 }}>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: 16,
-                    marginBottom: 4,
-                  }}
-                >
-                  No orders found
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                  Create a new order or adjust your filters
-                </Text>
-              </View>
-            ) : (
-              <ScrollView style={{ maxHeight: 420 }}>
-                {displayOrders.map((order) => (
-                  <View
-                    key={order.id}
+                <DataTable.Title style={{ width: 120 }}>
+                  <Text
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      borderBottomWidth: 1,
-                      borderBottomColor: colors.divider,
-                      backgroundColor: colors.surface,
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
                     }}
                   >
-                    <Text
-                      style={{
-                        width: 120,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
+                    Order ID
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 100 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Category
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 100 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Date
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 120 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Client
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 100 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Contact
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 80 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Items
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 100 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Amount
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 100 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Status
+                  </Text>
+                </DataTable.Title>
+                <DataTable.Title style={{ width: 175 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      textAlign: "left",
+                    }}
+                  >
+                    Actions
+                  </Text>
+                </DataTable.Title>
+              </DataTable.Header>
+              <ScrollView
+                style={{ height: 350 }}
+                showsVerticalScrollIndicator={true}
+              >
+                {displayOrders.length === 0 ? (
+                  <DataTable.Row>
+                    <DataTable.Cell
+                      style={{ justifyContent: "center", alignItems: "center" }}
                     >
-                      {order.id}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 100,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
+                      <View
+                        style={{
+                          width: 900,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: colors.textSecondary,
+                            fontSize: 16,
+                            textAlign: "center",
+                          }}
+                        >
+                          No orders found
+                        </Text>
+                        <Text
+                          style={{
+                            color: colors.textSecondary,
+                            fontSize: 14,
+                            textAlign: "center",
+                          }}
+                        >
+                          Create a new order or adjust your filters
+                        </Text>
+                      </View>
+                    </DataTable.Cell>
+                  </DataTable.Row>
+                ) : (
+                  displayOrders.map((order) => (
+                    <DataTable.Row
+                      key={order.id}
+                      style={{ backgroundColor: colors.surface }}
                     >
-                      {getCategoryIcon(order)}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 100,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {new Date(order.orderDate).toLocaleDateString()}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 120,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {order.clientName}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 100,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {order.clientContact}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 80,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {order.totalOrderItems}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 100,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {order.grandTotal}
-                    </Text>
-                    <Text
-                      style={{
-                        width: 100,
-                        color: colors.text,
-                        textAlign: "left",
-                      }}
-                    >
-                      {order.paymentStatus}
-                    </Text>
-                    <View style={{ width: 150, flexDirection: "row", gap: 4 }}>
-                      <IconButton
-                        icon="eye"
-                        size={18}
-                        onPress={() => handleViewDetails(order)}
-                        iconColor={colors.text}
-                      />
-                      <IconButton
-                        icon="printer"
-                        size={18}
-                        onPress={() => handlePrint(order)}
-                        iconColor={colors.text}
-                      />
-                      <IconButton
-                        icon="pencil"
-                        size={18}
-                        onPress={() => handleEdit(order)}
-                        iconColor={colors.text}
-                      />
-                      <IconButton
-                        icon="delete"
-                        size={18}
-                        onPress={() => handleDelete(order.id)}
-                        iconColor={colors.error}
-                      />
-                    </View>
-                  </View>
-                ))}
+                      <DataTable.Cell style={{ width: 120 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.id}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 100 }}>
+                        {getCategoryIcon(order)}
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 100 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {new Date(order.orderDate).toLocaleDateString()}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 120 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.clientName}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 100 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.clientContact}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 80 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.totalOrderItems}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 100 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.grandTotal}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 100 }}>
+                        <Text style={{ color: colors.text, textAlign: "left" }}>
+                          {order.paymentStatus}
+                        </Text>
+                      </DataTable.Cell>
+                      <DataTable.Cell style={{ width: 175 }}>
+                        <View style={{ flexDirection: "row", gap: 4 }}>
+                          <IconButton
+                            icon="eye"
+                            size={18}
+                            onPress={() => handleViewDetails(order)}
+                            iconColor={colors.text}
+                          />
+                          <IconButton
+                            icon="printer"
+                            size={18}
+                            onPress={() => handlePrint(order)}
+                            iconColor={colors.text}
+                          />
+                          <IconButton
+                            icon="pencil"
+                            size={18}
+                            onPress={() => handleEdit(order)}
+                            iconColor={colors.text}
+                          />
+                          <IconButton
+                            icon="delete"
+                            size={18}
+                            onPress={() => handleDelete(order.id)}
+                            iconColor={colors.error}
+                          />
+                        </View>
+                      </DataTable.Cell>
+                    </DataTable.Row>
+                  ))
+                )}
               </ScrollView>
-            )}
-            <View
+            </DataTable>
+            <DataTable.Pagination
+              page={0}
+              numberOfPages={1}
+              label={`Showing ${displayOrders.length} of ${orders.length} orders`}
               style={{
-                padding: 12,
                 backgroundColor: colors.surfaceVariant,
                 borderTopWidth: 1,
                 borderTopColor: colors.divider,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
               }}
-            >
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-                Showing {displayOrders.length} of {orders.length} orders
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  marginTop: 8,
-                }}
-              >
-                <Button onPress={() => {}} disabled={true}>
-                  Previous
-                </Button>
-                <Button onPress={() => {}} disabled={false}>
-                  Next
-                </Button>
-              </View>
-            </View>
+              theme={{
+                colors: {
+                  surface: colors.surfaceVariant,
+                  text: colors.text,
+                  primary: colors.primary,
+                  outline: colors.outline,
+                },
+              }}
+              onPageChange={() => {}}
+              showFastPaginationControls={false}
+              numberOfItemsPerPage={displayOrders.length}
+              onItemsPerPageChange={() => {}}
+              selectPageDropdownLabel={"Rows per page"}
+            />
           </View>
         </ScrollView>
       ) : (
@@ -1857,6 +1843,7 @@ export default function Orders() {
             borderWidth: 1,
             borderColor: colors.outline,
             overflow: "hidden",
+            marginBottom: 32,
           }}
         >
           {/* Table Header */}
@@ -1978,7 +1965,10 @@ export default function Orders() {
               </Text>
             </View>
           ) : (
-            <ScrollView style={{ maxHeight: 420 }}>
+            <ScrollView
+              style={{ height: 320 }}
+              showsVerticalScrollIndicator={true}
+            >
               {displayOrders.map((order) => (
                 <View
                   key={order.id}
@@ -2074,6 +2064,7 @@ export default function Orders() {
               ))}
             </ScrollView>
           )}
+          {/* Table Footer (pagination/info) outside the scroll area */}
           <View
             style={{
               padding: 12,

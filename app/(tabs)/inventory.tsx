@@ -756,7 +756,10 @@ Stock Value: KES ${item.stockValue}`;
                   </Text>
                 </DataTable.Title>
               </DataTable.Header>
-              <ScrollView style={{ maxHeight: 420 }}>
+              <ScrollView
+                style={{ maxHeight: 400 }}
+                showsVerticalScrollIndicator={true}
+              >
                 {paginatedItems.length > 0 ? (
                   paginatedItems.map((item) => (
                     <DataTable.Row
@@ -964,7 +967,10 @@ Stock Value: KES ${item.stockValue}`;
                 </Text>
               </DataTable.Title>
             </DataTable.Header>
-            <ScrollView style={{ maxHeight: 420 }}>
+            <ScrollView
+              style={{ maxHeight: 400 }}
+              showsVerticalScrollIndicator={true}
+            >
               {paginatedItems.length > 0 ? (
                 paginatedItems.map((item) => (
                   <DataTable.Row
