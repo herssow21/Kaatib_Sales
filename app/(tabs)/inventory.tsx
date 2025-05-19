@@ -620,9 +620,9 @@ Stock Value: KES ${item.stockValue}`;
                 styles.statCard,
                 {
                   width: width * 0.85,
-                  maxHeight: 120,
-                  marginTop: 2,
-                  marginBottom: 5,
+                  maxHeight: 150,
+                  marginTop: 0,
+                  marginBottom: 0,
                   marginRight: 5,
                   marginLeft: 0,
                   alignSelf: "center",
@@ -696,7 +696,15 @@ Stock Value: KES ${item.stockValue}`;
           showsHorizontalScrollIndicator
           style={{ flex: 1 }}
         >
-          <View style={{ minWidth: 900, flex: 1 }}>
+          <View
+            style={{
+              minWidth: 900,
+              flex: 1,
+              maxHeight: 300,
+              marginTop: 0,
+              marginBottom: 94,
+            }}
+          >
             <DataTable
               style={{
                 backgroundColor: colors.surface,
@@ -756,10 +764,7 @@ Stock Value: KES ${item.stockValue}`;
                   </Text>
                 </DataTable.Title>
               </DataTable.Header>
-              <ScrollView
-                style={{ maxHeight: 400 }}
-                showsVerticalScrollIndicator={true}
-              >
+              <ScrollView showsVerticalScrollIndicator={true}>
                 {paginatedItems.length > 0 ? (
                   paginatedItems.map((item) => (
                     <DataTable.Row
@@ -968,7 +973,7 @@ Stock Value: KES ${item.stockValue}`;
               </DataTable.Title>
             </DataTable.Header>
             <ScrollView
-              style={{ maxHeight: 400 }}
+              style={{ maxHeight: 400, paddingBottom: 24 }}
               showsVerticalScrollIndicator={true}
             >
               {paginatedItems.length > 0 ? (
@@ -1123,16 +1128,29 @@ Stock Value: KES ${item.stockValue}`;
         onDismiss={() => setItemModalVisible(false)}
       >
         <View
-          style={{
-            maxHeight: "60%",
-            minWidth: 320,
-            width: "100%",
-            maxWidth: 500,
-            alignSelf: "center",
-            backgroundColor: colors.modalBackground,
-            borderRadius: 8,
-            padding: 0,
-          }}
+          style={
+            Platform.OS === "web"
+              ? {
+                  maxHeight: "60%",
+                  minWidth: 320,
+                  width: "100%",
+                  maxWidth: 500,
+                  alignSelf: "center",
+                  backgroundColor: colors.modalBackground,
+                  borderRadius: 8,
+                  padding: 0,
+                }
+              : {
+                  backgroundColor: colors.modalBackground,
+                  borderRadius: 20,
+                  padding: 20,
+                  height: "95%",
+                  minWidth: 320,
+                  width: "100%",
+                  maxWidth: 500,
+                  alignSelf: "center",
+                }
+          }
         >
           <ScrollView keyboardShouldPersistTaps="handled">
             <ProductForm

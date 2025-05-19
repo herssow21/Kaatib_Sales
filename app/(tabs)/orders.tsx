@@ -1576,9 +1576,17 @@ export default function Orders() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator
-          style={{ width: "100%", marginBottom: 16 }}
+          style={{ width: "100%", marginBottom: 72 }}
         >
-          <View style={{ minWidth: 900, height: 450, flex: 1 }}>
+          <View
+            style={{
+              minWidth: 900,
+              height: 300,
+              flex: 1,
+              marginTop: 0,
+              marginBottom: 32,
+            }}
+          >
             <DataTable
               style={{
                 backgroundColor: colors.surface,
@@ -1810,14 +1818,17 @@ export default function Orders() {
             <DataTable.Pagination
               page={0}
               numberOfPages={1}
-              label={`Showing ${displayOrders.length} of ${orders.length} orders`}
-              style={{
-                backgroundColor: colors.surfaceVariant,
-                borderTopWidth: 1,
-                borderTopColor: colors.divider,
-                borderBottomLeftRadius: 8,
-                borderBottomRightRadius: 8,
-              }}
+              label={
+                displayOrders.length > 0
+                  ? `Showing 1-${displayOrders.length} of ${orders.length} orders`
+                  : "0-0 of 0"
+              }
+              numberOfItemsPerPageList={[5, 10, 15, 20]}
+              numberOfItemsPerPage={displayOrders.length}
+              onItemsPerPageChange={() => {}}
+              onPageChange={() => {}}
+              showFastPaginationControls
+              selectPageDropdownLabel={"Rows per page"}
               theme={{
                 colors: {
                   surface: colors.surfaceVariant,
@@ -1826,11 +1837,16 @@ export default function Orders() {
                   outline: colors.outline,
                 },
               }}
-              onPageChange={() => {}}
-              showFastPaginationControls={false}
-              numberOfItemsPerPage={displayOrders.length}
-              onItemsPerPageChange={() => {}}
-              selectPageDropdownLabel={"Rows per page"}
+              style={{
+                backgroundColor: colors.surface,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderTopWidth: 1,
+                borderTopColor: colors.divider,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
+                marginBottom: isMobile ? 32 : 24,
+              }}
             />
           </View>
         </ScrollView>
@@ -1844,6 +1860,7 @@ export default function Orders() {
             borderColor: colors.outline,
             overflow: "hidden",
             marginBottom: 32,
+            maxHeight: 400,
           }}
         >
           {/* Table Header */}
@@ -1966,7 +1983,7 @@ export default function Orders() {
             </View>
           ) : (
             <ScrollView
-              style={{ height: 320 }}
+              style={{ maxHeight: 320 }}
               showsVerticalScrollIndicator={true}
             >
               {displayOrders.map((order) => (
@@ -1985,52 +2002,64 @@ export default function Orders() {
                   <Text
                     style={{
                       flex: 1.2,
-                      color: colors.text,
+                      color: isDarkMode ? colors.text : "#000000",
                       textAlign: "left",
                     }}
                   >
                     {order.id}
                   </Text>
+                  <View style={{ flex: 1 }}>{getCategoryIcon(order)}</View>
                   <Text
-                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
-                  >
-                    {getCategoryIcon(order)}
-                  </Text>
-                  <Text
-                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    style={{
+                      flex: 1,
+                      color: isDarkMode ? colors.text : "#000000",
+                      textAlign: "left",
+                    }}
                   >
                     {new Date(order.orderDate).toLocaleDateString()}
                   </Text>
                   <Text
                     style={{
                       flex: 1.2,
-                      color: colors.text,
+                      color: isDarkMode ? colors.text : "#000000",
                       textAlign: "left",
                     }}
                   >
                     {order.clientName}
                   </Text>
                   <Text
-                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    style={{
+                      flex: 1,
+                      color: isDarkMode ? colors.text : "#000000",
+                      textAlign: "left",
+                    }}
                   >
                     {order.clientContact}
                   </Text>
                   <Text
                     style={{
                       flex: 0.8,
-                      color: colors.text,
+                      color: isDarkMode ? colors.text : "#000000",
                       textAlign: "left",
                     }}
                   >
                     {order.totalOrderItems}
                   </Text>
                   <Text
-                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    style={{
+                      flex: 1,
+                      color: isDarkMode ? colors.text : "#000000",
+                      textAlign: "left",
+                    }}
                   >
                     {order.grandTotal}
                   </Text>
                   <Text
-                    style={{ flex: 1, color: colors.text, textAlign: "left" }}
+                    style={{
+                      flex: 1,
+                      color: isDarkMode ? colors.text : "#000000",
+                      textAlign: "left",
+                    }}
                   >
                     {order.paymentStatus}
                   </Text>
@@ -2039,19 +2068,19 @@ export default function Orders() {
                       icon="eye"
                       size={18}
                       onPress={() => handleViewDetails(order)}
-                      iconColor={colors.text}
+                      iconColor={isDarkMode ? colors.text : "#000000"}
                     />
                     <IconButton
                       icon="printer"
                       size={18}
                       onPress={() => handlePrint(order)}
-                      iconColor={colors.text}
+                      iconColor={isDarkMode ? colors.text : "#000000"}
                     />
                     <IconButton
                       icon="pencil"
                       size={18}
                       onPress={() => handleEdit(order)}
-                      iconColor={colors.text}
+                      iconColor={isDarkMode ? colors.text : "#000000"}
                     />
                     <IconButton
                       icon="delete"
@@ -2065,32 +2094,39 @@ export default function Orders() {
             </ScrollView>
           )}
           {/* Table Footer (pagination/info) outside the scroll area */}
-          <View
+          <DataTable.Pagination
+            page={0}
+            numberOfPages={1}
+            label={
+              displayOrders.length > 0
+                ? `Showing 1-${displayOrders.length} of ${orders.length} orders`
+                : "0-0 of 0"
+            }
+            numberOfItemsPerPageList={[5, 10, 15, 20]}
+            numberOfItemsPerPage={displayOrders.length}
+            onItemsPerPageChange={() => {}}
+            onPageChange={() => {}}
+            showFastPaginationControls
+            selectPageDropdownLabel={"Rows per page"}
+            theme={{
+              colors: {
+                surface: colors.surfaceVariant,
+                text: isDarkMode ? colors.text : "#000000",
+                primary: colors.primary,
+                outline: colors.outline,
+              },
+            }}
             style={{
-              padding: 12,
-              backgroundColor: colors.surfaceVariant,
+              backgroundColor: colors.surface,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
               borderTopWidth: 1,
               borderTopColor: colors.divider,
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8,
+              marginBottom: isMobile ? 32 : 24,
             }}
-          >
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Showing {displayOrders.length} of {orders.length} orders
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                marginTop: 8,
-              }}
-            >
-              <Button onPress={() => {}} disabled={true}>
-                Previous
-              </Button>
-              <Button onPress={() => {}} disabled={false}>
-                Next
-              </Button>
-            </View>
-          </View>
+          />
         </View>
       )}
 
