@@ -1,0 +1,9 @@
+/* Import all CSS files */
+@import './global.css';
+@import './layout.css';
+@import './components.css';
+@import './typography.css';
+@import './utilities.css';
+@import './inventory.css';
+@import './orders.css';
+@import './expenses.css'; 

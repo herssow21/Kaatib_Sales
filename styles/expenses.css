@@ -1,0 +1,174 @@
+/* Expenses Screen Styles */
+.expenses-container {
+  flex: 1;
+  padding: var(--spacing-md);
+  background-color: var(--background);
+}
+
+.expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.expenses-header-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.expenses-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+}
+
+.expenses-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.summary-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border-left-width: 4px;
+  border-left-color: var(--primary);
+}
+
+.summary-card.highlight {
+  background-color: var(--primary-container);
+  border-left-color: var(--primary);
+}
+
+.summary-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.summary-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.expenses-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.expense-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expense-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.expense-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.expense-category {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.expense-amount {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.expense-date {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Category-specific styles */
+.category-rent {
+  background-color: var(--primary-container);
+}
+
+.category-food {
+  background-color: var(--secondary-container);
+}
+
+.category-transport {
+  background-color: var(--tertiary-container);
+}
+
+.category-utilities {
+  background-color: var(--error-container);
+}
+
+.category-other {
+  background-color: var(--surface-variant);
+}
+
+/* Dialog styles */
+.expense-dialog {
+  background-color: var(--modal-background);
+  padding: var(--spacing-md);
+  margin: var(--spacing-md);
+  border-radius: var(--radius-md);
+  max-height: 90%;
+  align-self: center;
+  width: 45%;
+}
+
+.dialog-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  color: var(--modal-text);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .expenses-container {
+    padding: var(--spacing-sm);
+  }
+
+  .expenses-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .expenses-actions {
+    justify-content: flex-start;
+  }
+
+  .expenses-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .expense-dialog {
+    width: 95%;
+    margin: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .expenses-summary {
+    grid-template-columns: 1fr;
+  }
+} 

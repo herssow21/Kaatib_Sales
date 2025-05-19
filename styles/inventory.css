@@ -1,0 +1,235 @@
+/* Inventory Screen Styles */
+.inventory-container {
+  flex: 1;
+  padding: var(--spacing-md);
+  background-color: var(--background);
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.inventory-header-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.inventory-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+}
+
+.inventory-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.inventory-filters {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.inventory-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.stat-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border-left-width: 4px;
+  border-left-color: var(--primary);
+}
+
+.stat-title {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.inventory-table {
+  flex: 1;
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.table-header {
+  background-color: var(--surface-variant);
+  border-bottom-width: 1px;
+  border-bottom-color: var(--divider);
+}
+
+.header-cell-text {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.table-row {
+  border-bottom-width: 1px;
+  border-bottom-color: var(--divider);
+  background-color: var(--surface);
+}
+
+.cell-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.service-cell-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.actions-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.name-column {
+  flex: 2.5;
+}
+
+.category-column {
+  flex: 1.5;
+}
+
+.quantity-column {
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.price-column {
+  flex: 1.5;
+  justify-content: flex-start;
+}
+
+.stock-value-column {
+  flex: 1.5;
+  justify-content: flex-start;
+}
+
+.actions-column {
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.modal-container {
+  background-color: var(--modal-background);
+  padding: var(--spacing-md);
+  margin: var(--spacing-md);
+  border-radius: var(--radius-md);
+  max-height: 90%;
+  align-self: center;
+  width: 45%;
+}
+
+.modal-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  color: var(--modal-text);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background-color: var(--surface);
+  border-radius: 0;
+}
+
+.empty-state-icon {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-secondary);
+}
+
+.empty-state-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.empty-state-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--spacing-xs);
+}
+
+.empty-state-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--spacing-sm);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .inventory-container {
+    padding: var(--spacing-sm);
+  }
+
+  .inventory-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .inventory-actions {
+    justify-content: flex-start;
+  }
+
+  .inventory-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .name-column {
+    flex: 3;
+  }
+
+  .category-column {
+    flex: 1;
+  }
+
+  .actions-column {
+    flex: 0.7;
+  }
+
+  .modal-container {
+    width: 95%;
+    margin: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .inventory-stats {
+    grid-template-columns: 1fr;
+  }
+} 

@@ -1,0 +1,222 @@
+/* Layout Patterns */
+.flex-1 {
+  flex: 1;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Grid Layouts */
+.grid {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.grid-2 {
+  composes: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  composes: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  composes: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Responsive Grid */
+@media (max-width: 1024px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-3, .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Spacing Utilities */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--spacing-xs); }
+.m-2 { margin: var(--spacing-sm); }
+.m-3 { margin: var(--spacing-md); }
+.m-4 { margin: var(--spacing-lg); }
+.m-5 { margin: var(--spacing-xl); }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+.mt-5 { margin-top: var(--spacing-xl); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+.mb-5 { margin-bottom: var(--spacing-xl); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--spacing-xs); }
+.p-2 { padding: var(--spacing-sm); }
+.p-3 { padding: var(--spacing-md); }
+.p-4 { padding: var(--spacing-lg); }
+.p-5 { padding: var(--spacing-xl); }
+
+/* Container Widths */
+.container-sm {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.container-md {
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+.container-lg {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.container-xl {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Common Layout Components */
+.page-wrapper {
+  composes: flex-1;
+  padding: var(--spacing-md);
+}
+
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header {
+  composes: flex-between mb-3;
+}
+
+.section-content {
+  composes: flex-1;
+}
+
+/* Card Layouts */
+.card-grid {
+  composes: grid grid-3;
+  gap: var(--spacing-md);
+}
+
+.card-stack {
+  composes: flex-column;
+  gap: var(--spacing-md);
+}
+
+/* Form Layouts */
+.form-group {
+  composes: flex-column mb-3;
+}
+
+.form-row {
+  composes: flex-row gap-md;
+}
+
+/* Table Layouts */
+.table-container {
+  composes: flex-1;
+  overflow-x: auto;
+}
+
+.table-wrapper {
+  composes: flex-1;
+  min-width: 100%;
+}
+
+/* Modal Layouts */
+.modal-container {
+  composes: flex-center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal-content {
+  composes: card;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Navigation Layouts */
+.nav-container {
+  composes: flex-row;
+  gap: var(--spacing-md);
+}
+
+.nav-item {
+  composes: flex-center;
+  padding: var(--spacing-sm);
+}
+
+/* List Layouts */
+.list-container {
+  composes: flex-column;
+  gap: var(--spacing-sm);
+}
+
+.list-item {
+  composes: flex-between;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Responsive Helpers */
+.hide-mobile {
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.hide-desktop {
+  @media (min-width: 769px) {
+    display: none;
+  }
+} 

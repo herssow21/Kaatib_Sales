@@ -177,20 +177,9 @@ const styles = StyleSheet.create({
     padding: Platform.OS === "web" ? 20 : 10,
   },
   formContainer: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: Platform.OS === "web" ? 24 : 16,
     width: Platform.OS === "web" ? "100%" : "98%",
     maxWidth: Platform.OS === "web" ? 500 : "100%",
     height: Platform.OS === "web" ? "90%" : "95%",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   contentContainer: {
     flex: 1,

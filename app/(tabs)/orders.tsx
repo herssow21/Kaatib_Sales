@@ -71,6 +71,8 @@ export default function Orders() {
     width: 48, // Default width for 58mm printer (32 or 48 chars per line)
   });
   const [isPrinterDialogVisible, setIsPrinterDialogVisible] = useState(false);
+  const [page, setPage] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const isMobile = Platform.OS === "android" || Platform.OS === "ios";
 
@@ -1573,560 +1575,626 @@ export default function Orders() {
       )}
       {/* Orders List or Table comes directly below search bar */}
       {isMobile ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator
-          style={{ width: "100%", marginBottom: 72 }}
-        >
-          <View
-            style={{
-              minWidth: 900,
-              height: 300,
-              flex: 1,
-              marginTop: 0,
-              marginBottom: 32,
-            }}
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator
+            style={{ width: "100%", marginBottom: 0 }}
           >
-            <DataTable
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 10,
-                marginTop: 12,
-                borderWidth: 1,
-                borderColor: colors.outline,
-                overflow: "hidden",
-                minWidth: 900,
-              }}
-            >
-              <DataTable.Header
-                style={{ backgroundColor: colors.surfaceVariant }}
+            <View style={{ minWidth: 900, flex: 1, marginBottom: 3 }}>
+              <DataTable
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 10,
+                  marginTop: 12,
+                  borderWidth: 1,
+                  borderColor: colors.outline,
+                  overflow: "hidden",
+                  minWidth: 900,
+                }}
               >
-                <DataTable.Title style={{ width: 120 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
+                <DataTable.Header
+                  style={{
+                    backgroundColor: colors.surfaceVariant,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.divider,
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    elevation: 2,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 2,
+                  }}
+                >
+                  <DataTable.Title
+                    style={{ width: 120, alignItems: "flex-start" }}
                   >
-                    Order ID
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 100 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Category
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 100 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Date
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 120 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Client
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 100 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Contact
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 80 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Items
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 100 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Amount
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 100 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Status
-                  </Text>
-                </DataTable.Title>
-                <DataTable.Title style={{ width: 175 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.text,
-                      textAlign: "left",
-                    }}
-                  >
-                    Actions
-                  </Text>
-                </DataTable.Title>
-              </DataTable.Header>
-              <ScrollView
-                style={{ height: 350 }}
-                showsVerticalScrollIndicator={true}
-              >
-                {displayOrders.length === 0 ? (
-                  <DataTable.Row>
-                    <DataTable.Cell
-                      style={{ justifyContent: "center", alignItems: "center" }}
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
                     >
-                      <View
+                      Order ID
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 100, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Category
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 100, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Date
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 120, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Client
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 100, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Contact
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 80, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Items
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 100, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Amount
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 100, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Status
+                    </Text>
+                  </DataTable.Title>
+                  <DataTable.Title
+                    style={{ width: 175, alignItems: "flex-start" }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.text,
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        textAlign: "left",
+                      }}
+                    >
+                      Actions
+                    </Text>
+                  </DataTable.Title>
+                </DataTable.Header>
+                <ScrollView style={{ maxHeight: 460 }}>
+                  {displayOrders.length === 0 ? (
+                    <DataTable.Row>
+                      <DataTable.Cell
                         style={{
-                          width: 900,
-                          alignItems: "center",
                           justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
-                        <Text
+                        <View
                           style={{
-                            color: colors.textSecondary,
-                            fontSize: 16,
-                            textAlign: "center",
+                            width: 900,
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
                         >
-                          No orders found
-                        </Text>
-                        <Text
-                          style={{
-                            color: colors.textSecondary,
-                            fontSize: 14,
-                            textAlign: "center",
-                          }}
-                        >
-                          Create a new order or adjust your filters
-                        </Text>
-                      </View>
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                ) : (
-                  displayOrders.map((order) => (
-                    <DataTable.Row
-                      key={order.id}
-                      style={{ backgroundColor: colors.surface }}
-                    >
-                      <DataTable.Cell style={{ width: 120 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.id}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 100 }}>
-                        {getCategoryIcon(order)}
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 100 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {new Date(order.orderDate).toLocaleDateString()}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 120 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.clientName}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 100 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.clientContact}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 80 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.totalOrderItems}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 100 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.grandTotal}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 100 }}>
-                        <Text style={{ color: colors.text, textAlign: "left" }}>
-                          {order.paymentStatus}
-                        </Text>
-                      </DataTable.Cell>
-                      <DataTable.Cell style={{ width: 175 }}>
-                        <View style={{ flexDirection: "row", gap: 4 }}>
-                          <IconButton
-                            icon="eye"
-                            size={18}
-                            onPress={() => handleViewDetails(order)}
-                            iconColor={colors.text}
-                          />
-                          <IconButton
-                            icon="printer"
-                            size={18}
-                            onPress={() => handlePrint(order)}
-                            iconColor={colors.text}
-                          />
-                          <IconButton
-                            icon="pencil"
-                            size={18}
-                            onPress={() => handleEdit(order)}
-                            iconColor={colors.text}
-                          />
-                          <IconButton
-                            icon="delete"
-                            size={18}
-                            onPress={() => handleDelete(order.id)}
-                            iconColor={colors.error}
-                          />
+                          <Text
+                            style={{
+                              color: colors.textSecondary,
+                              fontSize: 16,
+                              textAlign: "center",
+                            }}
+                          >
+                            No orders found
+                          </Text>
+                          <Text
+                            style={{
+                              color: colors.textSecondary,
+                              fontSize: 14,
+                              textAlign: "center",
+                            }}
+                          >
+                            Create a new order or adjust your filters
+                          </Text>
                         </View>
                       </DataTable.Cell>
                     </DataTable.Row>
-                  ))
-                )}
-              </ScrollView>
-            </DataTable>
-            <DataTable.Pagination
-              page={0}
-              numberOfPages={1}
-              label={
-                displayOrders.length > 0
-                  ? `Showing 1-${displayOrders.length} of ${orders.length} orders`
-                  : "0-0 of 0"
-              }
-              numberOfItemsPerPageList={[5, 10, 15, 20]}
-              numberOfItemsPerPage={displayOrders.length}
-              onItemsPerPageChange={() => {}}
-              onPageChange={() => {}}
-              showFastPaginationControls
-              selectPageDropdownLabel={"Rows per page"}
-              theme={{
-                colors: {
-                  surface: colors.surfaceVariant,
-                  text: colors.text,
-                  primary: colors.primary,
-                  outline: colors.outline,
-                },
+                  ) : (
+                    displayOrders.map((order) => (
+                      <DataTable.Row
+                        key={order.id}
+                        style={{ backgroundColor: colors.surface }}
+                      >
+                        <DataTable.Cell style={{ width: 120 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.id}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 100 }}>
+                          {getCategoryIcon(order)}
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 100 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {new Date(order.orderDate).toLocaleDateString()}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 120 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.clientName}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 100 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.clientContact}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 80 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.totalOrderItems}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 100 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.grandTotal}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 100 }}>
+                          <Text
+                            style={{ color: colors.text, textAlign: "left" }}
+                          >
+                            {order.paymentStatus}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell style={{ width: 175 }}>
+                          <View style={{ flexDirection: "row", gap: 4 }}>
+                            <IconButton
+                              icon="eye"
+                              size={18}
+                              onPress={() => handleViewDetails(order)}
+                              iconColor={colors.text}
+                            />
+                            <IconButton
+                              icon="printer"
+                              size={18}
+                              onPress={() => handlePrint(order)}
+                              iconColor={colors.text}
+                            />
+                            <IconButton
+                              icon="pencil"
+                              size={18}
+                              onPress={() => handleEdit(order)}
+                              iconColor={colors.text}
+                            />
+                            <IconButton
+                              icon="delete"
+                              size={18}
+                              onPress={() => handleDelete(order.id)}
+                              iconColor={colors.error}
+                            />
+                          </View>
+                        </DataTable.Cell>
+                      </DataTable.Row>
+                    ))
+                  )}
+                </ScrollView>
+              </DataTable>
+              <DataTable.Pagination
+                page={page}
+                numberOfPages={Math.ceil(filteredOrders.length / itemsPerPage)}
+                onPageChange={setPage}
+                label={
+                  <Text
+                    style={{
+                      color: colors.onSurface ?? "#222",
+                      fontSize: 14,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {`${page * itemsPerPage + 1}-${Math.min(
+                      (page + 1) * itemsPerPage,
+                      filteredOrders.length
+                    )} of ${filteredOrders.length}`}
+                  </Text>
+                }
+                showFastPaginationControls
+                numberOfItemsPerPageList={[5, 10, 15, 20]}
+                numberOfItemsPerPage={itemsPerPage}
+                onItemsPerPageChange={setItemsPerPage}
+                selectPageDropdownLabel={
+                  <Text
+                    style={{
+                      color: colors.onSurface ?? "#222",
+                      fontSize: 14,
+                      fontWeight: "500",
+                    }}
+                  >
+                    Rows per page
+                  </Text>
+                }
+                style={{
+                  backgroundColor: colors.surface,
+                  marginTop: 0,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.divider,
+                  borderBottomLeftRadius: 8,
+                  borderBottomRightRadius: 8,
+                }}
+              />
+            </View>
+          </ScrollView>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 10,
+              marginTop: 12,
+              borderWidth: 1,
+              borderColor: colors.outline,
+              overflow: "hidden",
+              marginBottom: 32,
+              maxHeight: 400,
+            }}
+          >
+            {/* Table Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: colors.surfaceVariant,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.divider,
               }}
+            >
+              <Text
+                style={{
+                  flex: 1.2,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Order ID
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Category
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Date
+              </Text>
+              <Text
+                style={{
+                  flex: 1.2,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Client
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Contact
+              </Text>
+              <Text
+                style={{
+                  flex: 0.8,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Items
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Amount
+              </Text>
+              <Text
+                style={{
+                  flex: 1,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Status
+              </Text>
+              <Text
+                style={{
+                  flex: 1.5,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  textAlign: "left",
+                }}
+              >
+                Actions
+              </Text>
+            </View>
+            {/* Table Rows */}
+            {displayOrders.length === 0 ? (
+              <View style={{ alignItems: "center", padding: 32 }}>
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 16,
+                    marginBottom: 4,
+                  }}
+                >
+                  No orders found
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  Create a new order or adjust your filters
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                style={{ maxHeight: 320 }}
+                showsVerticalScrollIndicator={true}
+              >
+                {displayOrders.map((order) => (
+                  <View
+                    key={order.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.divider,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        flex: 1.2,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.id}
+                    </Text>
+                    <View style={{ flex: 1 }}>{getCategoryIcon(order)}</View>
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 1.2,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.clientName}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.clientContact}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 0.8,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.totalOrderItems}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.grandTotal}
+                    </Text>
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: isDarkMode ? colors.text : "#000000",
+                        textAlign: "left",
+                      }}
+                    >
+                      {order.paymentStatus}
+                    </Text>
+                    <View style={{ flex: 1.5, flexDirection: "row", gap: 4 }}>
+                      <IconButton
+                        icon="eye"
+                        size={18}
+                        onPress={() => handleViewDetails(order)}
+                        iconColor={isDarkMode ? colors.text : "#000000"}
+                      />
+                      <IconButton
+                        icon="printer"
+                        size={18}
+                        onPress={() => handlePrint(order)}
+                        iconColor={isDarkMode ? colors.text : "#000000"}
+                      />
+                      <IconButton
+                        icon="pencil"
+                        size={18}
+                        onPress={() => handleEdit(order)}
+                        iconColor={isDarkMode ? colors.text : "#000000"}
+                      />
+                      <IconButton
+                        icon="delete"
+                        size={18}
+                        onPress={() => handleDelete(order.id)}
+                        iconColor={colors.error}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            {/* Table Footer (pagination/info) outside the scroll area */}
+            <DataTable.Pagination
+              page={page}
+              numberOfPages={Math.ceil(filteredOrders.length / itemsPerPage)}
+              onPageChange={(page) => setPage(page)}
+              label={
+                <Text
+                  style={{
+                    color: colors.onSurface ?? "#222",
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  {`${page * itemsPerPage + 1}-${Math.min(
+                    (page + 1) * itemsPerPage,
+                    filteredOrders.length
+                  )} of ${filteredOrders.length}`}
+                </Text>
+              }
+              showFastPaginationControls
+              numberOfItemsPerPageList={[5, 10, 15, 20]}
+              numberOfItemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              selectPageDropdownLabel={
+                <Text
+                  style={{
+                    color: colors.onSurface ?? "#222",
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  Rows per page
+                </Text>
+              }
               style={{
                 backgroundColor: colors.surface,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
+                marginTop: 0,
                 borderTopWidth: 1,
                 borderTopColor: colors.divider,
                 borderBottomLeftRadius: 8,
                 borderBottomRightRadius: 8,
-                marginBottom: isMobile ? 32 : 24,
               }}
             />
           </View>
-        </ScrollView>
-      ) : (
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: 10,
-            marginTop: 12,
-            borderWidth: 1,
-            borderColor: colors.outline,
-            overflow: "hidden",
-            marginBottom: 32,
-            maxHeight: 400,
-          }}
-        >
-          {/* Table Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              backgroundColor: colors.surfaceVariant,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.divider,
-            }}
-          >
-            <Text
-              style={{
-                flex: 1.2,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Order ID
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Category
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Date
-            </Text>
-            <Text
-              style={{
-                flex: 1.2,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Client
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Contact
-            </Text>
-            <Text
-              style={{
-                flex: 0.8,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Items
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Amount
-            </Text>
-            <Text
-              style={{
-                flex: 1,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Status
-            </Text>
-            <Text
-              style={{
-                flex: 1.5,
-                fontWeight: "bold",
-                color: colors.text,
-                textAlign: "left",
-              }}
-            >
-              Actions
-            </Text>
-          </View>
-          {/* Table Rows */}
-          {displayOrders.length === 0 ? (
-            <View style={{ alignItems: "center", padding: 32 }}>
-              <Text
-                style={{
-                  color: colors.textSecondary,
-                  fontSize: 16,
-                  marginBottom: 4,
-                }}
-              >
-                No orders found
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                Create a new order or adjust your filters
-              </Text>
-            </View>
-          ) : (
-            <ScrollView
-              style={{ maxHeight: 320 }}
-              showsVerticalScrollIndicator={true}
-            >
-              {displayOrders.map((order) => (
-                <View
-                  key={order.id}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.divider,
-                    backgroundColor: colors.surface,
-                  }}
-                >
-                  <Text
-                    style={{
-                      flex: 1.2,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.id}
-                  </Text>
-                  <View style={{ flex: 1 }}>{getCategoryIcon(order)}</View>
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {new Date(order.orderDate).toLocaleDateString()}
-                  </Text>
-                  <Text
-                    style={{
-                      flex: 1.2,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.clientName}
-                  </Text>
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.clientContact}
-                  </Text>
-                  <Text
-                    style={{
-                      flex: 0.8,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.totalOrderItems}
-                  </Text>
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.grandTotal}
-                  </Text>
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: isDarkMode ? colors.text : "#000000",
-                      textAlign: "left",
-                    }}
-                  >
-                    {order.paymentStatus}
-                  </Text>
-                  <View style={{ flex: 1.5, flexDirection: "row", gap: 4 }}>
-                    <IconButton
-                      icon="eye"
-                      size={18}
-                      onPress={() => handleViewDetails(order)}
-                      iconColor={isDarkMode ? colors.text : "#000000"}
-                    />
-                    <IconButton
-                      icon="printer"
-                      size={18}
-                      onPress={() => handlePrint(order)}
-                      iconColor={isDarkMode ? colors.text : "#000000"}
-                    />
-                    <IconButton
-                      icon="pencil"
-                      size={18}
-                      onPress={() => handleEdit(order)}
-                      iconColor={isDarkMode ? colors.text : "#000000"}
-                    />
-                    <IconButton
-                      icon="delete"
-                      size={18}
-                      onPress={() => handleDelete(order.id)}
-                      iconColor={colors.error}
-                    />
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-          {/* Table Footer (pagination/info) outside the scroll area */}
-          <DataTable.Pagination
-            page={0}
-            numberOfPages={1}
-            label={
-              displayOrders.length > 0
-                ? `Showing 1-${displayOrders.length} of ${orders.length} orders`
-                : "0-0 of 0"
-            }
-            numberOfItemsPerPageList={[5, 10, 15, 20]}
-            numberOfItemsPerPage={displayOrders.length}
-            onItemsPerPageChange={() => {}}
-            onPageChange={() => {}}
-            showFastPaginationControls
-            selectPageDropdownLabel={"Rows per page"}
-            theme={{
-              colors: {
-                surface: colors.surfaceVariant,
-                text: isDarkMode ? colors.text : "#000000",
-                primary: colors.primary,
-                outline: colors.outline,
-              },
-            }}
-            style={{
-              backgroundColor: colors.surface,
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderTopWidth: 1,
-              borderTopColor: colors.divider,
-              borderBottomLeftRadius: 8,
-              borderBottomRightRadius: 8,
-              marginBottom: isMobile ? 32 : 24,
-            }}
-          />
         </View>
       )}
 
