@@ -99,6 +99,7 @@ export function EmployeeManagement() {
     "success" | "error" | "warning"
   >("success");
 
+  const isMobile = width < 500;
   const isWeb = width >= 768;
   const modalWidth = isWeb ? Math.min(600, width * 0.8) : "90%";
 
@@ -218,33 +219,99 @@ export function EmployeeManagement() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, isWeb && styles.headerWeb]}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => router.back()}
-          style={styles.backButton}
-          iconColor="#fff"
-        />
-        <Text style={styles.headerText}>Employee Management</Text>
-        <Button
-          mode="contained"
-          onPress={() => {
-            resetForm();
-            setModalVisible(true);
-          }}
-          style={styles.addButton}
-          contentStyle={styles.addButtonContent}
-          icon="account-plus"
-        >
-          Add New Employee
-        </Button>
+    <View
+      style={[
+        styles.container,
+        isMobile && styles.containerMobile,
+        { backgroundColor: theme.dark ? theme.colors.background : "#f5f5f5" },
+      ]}
+    >
+      <View style={[styles.header, isMobile && styles.headerMobile]}>
+        {isMobile ? (
+          <>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 2,
+              }}
+            >
+              <IconButton
+                icon="arrow-left"
+                size={24}
+                onPress={() => router.back()}
+                style={[styles.backButton, styles.backButtonMobile]}
+                iconColor="#fff"
+              />
+              <Text style={[styles.headerText, styles.headerTextMobile]}>
+                Employee Management
+              </Text>
+            </View>
+            <Text style={[styles.subHeaderText, { marginBottom: 8 }]}>
+              Manage your employee information and track their assignments
+            </Text>
+            <Button
+              mode="contained"
+              onPress={() => {
+                resetForm();
+                setModalVisible(true);
+              }}
+              style={[styles.addButton, styles.addButtonMobile]}
+              contentStyle={[
+                styles.addButtonContent,
+                styles.addButtonContentMobile,
+              ]}
+              icon="account-plus"
+              labelStyle={{ fontSize: 16, color: "#fff", fontWeight: "600" }}
+            >
+              Add New Employee
+            </Button>
+          </>
+        ) : (
+          <>
+            <IconButton
+              icon="arrow-left"
+              size={24}
+              onPress={() => router.back()}
+              style={[styles.backButton]}
+              iconColor="#fff"
+            />
+            <View style={[styles.headerContent, styles.headerContentRow]}>
+              <Text style={styles.headerText}>Employee Management</Text>
+              <Text style={[styles.subHeaderText, styles.subHeaderTextRight]}>
+                Manage your employee information and track their assignments
+              </Text>
+            </View>
+            <Button
+              mode="contained"
+              onPress={() => {
+                resetForm();
+                setModalVisible(true);
+              }}
+              style={[styles.addButton]}
+              contentStyle={[styles.addButtonContent]}
+              icon="account-plus"
+              labelStyle={{ fontSize: 16, color: "#fff", fontWeight: "600" }}
+            >
+              Add New Employee
+            </Button>
+          </>
+        )}
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={[styles.scrollView, isMobile && styles.scrollViewMobile]}
+      >
         {employees.map((emp) => (
-          <Surface key={emp.id} style={styles.employeeCard} elevation={2}>
+          <Surface
+            key={emp.id}
+            style={[
+              styles.employeeCard,
+              isMobile && styles.employeeCardMobile,
+              { backgroundColor: theme.dark ? theme.colors.surface : "#fff" },
+            ]}
+            elevation={2}
+          >
             <View style={styles.row}>
               <Image
                 source={
@@ -252,25 +319,65 @@ export function EmployeeManagement() {
                     ? { uri: emp.avatar }
                     : require("../assets/images/avatar-placeholder.png")
                 }
-                style={styles.avatar}
+                style={[styles.avatar, isMobile && styles.avatarMobile]}
               />
               <View style={styles.infoCol}>
-                <Text style={styles.name}>{emp.name}</Text>
-                <Text style={styles.role}>{emp.email}</Text>
-                <Text style={styles.meta}>
+                <Text
+                  style={[
+                    styles.name,
+                    isMobile && styles.nameMobile,
+                    { color: theme.colors.onSurface },
+                  ]}
+                >
+                  {emp.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.role,
+                    isMobile && styles.roleMobile,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  {emp.email}
+                </Text>
+                <Text
+                  style={[
+                    styles.meta,
+                    isMobile && styles.metaMobile,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
                   ID: {emp.employeeId} | Branch: {emp.branch}
                 </Text>
                 {emp.joined && (
-                  <Text style={styles.meta}>
+                  <Text
+                    style={[
+                      styles.meta,
+                      isMobile && styles.metaMobile,
+                      { color: theme.colors.onSurfaceVariant },
+                    ]}
+                  >
                     Joined: {emp.joined} | Sales Rank: #{emp.salesRank} of{" "}
                     {emp.totalSalesPeople}
                   </Text>
                 )}
-                <Text style={styles.meta}>
+                <Text
+                  style={[
+                    styles.meta,
+                    isMobile && styles.metaMobile,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
                   Sales Period: {emp.salesPeriod} | Commission:{" "}
                   {emp.commissionRate}%
                 </Text>
-                <Text style={styles.meta}>
+                <Text
+                  style={[
+                    styles.meta,
+                    isMobile && styles.metaMobile,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
                   Assigned Store: {emp.assignedStore || "-"}
                 </Text>
               </View>
@@ -322,10 +429,26 @@ export function EmployeeManagement() {
             setModalVisible(false);
             resetForm();
           }}
-          contentContainerStyle={[styles.modalContent, { width: modalWidth }]}
+          contentContainerStyle={[
+            styles.modalContent,
+            {
+              width: modalWidth,
+              marginTop: 40,
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.outline,
+              borderWidth: 1,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 8,
+            },
+          ]}
         >
           <ScrollView style={styles.modalScrollView}>
-            <Text style={styles.modalTitle}>
+            <Text
+              style={[styles.modalTitle, { color: theme.colors.onSurface }]}
+            >
               {editingEmployee ? "Edit Employee" : "Add New Employee"}
             </Text>
             <TextInput
@@ -336,7 +459,13 @@ export function EmployeeManagement() {
                 if (errors.name)
                   setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               error={!!errors.name}
               left={<TextInput.Icon icon="account" />}
@@ -357,7 +486,13 @@ export function EmployeeManagement() {
                 if (errors.phone)
                   setErrors((prev) => ({ ...prev, phone: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               keyboardType="phone-pad"
               error={!!errors.phone}
@@ -376,7 +511,13 @@ export function EmployeeManagement() {
                 if (errors.email)
                   setErrors((prev) => ({ ...prev, email: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               keyboardType="email-address"
               error={!!errors.email}
@@ -394,7 +535,13 @@ export function EmployeeManagement() {
                 if (errors.employeeId)
                   setErrors((prev) => ({ ...prev, employeeId: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               error={!!errors.employeeId}
               left={<TextInput.Icon icon="badge-account" />}
@@ -411,7 +558,13 @@ export function EmployeeManagement() {
                 if (errors.password)
                   setErrors((prev) => ({ ...prev, password: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               secureTextEntry={!showPassword}
               error={!!errors.password}
@@ -435,7 +588,13 @@ export function EmployeeManagement() {
                   label="Branch *"
                   value={form.branch}
                   onPressIn={() => setBranchMenuVisible(true)}
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.colors.background,
+                      color: theme.colors.onSurface,
+                    },
+                  ]}
                   mode="outlined"
                   error={!!errors.branch}
                   left={<TextInput.Icon icon="store" />}
@@ -464,7 +623,13 @@ export function EmployeeManagement() {
               label="Joined Date (Optional)"
               value={form.joined}
               onChangeText={(v) => setForm((f) => ({ ...f, joined: v }))}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               placeholder="e.g. Jan 2023"
               left={<TextInput.Icon icon="calendar" />}
@@ -478,7 +643,13 @@ export function EmployeeManagement() {
                 if (errors.commissionRate)
                   setErrors((prev) => ({ ...prev, commissionRate: undefined }));
               }}
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.colors.background,
+                  color: theme.colors.onSurface,
+                },
+              ]}
               mode="outlined"
               keyboardType="numeric"
               error={!!errors.commissionRate}
@@ -558,27 +729,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: useTheme().dark ? useTheme().colors.background : "#f5f5f5",
+  },
+  containerMobile: {
+    padding: 4,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+    paddingTop: 24,
   },
-  headerWeb: {
-    maxWidth: 1200,
-    alignSelf: "center",
-    width: "100%",
+  headerMobile: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 8,
+    paddingTop: 24,
+  },
+  headerContent: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  subHeaderText: {
+    fontSize: 14,
+    color: "#888",
+    marginLeft: 8,
+    marginBottom: 16,
+  },
+  subHeaderTextRight: {
+    marginLeft: 8,
   },
   scrollView: {
     flex: 1,
+  },
+  scrollViewMobile: {
+    paddingHorizontal: 0,
   },
   employeeCard: {
     marginBottom: 16,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: useTheme().dark ? useTheme().colors.surface : "#fff",
     elevation: 2,
+  },
+  employeeCardMobile: {
+    padding: 10,
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
@@ -590,26 +788,36 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 16,
   },
+  avatarMobile: {
+    width: 48,
+    height: 48,
+    marginRight: 8,
+  },
   infoCol: {
     flex: 1,
   },
   name: {
     fontSize: 18,
     fontWeight: "bold",
-    color: useTheme().colors.onSurface,
+  },
+  nameMobile: {
+    fontSize: 16,
   },
   role: {
     fontSize: 14,
-    color: useTheme().colors.onSurfaceVariant,
     marginBottom: 4,
+  },
+  roleMobile: {
+    fontSize: 12,
   },
   meta: {
     fontSize: 12,
-    color: useTheme().colors.onSurfaceVariant,
     marginBottom: 2,
   },
+  metaMobile: {
+    fontSize: 10,
+  },
   modalContent: {
-    backgroundColor: useTheme().dark ? useTheme().colors.surface : "#fff",
     padding: 24,
     margin: 20,
     borderRadius: 12,
@@ -626,14 +834,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
-    color: useTheme().colors.onSurface,
   },
   input: {
     marginBottom: 16,
-    backgroundColor: useTheme().dark
-      ? useTheme().colors.surfaceVariant
-      : "#fff",
-    color: useTheme().colors.onSurface,
   },
   modalActions: {
     flexDirection: "row",
@@ -653,17 +856,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 2,
   },
+  backButtonMobile: {
+    marginRight: 0,
+    marginBottom: 4,
+  },
   headerText: {
     fontSize: 22,
     fontWeight: "bold",
     marginLeft: 8,
-    flex: 1,
-    color: useTheme().colors.onSurface,
+    marginBottom: 8,
+  },
+  headerTextMobile: {
+    fontSize: 18,
+    marginLeft: 8,
+    marginBottom: 0,
+    alignSelf: "center",
+    fontWeight: "bold",
   },
   addButton: {
     borderRadius: 8,
     elevation: 2,
-    backgroundColor: useTheme().dark ? useTheme().colors.primary : undefined,
+    backgroundColor: reddish,
+  },
+  addButtonMobile: {
+    width: "100%",
+    marginTop: 8,
+    alignSelf: "stretch",
+    backgroundColor: reddish,
+    marginBottom: 8,
   },
   addButtonContent: {
     flexDirection: "row",
@@ -671,8 +891,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 48,
   },
+  addButtonContentMobile: {
+    justifyContent: "center",
+    paddingHorizontal: 0,
+    height: 40,
+  },
   errorText: {
-    color: useTheme().colors.error,
+    color: "#FF0000",
     marginTop: -12,
     marginBottom: 12,
     marginLeft: 4,

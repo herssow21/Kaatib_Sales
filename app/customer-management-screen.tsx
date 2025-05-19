@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Platform, Alert } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  Alert,
+  Dimensions,
+} from "react-native";
 import {
   TextInput,
   Text,
@@ -328,6 +335,11 @@ const CustomerManagementScreen = () => {
       elevation: 2,
       borderColor: colors.listBorder,
       borderWidth: 1,
+      ...(Platform.OS === "web"
+        ? {}
+        : {
+            width: Dimensions.get("window").width - 32, // Full width minus margins
+          }),
     },
     tableHeader: {
       flexDirection: "row",
@@ -335,6 +347,11 @@ const CustomerManagementScreen = () => {
       borderBottomWidth: 1,
       borderBottomColor: colors.divider,
       backgroundColor: colors.surfaceVariant,
+      ...(Platform.OS === "web"
+        ? {}
+        : {
+            minWidth: 800, // Minimum width for mobile to enable horizontal scroll
+          }),
     },
     headerCell: {
       fontWeight: "bold",
@@ -360,11 +377,19 @@ const CustomerManagementScreen = () => {
     scrollView: {
       flex: 1,
     },
+    horizontalScrollView: {
+      flex: 1,
+    },
     row: {
       flexDirection: "row",
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.divider,
+      ...(Platform.OS === "web"
+        ? {}
+        : {
+            minWidth: 800, // Minimum width for mobile to enable horizontal scroll
+          }),
     },
     cell: {
       color: colors.listText,
@@ -497,77 +522,90 @@ const CustomerManagementScreen = () => {
       </View>
 
       <View style={styles.tableContainer}>
-        <View style={styles.tableHeader}>
-          <Text style={[styles.headerCell, styles.nameCell]}>
-            Customer Name
-          </Text>
-          <Text style={[styles.headerCell, styles.contactCell]}>Contact</Text>
-          <Text style={[styles.headerCell, styles.addressCell]}>Address</Text>
-          <Text style={[styles.headerCell, styles.ordersCell]}>Orders</Text>
-          <View style={styles.actionsCell}>
-            <Text style={styles.headerCell}>Actions</Text>
-          </View>
-        </View>
-
-        <ScrollView style={styles.scrollView}>
-          {filteredCustomers.map((customer) => (
-            <View key={customer.id} style={styles.row}>
-              <View style={styles.nameCell}>
-                <Text style={styles.cell}>{customer.name}</Text>
-              </View>
-              <View style={styles.contactCell}>
-                <Text style={styles.cell}>{customer.email || "N/A"}</Text>
-                <Text style={[styles.cell, { color: colors.onSurfaceVariant }]}>
-                  {customer.phone}
-                </Text>
-              </View>
-              <View style={styles.addressCell}>
-                <Text style={styles.cell}>{customer.address || "N/A"}</Text>
-              </View>
-              <View style={styles.ordersCell}>
-                <Text style={styles.cell}>{customer.totalOrders}</Text>
-              </View>
+        <ScrollView
+          horizontal={Platform.OS !== "web"}
+          style={styles.horizontalScrollView}
+        >
+          <View>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.headerCell, styles.nameCell]}>
+                Customer Name
+              </Text>
+              <Text style={[styles.headerCell, styles.contactCell]}>
+                Contact
+              </Text>
+              <Text style={[styles.headerCell, styles.addressCell]}>
+                Address
+              </Text>
+              <Text style={[styles.headerCell, styles.ordersCell]}>Orders</Text>
               <View style={styles.actionsCell}>
-                <Menu
-                  visible={menuVisible === customer.id}
-                  onDismiss={() => setMenuVisible(null)}
-                  anchor={
-                    <IconButton
-                      icon="dots-vertical"
-                      size={20}
-                      onPress={() => setMenuVisible(customer.id)}
-                    />
-                  }
-                >
-                  <Menu.Item
-                    onPress={() => {
-                      handleViewOrders(customer);
-                      setMenuVisible(null);
-                    }}
-                    title="View Orders"
-                    leadingIcon="shopping"
-                  />
-                  <Menu.Item
-                    onPress={() => {
-                      handleEdit(customer);
-                      setMenuVisible(null);
-                    }}
-                    title="Edit"
-                    leadingIcon="pencil"
-                  />
-                  <Menu.Item
-                    onPress={() => {
-                      handleDelete(customer);
-                      setMenuVisible(null);
-                    }}
-                    title="Delete"
-                    leadingIcon="delete"
-                    titleStyle={{ color: colors.error }}
-                  />
-                </Menu>
+                <Text style={styles.headerCell}>Actions</Text>
               </View>
             </View>
-          ))}
+
+            <ScrollView style={styles.scrollView}>
+              {filteredCustomers.map((customer) => (
+                <View key={customer.id} style={styles.row}>
+                  <View style={styles.nameCell}>
+                    <Text style={styles.cell}>{customer.name}</Text>
+                  </View>
+                  <View style={styles.contactCell}>
+                    <Text style={styles.cell}>{customer.email || "N/A"}</Text>
+                    <Text
+                      style={[styles.cell, { color: colors.onSurfaceVariant }]}
+                    >
+                      {customer.phone}
+                    </Text>
+                  </View>
+                  <View style={styles.addressCell}>
+                    <Text style={styles.cell}>{customer.address || "N/A"}</Text>
+                  </View>
+                  <View style={styles.ordersCell}>
+                    <Text style={styles.cell}>{customer.totalOrders}</Text>
+                  </View>
+                  <View style={styles.actionsCell}>
+                    <Menu
+                      visible={menuVisible === customer.id}
+                      onDismiss={() => setMenuVisible(null)}
+                      anchor={
+                        <IconButton
+                          icon="dots-vertical"
+                          size={20}
+                          onPress={() => setMenuVisible(customer.id)}
+                        />
+                      }
+                    >
+                      <Menu.Item
+                        onPress={() => {
+                          handleViewOrders(customer);
+                          setMenuVisible(null);
+                        }}
+                        title="View Orders"
+                        leadingIcon="shopping"
+                      />
+                      <Menu.Item
+                        onPress={() => {
+                          handleEdit(customer);
+                          setMenuVisible(null);
+                        }}
+                        title="Edit"
+                        leadingIcon="pencil"
+                      />
+                      <Menu.Item
+                        onPress={() => {
+                          handleDelete(customer);
+                          setMenuVisible(null);
+                        }}
+                        title="Delete"
+                        leadingIcon="delete"
+                        titleStyle={{ color: colors.error }}
+                      />
+                    </Menu>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </ScrollView>
 
         <View style={styles.footer}>
