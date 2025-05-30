@@ -6,6 +6,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  useColorScheme,
 } from "react-native";
 import { TextInput, Button, Text, Title, useTheme } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
@@ -105,10 +106,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
   orders,
 }) => {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { items: inventoryItems, handleOrderSale } = useInventoryContext();
   const { categories } = useCategoryContext();
   const { showError, showSuccess, showWarning } = useAlertContext();
-  const { getCustomerByPhone, createCustomer, addOrderToCustomer } = useCustomerLookup();
+  const { getCustomerByPhone, createCustomer, addOrderToCustomer } =
+    useCustomerLookup();
   const { methods } = usePaymentMethods();
   const [formData, setFormData] = useState(initialData || initialFormState);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -152,7 +156,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
     const balance = grandTotal - amountPaid;
 
     let newStatus = "No Payment";
-    if (balance === 0 && grandTotal > 0) {
+    if (balance <= 0 && grandTotal > 0) {
       newStatus = "Completed";
     } else if (amountPaid > 0 && balance > 0) {
       newStatus = "Partial";
@@ -359,7 +363,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
         customer = await createCustomer({
           name: formData.clientName,
           phone: formData.clientContact,
-          address: formData.address || '',
+          address: formData.address || "",
         });
       }
 
@@ -627,22 +631,28 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }));
   };
 
-  // Create a custom theme that keeps labels black in all states
+  // Create a custom theme that handles dark mode text colors
   const customInputTheme = {
     ...theme,
     colors: {
       ...theme.colors,
-      onSurfaceVariant: "#000000", // Label color in normal state
-      onSurface: "#000000", // Label color when focused
+      onSurfaceVariant: isDark ? "#FFFFFF" : "#000000", // Label color in normal state
+      onSurface: isDark ? "#FFFFFF" : "#000000", // Label color when focused
       error: theme.colors.error, // Keep the error color for borders
-      outline: "#CCCCCC", // Normal border color
-      primary: "#000000", // Label and border color when focused
+      outline: isDark ? "#666666" : "#CCCCCC", // Normal border color
+      primary: isDark ? "#FFFFFF" : "#000000", // Label and border color when focused
+      text: isDark ? "#FFFFFF" : "#000000", // Input text color
     },
   };
 
+  // Helper function to get text color based on dark mode
+  const getTextColor = (isDark: boolean) => ({
+    color: isDark ? "#FFFFFF" : "#000000",
+  });
+
   return (
     <ScrollView style={orderFormStyles.container}>
-      <Text style={orderFormStyles.title}>
+      <Text style={[orderFormStyles.title, getTextColor(isDark)]}>
         {initialData ? "Edit Order" : "Add New Order"}
       </Text>
       <View style={orderFormStyles.topSection}>
@@ -663,7 +673,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
                   <MaterialIcons
                     name="calendar-today"
                     size={24}
-                    color="black"
+                    color={isDark ? "#FFFFFF" : "#000000"}
                     onPress={toggleDatePicker}
                   />
                 )}
@@ -819,8 +829,10 @@ const OrderForm: React.FC<OrderFormProps> = ({
             </View>
           </View>
           <View style={orderFormStyles.alignRow}>
-            <Text style={orderFormStyles.label}>Subtotal:</Text>
-            <Text>
+            <Text style={[orderFormStyles.label, getTextColor(isDark)]}>
+              Subtotal:
+            </Text>
+            <Text style={getTextColor(isDark)}>
               KES{" "}
               {formData.items.reduce(
                 (acc, item) => acc + item.rate * item.quantity,
@@ -829,12 +841,20 @@ const OrderForm: React.FC<OrderFormProps> = ({
             </Text>
           </View>
           <View style={orderFormStyles.alignRow}>
-            <Text style={orderFormStyles.label}>Order Discount:</Text>
-            <Text>KES {formData.discount}</Text>
+            <Text style={[orderFormStyles.label, getTextColor(isDark)]}>
+              Order Discount:
+            </Text>
+            <Text style={getTextColor(isDark)}>KES {formData.discount}</Text>
           </View>
           <View style={orderFormStyles.alignRow}>
-            <Text style={orderFormStyles.grandTotalLabel}>Grand Total:</Text>
-            <Text style={orderFormStyles.grandTotalValue}>
+            <Text
+              style={[orderFormStyles.grandTotalLabel, getTextColor(isDark)]}
+            >
+              Grand Total:
+            </Text>
+            <Text
+              style={[orderFormStyles.grandTotalValue, getTextColor(isDark)]}
+            >
               KES{" "}
               {formData.items.reduce(
                 (acc, item) => acc + item.rate * item.quantity,
@@ -844,8 +864,12 @@ const OrderForm: React.FC<OrderFormProps> = ({
           </View>
 
           <View style={orderFormStyles.alignRow}>
-            <Text style={orderFormStyles.label}>Balance:</Text>
-            <Text style={orderFormStyles.grandTotalValue}>
+            <Text style={[orderFormStyles.label, getTextColor(isDark)]}>
+              Balance:
+            </Text>
+            <Text
+              style={[orderFormStyles.grandTotalValue, getTextColor(isDark)]}
+            >
               KES{" "}
               {formData.items.reduce(
                 (acc, item) => acc + item.rate * item.quantity,
@@ -870,34 +894,55 @@ const OrderForm: React.FC<OrderFormProps> = ({
             />
           </View>
 
-          <Text style={orderFormStyles.label}>Payment Method</Text>
+          <Text style={[orderFormStyles.label, getTextColor(isDark)]}>
+            Payment Method
+          </Text>
           <Picker
             selectedValue={formData.paymentMethod}
             onValueChange={(itemValue) =>
               setFormData((prev) => ({ ...prev, paymentMethod: itemValue }))
             }
-            style={orderFormStyles.picker}
+            style={[orderFormStyles.picker, getTextColor(isDark)]}
           >
             {methods.map((method) => (
               <Picker.Item
                 key={method.id}
                 label={method.type}
                 value={method.type}
+                color={isDark ? "#FFFFFF" : "#000000"}
               />
             ))}
           </Picker>
-          <Text style={orderFormStyles.label}>Payment Status</Text>
+          <Text style={[orderFormStyles.label, getTextColor(isDark)]}>
+            Payment Status
+          </Text>
           <Picker
             selectedValue={formData.paymentStatus}
             onValueChange={(itemValue) =>
               setFormData((prev) => ({ ...prev, paymentStatus: itemValue }))
             }
-            style={orderFormStyles.picker}
+            style={[orderFormStyles.picker, getTextColor(isDark)]}
           >
-            <Picker.Item label="No Payment" value="No Payment" />
-            <Picker.Item label="Partial" value="Partial" />
-            <Picker.Item label="Completed" value="Completed" />
-            <Picker.Item label="Closed" value="Closed" />
+            <Picker.Item
+              label="No Payment"
+              value="No Payment"
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
+            <Picker.Item
+              label="Partial"
+              value="Partial"
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
+            <Picker.Item
+              label="Completed"
+              value="Completed"
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
+            <Picker.Item
+              label="Closed"
+              value="Closed"
+              color={isDark ? "#FFFFFF" : "#000000"}
+            />
           </Picker>
         </View>
       </View>
@@ -918,7 +963,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
           Save Order
         </Button>
       </View>
-      {/* <Button onPress={handleClose}>Cancel</Button> */}
 
       {errors.items && (
         <Text style={[orderFormStyles.errorText, { textAlign: "center" }]}>

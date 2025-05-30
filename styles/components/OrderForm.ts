@@ -42,7 +42,7 @@ export const orderFormStyles = StyleSheet.create({
   },
   discountInput: {
     ...globalStyles.input,
-    width: Platform.OS === 'android' ? '50%' : '40%',
+    width: Platform.OS === 'android' ? '100%' : '100%',
     height: 40,
     marginBottom: 0,
   },
@@ -123,7 +123,7 @@ export const orderFormStyles = StyleSheet.create({
   },
   amountPaidInput: {
     ...globalStyles.input,
-    width: Platform.OS === 'android' ? '50%' : '40%',
+    width: Platform.OS === 'android' ? '100%' : '100%',
     height: 40,
     marginBottom: 0,
   },

@@ -141,9 +141,10 @@ const ProductForm: React.FC<{
     scrollContainer: {
       flexGrow: 1,
       justifyContent: "center",
+      backgroundColor: theme.colors.background,
     },
     container: {
-      backgroundColor: "white",
+      backgroundColor: theme.colors.background,
       padding: 24,
       borderRadius: 8,
       maxWidth: 500,
@@ -174,9 +175,10 @@ const ProductForm: React.FC<{
       },
       shadowOpacity: 0.22,
       shadowRadius: 2.22,
+      backgroundColor: theme.colors.error,
     },
     closeButtonText: {
-      color: "white",
+      color: "#fff",
       fontSize: 14,
       fontWeight: "bold",
       textAlign: "center",
@@ -184,9 +186,11 @@ const ProductForm: React.FC<{
     title: {
       marginBottom: 24,
       fontWeight: "bold",
+      color: theme.colors.onSurface,
     },
     segmentedButtons: {
       marginBottom: 24,
+      backgroundColor: theme.colors.surface,
     },
     formGroup: {
       marginBottom: 16,
@@ -194,16 +198,20 @@ const ProductForm: React.FC<{
     label: {
       marginBottom: 8,
       fontWeight: "500",
+      color: theme.colors.onSurfaceVariant,
     },
     input: {
-      backgroundColor: "white",
+      backgroundColor: theme.colors.surface,
+      color: theme.colors.onSurface,
+      borderColor: theme.colors.outline,
     },
     picker: {
-      backgroundColor: "white",
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
-      borderColor: "#ccc",
+      borderColor: theme.colors.outline,
       borderRadius: 4,
       height: 50,
+      color: theme.colors.onSurface,
     },
     buttonContainer: {
       flexDirection: "row",
@@ -216,13 +224,13 @@ const ProductForm: React.FC<{
       borderRadius: 4,
     },
     createButton: {
-      backgroundColor: "#000",
+      backgroundColor: theme.colors.primary,
     },
     cancelButton: {
-      borderColor: "#ccc",
+      borderColor: theme.colors.outline,
     },
     cancelText: {
-      color: "#666",
+      color: theme.colors.onSurfaceVariant,
     },
     required: {
       color: theme.colors.error,
