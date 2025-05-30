@@ -1,17 +1,29 @@
 import React, { useState } from "react";
 import { StyleSheet, View, FlatList, Platform } from "react-native";
-import { TextInput, Button, Text, Card, useTheme } from "react-native-paper";
+import {
+  TextInput,
+  Button,
+  Text,
+  Card,
+  useTheme,
+  IconButton,
+} from "react-native-paper";
 import { useCategoryContext } from "../contexts/CategoryContext";
 import { generateId } from "../utils/idGenerator";
 import { TouchableOpacity } from "react-native";
 import CustomAlert from "./common/CustomAlert";
 import { useAlert } from "../hooks/useAlert";
+import { useColorScheme } from "react-native";
+import { getCategoryFormStyles } from "../styles/components/CategoryForm";
 
 const CategoryForm: React.FC<{
   initialData?: { id?: string; name: string };
   onClose: () => void;
 }> = ({ initialData, onClose }) => {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const styles = getCategoryFormStyles(isDark);
   const { categories, addCategory, editCategory, removeCategory } =
     useCategoryContext();
   const [categoryName, setCategoryName] = useState(initialData?.name || "");
@@ -88,203 +100,88 @@ const CategoryForm: React.FC<{
   };
 
   return (
-    <View style={styles.modalContainer}>
+    <View style={styles.container}>
       <CustomAlert {...alertProps} />
-
-      <View style={styles.formContainer}>
+      <TouchableOpacity
+        style={styles.closeButtonContainer}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+      >
+        <View style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>✕</Text>
+        </View>
+      </TouchableOpacity>
+      <View>
         <View style={styles.headerContainer}>
           <Text variant="headlineMedium" style={styles.title}>
             {editingItem ? "Edit Category" : "Create Category"}
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.closeButton,
-              { backgroundColor: theme.colors.error },
-            ]}
-            onPress={onClose}
-          >
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
         </View>
-
-        <View style={styles.contentContainer}>
-          <View style={styles.inputSection}>
-            <TextInput
-              mode="outlined"
-              label="Category Name"
-              value={categoryName}
-              onChangeText={setCategoryName}
-              style={styles.input}
-            />
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              style={styles.button}
-            >
-              {editingItem ? "Update Category" : "Add Category"}
-            </Button>
-          </View>
-
-          <View style={styles.listSection}>
-            <Text variant="titleMedium" style={styles.listTitle}>
-              Categories
-            </Text>
-            <FlatList
-              data={categories}
-              keyExtractor={(item) => item.id}
-              style={styles.list}
-              renderItem={({ item }) => (
-                <Card style={styles.categoryItem}>
-                  <View style={styles.categoryContent}>
-                    <Text style={styles.categoryText}>{item.name}</Text>
-                    <View style={styles.actions}>
-                      <Button
-                        onPress={() => handleEdit(item)}
-                        mode="outlined"
-                        style={styles.actionButton}
-                        labelStyle={styles.actionButtonLabel}
-                        compact={Platform.OS !== "web"}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        onPress={() => handleDelete(item.id)}
-                        mode="outlined"
-                        style={[styles.actionButton, styles.deleteButton]}
-                        textColor={theme.colors.error}
-                        compact={Platform.OS !== "web"}
-                        labelStyle={styles.actionButtonLabel}
-                      >
-                        Delete
-                      </Button>
-                    </View>
+        <View style={styles.inputSection}>
+          <TextInput
+            mode="outlined"
+            label="Category Name"
+            value={categoryName}
+            onChangeText={setCategoryName}
+            style={styles.input}
+            theme={{
+              colors: {
+                text: styles.input.color,
+                background: styles.input.backgroundColor,
+                primary: theme.colors.primary,
+                placeholder: styles.input.color,
+              },
+            }}
+            placeholderTextColor={styles.input.color}
+            underlineColorAndroid="transparent"
+            selectionColor={theme.colors.primary}
+            textColor={styles.input.color}
+          />
+          <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+            {editingItem ? "Update Category" : "Add Category"}
+          </Button>
+        </View>
+        <View style={styles.listSection}>
+          <Text variant="titleMedium" style={styles.listTitle}>
+            Categories
+          </Text>
+          <FlatList
+            data={categories}
+            keyExtractor={(item) => item.id}
+            style={styles.list}
+            contentContainerStyle={{ paddingBottom: 8 }}
+            showsVerticalScrollIndicator={true}
+            renderItem={({ item }) => (
+              <Card style={styles.categoryItem}>
+                <View style={styles.categoryContent}>
+                  <Text style={styles.categoryText}>{item.name}</Text>
+                  <View style={styles.actions}>
+                    <IconButton
+                      icon="pencil"
+                      size={22}
+                      onPress={() => handleEdit(item)}
+                      style={styles.actionButton}
+                      iconColor={styles.actionButtonLabel.color}
+                      accessibilityLabel="Edit"
+                    />
+                    <IconButton
+                      icon="delete"
+                      size={22}
+                      onPress={() => handleDelete(item.id)}
+                      style={[styles.actionButton, styles.deleteButton]}
+                      iconColor={theme.colors.error}
+                      accessibilityLabel="Delete"
+                    />
                   </View>
-                </Card>
-              )}
-            />
-          </View>
+                </View>
+              </Card>
+            )}
+          />
         </View>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: Platform.OS === "web" ? 20 : 10,
-  },
-  formContainer: {
-    width: Platform.OS === "web" ? "100%" : "98%",
-    maxWidth: Platform.OS === "web" ? 500 : "100%",
-    height: Platform.OS === "web" ? "90%" : "95%",
-  },
-  contentContainer: {
-    flex: 1,
-    flexDirection: "column",
-  },
-  inputSection: {
-    marginBottom: 16,
-  },
-  listSection: {
-    flex: 1,
-    marginTop: 8,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-    position: "relative",
-    paddingRight: 40,
-  },
-  title: {
-    fontWeight: "bold",
-    fontSize: Platform.OS === "web" ? 24 : 20,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "absolute",
-    right: -12,
-    top: -12,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    zIndex: 1000,
-  },
-  closeButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  input: {
-    marginBottom: 16,
-    backgroundColor: "white",
-    height: Platform.OS === "web" ? undefined : 45,
-  },
-  button: {
-    height: Platform.OS === "web" ? undefined : 45,
-    justifyContent: "center",
-  },
-  list: {
-    flex: 1,
-  },
-  categoryItem: {
-    marginBottom: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    backgroundColor: "#fff",
-  },
-  categoryContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: Platform.OS === "web" ? 16 : 12,
-    flexWrap: "nowrap",
-    minWidth: Platform.OS === "web" ? undefined : 320,
-  },
-  categoryText: {
-    fontSize: Platform.OS === "web" ? 16 : 13,
-    flex: 1,
-    marginRight: Platform.OS === "web" ? 8 : 4,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: Platform.OS === "web" ? 8 : 3,
-  },
-  actionButton: {
-    marginHorizontal: Platform.OS === "web" ? 2 : 3,
-    paddingHorizontal: Platform.OS === "web" ? 8 : 6,
-    minWidth: Platform.OS === "web" ? undefined : 65,
-  },
-  deleteButton: {
-    borderColor: "transparent",
-  },
-  listTitle: {
-    marginBottom: 12,
-    fontWeight: "600",
-  },
-  actionButtonLabel: {
-    fontSize: Platform.OS === "web" ? 14 : 12,
-  },
-});
 
 export default CategoryForm;

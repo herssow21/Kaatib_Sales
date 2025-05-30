@@ -1,0 +1,130 @@
+.product-form-scroll-container {
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.product-form-container {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  align-self: center;
+}
+
+.product-form-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.product-form-close-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -12px;
+  top: -12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+.product-form-close-text {
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.product-form-title {
+  margin-bottom: 24px;
+  font-weight: bold;
+}
+
+.product-form-segmented-buttons {
+  margin-bottom: 24px;
+}
+
+.product-form-group {
+  margin-bottom: 16px;
+}
+
+.product-form-label {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.product-form-input {
+  background-color: white;
+}
+
+.product-form-picker {
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 50px;
+}
+
+.product-form-button-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.product-form-button {
+  min-width: 100px;
+  border-radius: 4px;
+}
+
+.product-form-create-button {
+  background-color: #000;
+}
+
+.product-form-cancel-button {
+  border-color: #ccc;
+}
+
+.product-form-cancel-text {
+  color: #666;
+}
+
+.product-form-required {
+  color: #FF3B30;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+/* Platform-specific styles */
+@media (max-width: 768px) {
+  .product-form-container {
+    padding: 16px;
+    margin: 12px;
+  }
+
+  .product-form-header {
+    margin-bottom: 16px;
+  }
+
+  .product-form-title {
+    margin-bottom: 16px;
+  }
+
+  .product-form-segmented-buttons {
+    margin-bottom: 16px;
+  }
+
+  .product-form-group {
+    margin-bottom: 12px;
+  }
+
+  .product-form-button-container {
+    margin-top: 16px;
+  }
+} 

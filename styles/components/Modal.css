@@ -1,0 +1,88 @@
+.modalContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  min-width: 340px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  border: none;
+  position: relative;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.closeButton {
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.closeText {
+  font-size: 1.2rem;
+  color: var(--on-surface);
+}
+
+.modalScrollView {
+  max-height: calc(90vh - 100px);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--outline);
+}
+
+.modalButton {
+  min-width: 100px;
+}
+
+/* Mobile styles */
+@media (max-width: 480px) {
+  .modalContent {
+    min-width: unset;
+    width: 98vw;
+    padding: 16px 8px;
+  }
+
+  .modalTitle {
+    font-size: 1.2rem;
+  }
+
+  .modalActions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modalButton {
+    width: 100%;
+  }
+} 
