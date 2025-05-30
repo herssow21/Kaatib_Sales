@@ -598,7 +598,7 @@ Stock Value: KES ${item.stockValue}`;
       </View>
 
       {isMobile ? (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingVertical: 0 }}>
           <ScrollView
             horizontal
             pagingEnabled
@@ -624,7 +624,7 @@ Stock Value: KES ${item.stockValue}`;
                   styles.statCard,
                   {
                     width: width * 0.85,
-                    maxHeight: 90,
+                    maxHeight: 140,
                     marginTop: 0,
                     marginBottom: 0,
                     marginRight: 5,
@@ -661,7 +661,7 @@ Stock Value: KES ${item.stockValue}`;
               </Card>
             ))}
           </ScrollView>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingVertical: 0 }}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator
@@ -673,7 +673,7 @@ Stock Value: KES ${item.stockValue}`;
                   flex: 1,
                   maxHeight: 300,
                   marginTop: 0,
-                  marginBottom: 94,
+                  marginBottom: 104,
                 }}
               >
                 <DataTable
@@ -825,7 +825,10 @@ Stock Value: KES ${item.stockValue}`;
                         }}
                       >
                         <Card.Content
-                          style={{ alignItems: "center", paddingVertical: 20 }}
+                          style={{
+                            alignItems: "flex-start",
+                            paddingVertical: 20,
+                          }}
                         >
                           <MaterialCommunityIcons
                             name="package-variant-closed"
