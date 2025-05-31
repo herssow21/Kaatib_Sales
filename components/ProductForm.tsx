@@ -148,6 +148,7 @@ const ProductForm: React.FC<{
       padding: 24,
       borderRadius: 8,
       maxWidth: 500,
+      minHeight: 700,
       width: "100%",
       alignSelf: "center",
     },
