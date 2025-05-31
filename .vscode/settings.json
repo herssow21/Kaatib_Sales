@@ -1,0 +1,9 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["tsconfig.json"],
+      "url": "https://json.schemastore.org/tsconfig"
+    }
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
+} 

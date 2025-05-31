@@ -3,6 +3,7 @@ import { StyleSheet, View, Image, Platform, Dimensions } from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 
 export default function Index() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,12 +25,57 @@ export default function Index() {
         style={[styles.contentContainer, isWeb && styles.contentContainerWeb]}
       >
         {isWeb && (
-          <View style={styles.imageContainer}>
-            <Image
-              source={require("../assets/images/login-image.png")}
-              style={styles.loginImage}
-              resizeMode="cover"
-            />
+          <View style={styles.leftContainer}>
+            <View style={styles.logoAndTitleContainer}>
+              <View style={styles.packageIconBackground}>
+                <Feather name="package" size={32} color="white" />
+              </View>
+              <View>
+                <Text style={styles.leftTitle}>Kaatib Inventory</Text>
+                <Text style={styles.leftSubtitle}>
+                  Sales & Inventory Management
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.leftDescription}>
+              Streamline your business operations with our comprehensive
+              inventory and sales management platform.
+            </Text>
+            <View style={styles.featuresContainer}>
+              <View style={styles.featureItem}>
+                <View style={styles.trendingUpIconBackground}>
+                  <Feather name="trending-up" size={24} color="green" />
+                </View>
+                <View>
+                  <Text style={styles.featureTitle}>Real-time Analytics</Text>
+                  <Text style={styles.featureDescription}>
+                    Track sales performance and inventory levels in real-time
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={styles.packageFeatureIconBackground}>
+                  <Feather name="package" size={24} color="blue" />
+                </View>
+                <View>
+                  <Text style={styles.featureTitle}>Inventory Control</Text>
+                  <Text style={styles.featureDescription}>
+                    Manage stock levels, track products, and automate reordering
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={styles.shieldIconBackground}>
+                  <Feather name="shield" size={24} color="purple" />
+                </View>
+                <View>
+                  <Text style={styles.featureTitle}>Secure & Reliable</Text>
+                  <Text style={styles.featureDescription}>
+                    Enterprise-grade security with 99.9% uptime guarantee
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
         )}
         <View style={[styles.formContainer, isWeb && styles.formContainerWeb]}>
@@ -41,7 +87,12 @@ export default function Index() {
             />
           )}
           <Text style={[styles.title, isWeb && styles.titleWeb]}>
-            Kaatib Sales
+            {isLogin ? "Welcome Back" : "Join Us"}
+          </Text>
+          <Text style={[styles.subtitle, isWeb && styles.subtitleWeb]}>
+            {isLogin
+              ? "Sign in to your account to continue"
+              : "Create an account to get started"}
           </Text>
           <TextInput
             mode="outlined"
@@ -100,31 +151,83 @@ const styles = StyleSheet.create({
   contentContainerWeb: {
     flexDirection: "row",
     padding: 0,
-    alignItems: "stretch",
-  },
-  imageContainer: {
-    flex: 1,
-    width: "40%",
     alignItems: "center",
+    justifyContent: "center",
   },
-  loginImage: {
-    width: "50%",
-    height: "70%",
+  leftContainer: {
+    flex: 1,
+    padding: 60,
+    justifyContent: "center",
+    backgroundColor: "#f8f8f8",
+    height: "100%",
+    maxWidth: "50%",
+  },
+  logoAndTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  leftLogo: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  leftTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 2,
+    marginLeft: 10,
+  },
+  leftSubtitle: {
+    fontSize: 16,
+    color: "#555",
+    marginLeft: 10,
+  },
+  leftDescription: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 40,
+    lineHeight: 24,
+  },
+  featuresContainer: {
+    // Styles for the container of feature items
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  featureIconPlaceholder: {
+    width: 24,
+    height: 24,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 12,
+    marginRight: 15,
+    marginTop: 4,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  featureDescription: {
+    fontSize: 14,
+    color: "#555",
   },
   formContainer: {
     flex: 1,
   },
   formContainerWeb: {
-    width: "60%",
+    width: "50%",
     padding: 65,
     maxWidth: undefined,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: "#fff",
+    borderRadius: 0,
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   logo: {
     width: 200,
@@ -154,5 +257,44 @@ const styles = StyleSheet.create({
   },
   policyButton: {
     marginTop: 8,
+  },
+  packageIconBackground: {
+    backgroundColor: "#f00",
+    padding: 12,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 10,
+  },
+  trendingUpIconBackground: {
+    backgroundColor: "#d0f0c0",
+    padding: 8,
+    borderRadius: 6,
+    marginRight: 15,
+    marginTop: 4,
+  },
+  packageFeatureIconBackground: {
+    backgroundColor: "#c0d0f0",
+    padding: 8,
+    borderRadius: 6,
+    marginRight: 15,
+    marginTop: 4,
+  },
+  shieldIconBackground: {
+    backgroundColor: "#e0c0f0",
+    padding: 8,
+    borderRadius: 6,
+    marginRight: 15,
+    marginTop: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#555",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  subtitleWeb: {
+    textAlign: "left",
+    marginBottom: 30,
   },
 });
