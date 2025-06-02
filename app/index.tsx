@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { StyleSheet, View, Image, Platform, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Image,
+  Platform,
+  Dimensions,
+  useColorScheme,
+} from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +18,8 @@ export default function Index() {
   const [password, setPassword] = useState("");
   const { width } = Dimensions.get("window");
   const isWeb = Platform.OS === "web";
+  const colorScheme = useColorScheme();
+  const isDarkMode = colorScheme === "dark";
 
   const handleSubmit = () => {
     // TODO: Implement actual authentication
@@ -20,24 +29,45 @@ export default function Index() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, isDarkMode && styles.containerDark]}
+    >
       <View
         style={[styles.contentContainer, isWeb && styles.contentContainerWeb]}
       >
         {isWeb && (
-          <View style={styles.leftContainer}>
+          <View
+            style={[
+              styles.leftContainer,
+              isDarkMode && styles.leftContainerDark,
+            ]}
+          >
             <View style={styles.logoAndTitleContainer}>
               <View style={styles.packageIconBackground}>
                 <Feather name="package" size={32} color="white" />
               </View>
               <View>
-                <Text style={styles.leftTitle}>Kaatib Inventory</Text>
-                <Text style={styles.leftSubtitle}>
+                <Text
+                  style={[styles.leftTitle, isDarkMode && styles.leftTitleDark]}
+                >
+                  Kaatib Inventory
+                </Text>
+                <Text
+                  style={[
+                    styles.leftSubtitle,
+                    isDarkMode && styles.leftSubtitleDark,
+                  ]}
+                >
                   Sales & Inventory Management
                 </Text>
               </View>
             </View>
-            <Text style={styles.leftDescription}>
+            <Text
+              style={[
+                styles.leftDescription,
+                isDarkMode && styles.leftDescriptionDark,
+              ]}
+            >
               Streamline your business operations with our comprehensive
               inventory and sales management platform.
             </Text>
@@ -47,8 +77,20 @@ export default function Index() {
                   <Feather name="trending-up" size={24} color="green" />
                 </View>
                 <View>
-                  <Text style={styles.featureTitle}>Real-time Analytics</Text>
-                  <Text style={styles.featureDescription}>
+                  <Text
+                    style={[
+                      styles.featureTitle,
+                      isDarkMode && styles.featureTitleDark,
+                    ]}
+                  >
+                    Real-time Analytics
+                  </Text>
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      isDarkMode && styles.featureDescriptionDark,
+                    ]}
+                  >
                     Track sales performance and inventory levels in real-time
                   </Text>
                 </View>
@@ -58,8 +100,20 @@ export default function Index() {
                   <Feather name="package" size={24} color="blue" />
                 </View>
                 <View>
-                  <Text style={styles.featureTitle}>Inventory Control</Text>
-                  <Text style={styles.featureDescription}>
+                  <Text
+                    style={[
+                      styles.featureTitle,
+                      isDarkMode && styles.featureTitleDark,
+                    ]}
+                  >
+                    Inventory Control
+                  </Text>
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      isDarkMode && styles.featureDescriptionDark,
+                    ]}
+                  >
                     Manage stock levels, track products, and automate reordering
                   </Text>
                 </View>
@@ -69,8 +123,20 @@ export default function Index() {
                   <Feather name="shield" size={24} color="purple" />
                 </View>
                 <View>
-                  <Text style={styles.featureTitle}>Secure & Reliable</Text>
-                  <Text style={styles.featureDescription}>
+                  <Text
+                    style={[
+                      styles.featureTitle,
+                      isDarkMode && styles.featureTitleDark,
+                    ]}
+                  >
+                    Secure & Reliable
+                  </Text>
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      isDarkMode && styles.featureDescriptionDark,
+                    ]}
+                  >
                     Enterprise-grade security with 99.9% uptime guarantee
                   </Text>
                 </View>
@@ -78,18 +144,36 @@ export default function Index() {
             </View>
           </View>
         )}
-        <View style={[styles.formContainer, isWeb && styles.formContainerWeb]}>
+        <View
+          style={[
+            styles.formContainer,
+            isWeb && styles.formContainerWeb,
+            isDarkMode && styles.formContainerDark,
+          ]}
+        >
           {!isWeb && (
             <Image
-              source={require("../assets/images/login-image.png")}
+              source={require("../assets/images/logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />
           )}
-          <Text style={[styles.title, isWeb && styles.titleWeb]}>
+          <Text
+            style={[
+              styles.title,
+              isWeb && styles.titleWeb,
+              isDarkMode && styles.titleDark,
+            ]}
+          >
             {isLogin ? "Welcome Back" : "Join Us"}
           </Text>
-          <Text style={[styles.subtitle, isWeb && styles.subtitleWeb]}>
+          <Text
+            style={[
+              styles.subtitle,
+              isWeb && styles.subtitleWeb,
+              isDarkMode && styles.subtitleDark,
+            ]}
+          >
             {isLogin
               ? "Sign in to your account to continue"
               : "Create an account to get started"}
@@ -99,9 +183,18 @@ export default function Index() {
             label="Email"
             value={email}
             onChangeText={setEmail}
-            style={styles.input}
+            style={[styles.input, isDarkMode && styles.inputDark]}
             keyboardType="email-address"
             autoCapitalize="none"
+            theme={{
+              colors: {
+                primary: isDarkMode ? "#fff" : "#000",
+                background: isDarkMode ? "#3a3a3a" : "#fff",
+                text: isDarkMode ? "#fff" : "#000",
+                placeholder: isDarkMode ? "#ddd" : "#555",
+                outline: isDarkMode ? "#555" : "#ccc",
+              },
+            }}
           />
           <TextInput
             mode="outlined"
@@ -109,15 +202,30 @@ export default function Index() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            style={styles.input}
+            style={[styles.input, isDarkMode && styles.inputDark]}
+            theme={{
+              colors: {
+                primary: isDarkMode ? "#fff" : "#000",
+                background: isDarkMode ? "#3a3a3a" : "#fff",
+                text: isDarkMode ? "#fff" : "#000",
+                placeholder: isDarkMode ? "#ddd" : "#555",
+                outline: isDarkMode ? "#555" : "#ccc",
+              },
+            }}
           />
-          <Button mode="contained" onPress={handleSubmit} style={styles.button}>
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            style={styles.button}
+            labelStyle={isDarkMode && { color: "#fff" }}
+          >
             {isLogin ? "Login" : "Sign Up"}
           </Button>
           <Button
             mode="text"
             onPress={() => setIsLogin(!isLogin)}
             style={styles.switchButton}
+            labelStyle={isDarkMode && { color: "#fff" }}
           >
             {isLogin ? "Need an account? Sign Up" : "Have an account? Login"}
           </Button>
@@ -129,6 +237,7 @@ export default function Index() {
               })
             }
             style={styles.policyButton}
+            labelStyle={isDarkMode && { color: "#fff" }}
           >
             Terms & Privacy Policy
           </Button>
@@ -142,6 +251,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  containerDark: {
+    backgroundColor: "#121212",
   },
   contentContainer: {
     flex: 1,
@@ -162,6 +274,9 @@ const styles = StyleSheet.create({
     height: "100%",
     maxWidth: "50%",
   },
+  leftContainerDark: {
+    backgroundColor: "#1e1e1e",
+  },
   logoAndTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -177,17 +292,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 2,
     marginLeft: 10,
+    color: "#000",
+  },
+  leftTitleDark: {
+    color: "#fff",
   },
   leftSubtitle: {
     fontSize: 16,
     color: "#555",
     marginLeft: 10,
   },
+  leftSubtitleDark: {
+    color: "#bbb",
+  },
   leftDescription: {
     fontSize: 16,
     color: "#333",
     marginBottom: 40,
     lineHeight: 24,
+  },
+  leftDescriptionDark: {
+    color: "#ccc",
   },
   featuresContainer: {
     // Styles for the container of feature items
@@ -209,10 +334,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 4,
+    color: "#000",
+  },
+  featureTitleDark: {
+    color: "#fff",
   },
   featureDescription: {
     fontSize: 14,
     color: "#555",
+  },
+  featureDescriptionDark: {
+    color: "#bbb",
   },
   formContainer: {
     flex: 1,
@@ -229,6 +361,9 @@ const styles = StyleSheet.create({
     shadowRadius: 0,
     elevation: 0,
   },
+  formContainerDark: {
+    backgroundColor: "#1e1e1e",
+  },
   logo: {
     width: 200,
     height: 200,
@@ -239,15 +374,34 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 20,
+    color: "#000",
   },
   titleWeb: {
     marginBottom: 20,
     textAlign: "left",
   },
+  titleDark: {
+    color: "#fff",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#555",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  subtitleWeb: {
+    textAlign: "left",
+    marginBottom: 30,
+  },
+  subtitleDark: {
+    color: "#bbb",
+  },
   input: {
     marginBottom: 16,
   },
+  inputDark: {},
   button: {
     marginTop: 8,
     padding: 4,
@@ -285,16 +439,5 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 15,
     marginTop: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#555",
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  subtitleWeb: {
-    textAlign: "left",
-    marginBottom: 30,
   },
 });
